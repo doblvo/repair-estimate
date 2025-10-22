@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAERSK – Cuestionario + Repair Estimate (SharePoint REST)</title>
+  <style>
+    :root{ --brand:#0b74c7; --bg:#f6f8fb; --ink:#1f2937; --muted:#6b7280; --card:#fff; --line:#e5e7eb; --radius:14px; }
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui, Segoe UI, Roboto, Helvetica, Arial}
+    .wrap{max-width:1200px;margin:0 auto}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
+    header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
+    header h1{margin:0;font-size:18px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+    button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+    button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    button.ghost{background:transparent}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .qwrap{padding:14px 16px;display:grid;gap:12px}
+    .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .qcard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+    .qtitle{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .row input[type="text"], .row input[type="number"], .row input[type="date"], .row input[type="time"], .row select{width:100%;border:1px solid #dbe2ea;border-radius:8px;padding:6px 8px;font:inherit}
+    .row .half{flex:1 1 48%}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px 6px;z-index:1}
+    tbody td{border-bottom:1px dashed #eef2f7;padding:4px}
+    tfoot td{border-top:2px solid var(--line);font-weight:700;padding:8px 6px;background:#fafbfd}
+    input[type="text"], input[type="number"], textarea{width:100%;border:1px solid #dbe2ea;border-radius:8px;padding:6px 8px;font:inherit}
+    input[readonly]{background:#f3f4f6}
+    .cell-photos{width:120px}
+    .cell-del{width:34px;text-align:center}
+    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+    .grid>div label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    .submitbar{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
+    @media (max-width:1000px){ .qgrid{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:600px){
+      header{flex-direction:column;align-items:flex-start}
+      .qgrid{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr}
+      table{font-size:13px}
+    }
+    #log{white-space:pre-wrap;background:#0b1220;color:#cbd5e1;padding:12px;border-radius:10px;margin:12px;max-height:220px;overflow:auto}
+  </style>
+</head>
+<body>
+<div class="wrap card">
+  <header>
+    <h1>MAERSK — Cuestionario inicial</h1>
+    <div class="toolbar">
+      <button id="btnCSV" type="button">Exportar CSV</button>
+      <button id="btnJSON" type="button">Exportar JSON</button>
+    </div>
+  </header>
+
+  <!-- CUESTIONARIO -->
+  <section class="qwrap">
+    <div class="qgrid">
+      <div class="qcard"><div class="qtitle">Container Nº</div><div class="row"><input id="q_container" type="text" placeholder="MSKU1234567"></div></div>
+      <div class="qcard"><div class="qtitle">Folio Nº</div><div class="row"><input id="q_folio" type="text"></div></div>
+      <div class="qcard"><div class="qtitle">Estado</div><div class="row">
+        <label><input type="radio" name="q_estado" value="B"> B</label>
+        <label><input type="radio" name="q_estado" value="M"> M</label>
+        <span class="pill">(opcional)</span>
+      </div></div>
+      <div class="qcard"><div class="qtitle">Tipo</div><div class="row">
+        <select id="q_tipo"><option>20 DRY</option><option selected>40 DRY</option><option>40 HC</option><option>20 RF</option><option>40 RF</option></select>
+      </div></div>
+
+      <div class="qcard"><div class="qtitle">Para</div><div class="row">
+        <label><input type="radio" name="q_para" value="EXP"> EXP</label>
+        <label><input type="radio" name="q_para" value="IMP"> IMP</label>
+        <label><input type="radio" name="q_para" value="CFS"> CFS</label>
+        <span class="pill">(opcional)</span>
+      </div></div>
+      <div class="qcard"><div class="qtitle">Naviera</div><div class="row">
+        <select id="q_naviera">
+          <option>MAERSK</option><option>HAPAG-LLOYD</option><option>COSCO</option><option>TRANSMARES</option><option>OOCL</option><option>OTRA</option>
+        </select>
+      </div></div>
+      <div class="qcard"><div class="qtitle">Lugar</div><div class="row"><input id="q_lugar" type="text" placeholder="CL"></div></div>
+      <div class="qcard"><div class="qtitle">Fecha y Hora</div><div class="row">
+        <input id="q_fecha" class="half" type="date"><input id="q_hora" class="half" type="time">
+      </div></div>
+
+      <div class="qcard"><div class="qtitle">Vacio</div><div class="row">
+        <label><input type="radio" name="q_vacio" value="S"> S</label>
+        <label><input type="radio" name="q_vacio" value="N"> N</label>
+        <span class="pill">(opcional)</span>
+      </div></div>
+      <div class="qcard"><div class="qtitle">OOG</div><div class="row">
+        <label><input type="radio" name="q_oog" value="S"> S</label>
+        <label><input type="radio" name="q_oog" value="N"> N</label>
+        <span class="pill">(opcional)</span>
+      </div></div>
+      <div class="qcard"><div class="qtitle">Transportista</div><div class="row"><input id="q_transportista" type="text"></div></div>
+      <div class="qcard"><div class="qtitle">Patente Camión</div><div class="row"><input id="q_patente" type="text"></div></div>
+      <div class="qcard"><div class="qtitle">Nave</div><div class="row"><input id="q_nave" type="text"></div></div>
+      <div class="qcard"><div class="qtitle">Pto Embarque / Descarga</div><div class="row"><input id="q_ptoemb" class="half" type="text" placeholder="CL"><input id="q_ptodesc" class="half" type="text"></div></div>
+      <div class="qcard"><div class="qtitle">Tara / Gross (KGS)</div><div class="row"><input id="q_tara" class="half" type="number" step="0.01" placeholder="7250"><input id="q_gross" class="half" type="number" step="0.01" placeholder="32500"></div></div>
+      <div class="qcard"><div class="qtitle">Class / Status</div><div class="row"><input id="q_class" class="half" type="text" placeholder="S"><input id="q_status" class="half" type="text" placeholder="PTI"></div></div>
+      <div class="qcard"><div class="qtitle">Interior Condition</div><div class="row"><input id="q_interior" type="text" placeholder="06-25"></div></div>
+    </div>
+  </section>
+
+  <!-- REPAIR ESTIMATE -->
+  <header>
+    <h1>REPAIR ESTIMATE — líneas dinámicas</h1>
+    <div class="toolbar">
+      <button id="btnAdd" class="primary" type="button">+ Agregar línea</button>
+      <button id="btnClear" class="ghost" type="button">Vaciar líneas</button>
+    </div>
+  </header>
+
+  <div style="overflow:auto;">
+    <table id="tabla">
+      <thead>
+        <tr>
+          <th style="width:54px">#</th>
+          <th style="min-width:110px">Location</th>
+          <th style="min-width:120px">Type of Damage</th>
+          <th style="min-width:190px">Component & Repair Method</th>
+          <th style="min-width:130px">Size of Repair</th>
+          <th style="width:70px">Qty</th>
+          <th style="min-width:80px">Code</th>
+          <th style="width:110px">Man Hours</th>
+          <th style="width:140px">Material Cost</th>
+          <th style="width:60px">R</th>
+          <th class="cell-photos">Cargar fotos</th>
+          <th class="cell-del"></th>
+        </tr>
+      </thead>
+      <tbody id="body"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7">Totales</td>
+          <td id="totHH">0.0</td>
+          <td id="totMat">0.00</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="grid">
+    <div><label>Remarks</label><textarea id="remarks" rows="3" placeholder="Observaciones generales..."></textarea></div>
+    <div><label>Nombre Técnico</label><input id="insp" type="text" placeholder="Nombre" /></div>
+    <div><label>Correo Técnico</label><input id="insp_email" type="text" placeholder="tecnico@empresa.cl" /></div>
+    <div><label>Fecha / Lugar</label><input id="fecha" type="datetime-local" /></div>
+  </div>
+
+  <div class="submitbar">
+    <button id="btnSubmit" class="primary" type="button">Submit</button>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<script>
+/* ===================== CONFIG (SharePoint) ===================== */
+// Sitio (server-relative) robusto: funciona desde /sites/ o /teams/ y evita /:u:/r/ del visor
+function resolveSiteRel() {
+  if (window._spPageContextInfo && _spPageContextInfo.webServerRelativeUrl) {
+    return _spPageContextInfo.webServerRelativeUrl.replace(/\/$/, "");
+  }
+  const m = location.pathname.match(/\/(?:sites|teams)\/[^\/]+/);
+  return m ? m[0] : "";
+}
+const SITE_REL = resolveSiteRel();
+
+// Biblioteca de documentos donde guardar fotos/JSON
+// Si tu biblioteca no es la estándar, cambia la ruta:
+const LIB_SERVER_RELATIVE = SITE_REL + "/Shared Documents";
+
+// Lista donde guardaremos un registro ligero del envío (cuestionario+totales)
+const LIST_TITLE = "Control USDA – Reefer"; // cámbiala si tu lista tiene otro nombre
+
+// Mapeo de campos (usa los InternalName de tu lista)
+const LIST_FIELDS = {
+  Title: "Container",          // pondremos el Container como Title
+  Container: "Container",
+  Folio: "Folio",
+  Estado: "Estado",
+  Tipo: "Tipo",
+  Para: "Para",
+  Naviera: "Naviera",
+  Lugar: "Lugar",
+  FechaHora: "FechaHora",      // DateTime
+  Vacio: "Vacio",
+  OOG: "OOG",
+  Transportista: "Transportista",
+  Patente: "Patente",
+  Nave: "Nave",
+  PtoEmbarque: "PtoEmbarque",
+  PtoDescarga: "PtoDescarga",
+  TaraKgs: "TaraKgs",
+  GrossKgs: "GrossKgs",
+  Class: "Class",
+  Status: "Status",
+  InteriorCondition: "InteriorCondition",
+  Inspector: "Inspector",
+  InspectorEmail: "InspectorEmail",
+  Remarks: "Remarks",
+  TotalHH: "TotalHH",
+  TotalMat: "TotalMat"
+};
+
+// Tamaño umbral para subir directo vs fragmentado
+const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024;
+
+/* ===================== UTIL/UI ===================== */
+const $ = (q, el=document) => el.querySelector(q);
+const logEl = $('#log');
+function log(m){ logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
+
+/* Radios des-seleccionables */
+document.addEventListener('click', (e)=>{
+  if(e.target.matches('input[type="radio"]')){
+    const r = e.target; if(r._was){ r.checked=false; r._was=false; } else {
+      document.querySelectorAll(`input[name="${r.name}"]`).forEach(x=>x._was=false); r._was=true;
+    }
+  }
+});
+
+/* ===================== CUESTIONARIO/REPAIR ===================== */
+function getRadio(name){ const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ""; }
+function getQuestionnaire(){ return {
+  container: $('#q_container').value.trim(),
+  folio: $('#q_folio').value.trim(),
+  estado: getRadio('q_estado'),
+  tipo: $('#q_tipo').value,
+  para: getRadio('q_para'),
+  naviera: $('#q_naviera').value,
+  lugar: $('#q_lugar').value.trim(),
+  fecha: $('#q_fecha').value, hora: $('#q_hora').value,
+  vacio: getRadio('q_vacio'),
+  oog: getRadio('q_oog'),
+  transportista: $('#q_transportista').value.trim(),
+  patente: $('#q_patente').value.trim(),
+  nave: $('#q_nave').value.trim(),
+  pto_embarque: $('#q_ptoemb').value.trim(),
+  pto_descarga: $('#q_ptodesc').value.trim(),
+  tara_kgs: $('#q_tara').value,
+  gross_kgs: $('#q_gross').value,
+  class: $('#q_class').value.trim(),
+  status: $('#q_status').value.trim(),
+  interior_condition: $('#q_interior').value.trim()
+};}
+
+const body = $('#body'); let seq = 0; const photos = new Map();
+function addRow(p={}) {
+  seq++; const id=seq; const tr = document.createElement('tr'); tr.dataset.row = id;
+  tr.innerHTML = `
+    <td><input type="number" value="${id}" min="1" step="1" readonly></td>
+    <td><input type="text" placeholder="1/1/X or 11xXX" value="${p.location||''}"></td>
+    <td><input type="text" placeholder="RIC / DY..." value="${p.damage||''}"></td>
+    <td><input type="text" placeholder="COMP + METHOD" value="${p.component||''}"></td>
+    <td><input type="text" placeholder="PC / MON/10x5" value="${p.size||''}"></td>
+    <td><input type="number" min="0" step="1" value="${p.qty??''}" oninput="recalc()"></td>
+    <td><input type="text" value="${p.code||''}"></td>
+    <td><input type="number" min="0" step="0.1" value="${p.hh??''}" oninput="recalc()"></td>
+    <td><input type="number" min="0" step="0.01" value="${p.material??''}" oninput="recalc()"></td>
+    <td><input type="text" placeholder="D/U/I" value="${p.r||''}"></td>
+    <td class="cell-photos">
+      <input id="file_${id}" type="file" accept="image/*" multiple style="display:none">
+      <button type="button" onclick="document.getElementById('file_${id}').click()">Cargar fotos</button>
+      <div id="fc_${id}" class="pill" style="margin-top:6px">0 archivo(s)</div>
+    </td>
+    <td class="cell-del"><button type="button" onclick="delRow(${id})">✕</button></td>`;
+  body.appendChild(tr);
+  const fi = tr.querySelector(`#file_${id}`);
+  fi.addEventListener('change', ()=>{ photos.set(id, fi.files); $('#fc_'+id).textContent = `${fi.files.length} archivo(s)`; });
+}
+function delRow(id){ const tr = body.querySelector(`tr[data-row="${id}"]`); if(tr){ tr.remove(); photos.delete(id); recalc(); } }
+function getLines(){
+  return [...body.querySelectorAll('tr')].map((tr)=>{
+    const c = tr.querySelectorAll('input');
+    return {
+      line:Number(c[0].value||0), location:c[1].value.trim(), damage:c[2].value.trim(), component:c[3].value.trim(),
+      size:c[4].value.trim(), qty:Number(c[5].value||0), code:c[6].value.trim(), man_hours:Number(c[7].value||0),
+      material_cost:Number(c[8].value||0), r:c[9].value.trim(), hasPhotos:(photos.get(Number(tr.dataset.row))||[]).length>0
+    };
+  });
+}
+function getDoc(){
+  const lines=getLines();
+  return {
+    questionnaire:getQuestionnaire(),
+    lines,
+    totals: lines.reduce((a,r)=>({hh:a.hh+r.man_hours,mat:a.mat+r.material_cost}),{hh:0,mat:0}),
+    remarks: $('#remarks').value.trim(),
+    inspector: $('#insp').value.trim(),
+    inspector_email: $('#insp_email').value.trim(),
+    datetime: $('#fecha').value
+  };
+}
+function recalc(){ const d=getDoc(); $('#totHH').textContent=d.totals.hh.toFixed(1); $('#totMat').textContent=d.totals.mat.toFixed(2); }
+
+/* ===================== EXPORT LOCAL ===================== */
+function toCSV(data){
+  const q=data.questionnaire;
+  const headPairs=Object.entries(q).map(([k,v])=>`${k.toUpperCase()},"${String(v).replace(/"/g,'""')}"`).join('\n');
+  const tailPairs=[['INSPECTOR',data.inspector],['INSPECTOR_EMAIL',data.inspector_email],['DATETIME',data.datetime],['TOTAL_HH',data.totals.hh],['TOTAL_MAT',data.totals.mat],['REMARKS',data.remarks]].map(([k,v])=>`${k},"${String(v).replace(/"/g,'""')}"`).join('\n');
+  const head=['Line','Location','Damage','ComponentMethod','SizeRepair','Qty','Code','ManHours','MaterialCost','R','HasPhotos'];
+  const rows=data.lines.map(r=>[r.line,r.location,r.damage,r.component,r.size,r.qty,r.code,r.man_hours,r.material_cost,r.r,r.hasPhotos]);
+  const csvBody=[head,...rows].map(arr=>arr.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  return headPairs+'\n'+tailPairs+'\n\n'+csvBody;
+}
+function download(name, content, mime){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type:mime})); a.download=name; a.click(); }
+
+/* ===================== SHAREPOINT REST HELPERS ===================== */
+async function getDigest(){
+  const res = await fetch(`${SITE_REL}/_api/contextinfo`, {
+    method:"POST",
+    credentials: "same-origin",
+    headers:{ "Accept":"application/json;odata=nometadata" }
+  });
+  if(!res.ok) throw new Error("No se pudo obtener X-RequestDigest");
+  const j = await res.json(); return j.FormDigestValue;
+}
+async function spPost(url, body, digest, extraHeaders={}){
+  const res = await fetch(url, {
+    method:"POST",
+    credentials: "same-origin",
+    headers:{
+      "Accept":"application/json;odata=nometadata",
+      "Content-Type":"application/json;odata=nometadata",
+      "X-RequestDigest": digest,
+      ...extraHeaders
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const j = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(j.error && j.error.message ? j.error.message : `HTTP ${res.status}`);
+  return j;
+}
+async function spPostBinary(url, blob, digest, extraHeaders={}){
+  const res = await fetch(url, {
+    method:"POST",
+    credentials: "same-origin",
+    headers:{ "Accept":"application/json;odata=nometadata", "X-RequestDigest": digest, ...extraHeaders },
+    body: blob
+  });
+  const j = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(j.error && j.error.message ? j.error.message : `HTTP ${res.status}`);
+  return j;
+}
+async function ensureFolderPath(baseServerRelative, path, digest){
+  const parts = path.split('/').filter(Boolean);
+  let current = baseServerRelative;
+  for(const p of parts){
+    const url = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(current)}')/folders`;
+    try{
+      await spPost(url, { "__metadata": { "type": "SP.Folder" }, "ServerRelativeUrl": `${current}/${p}` }, digest);
+      log(`Carpeta creada: ${current}/${p}`);
+    }catch(e){ log(`Carpeta OK: ${current}/${p}`); }
+    current = `${current}/${p}`;
+  }
+  return current;
+}
+async function uploadSmall(serverRelativeFolder, file, digest){
+  const url = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(serverRelativeFolder)}')/files/add(overwrite=true,url='${encodeURIComponent(file.name)}')`;
+  return spPostBinary(url, file, digest);
+}
+async function uploadLarge(serverRelativeFolder, file, digest){
+  const guid = (crypto.randomUUID && crypto.randomUUID()) || '00000000-0000-4000-8000-000000000000';
+  const startUrl = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(serverRelativeFolder)}')/files/add(overwrite=true,url='${encodeURIComponent(file.name)}')/startupload(uploadId=guid'${guid}')`;
+  const chunkSize = 2 * 1024 * 1024;
+  let offset = 0;
+  const first = file.slice(0, Math.min(chunkSize, file.size));
+  await spPostBinary(startUrl, first, await getDigest());
+  offset = first.size; log(`StartUpload ${offset}/${file.size}`);
+  while(offset < file.size){
+    const next = Math.min(chunkSize, file.size - offset);
+    const chunk = file.slice(offset, offset + next);
+    const contUrl = `${SITE_REL}/_api/web/getfilebyserverrelativeurl('${encodeURIComponent(serverRelativeFolder + "/" + file.name)}')/continueupload(uploadId=guid'${guid}',fileOffset=${offset})`;
+    await spPostBinary(contUrl, chunk, await getDigest());
+    offset += next; log(`ContinueUpload ${offset}/${file.size}`);
+  }
+  const finishUrl = `${SITE_REL}/_api/web/getfilebyserverrelativeurl('${encodeURIComponent(serverRelativeFolder + "/" + file.name)}')/finishupload(uploadId=guid'${guid}',fileOffset=${file.size})`;
+  await spPostBinary(finishUrl, new Blob([]), await getDigest());
+  log(`FinishUpload OK`);
+}
+async function createListItem(digest, payload){
+  const info = await fetch(`${SITE_REL}/_api/web/lists/GetByTitle('${encodeURIComponent(LIST_TITLE)}')?$select=ListItemEntityTypeFullName`,
+    { credentials:"same-origin", headers: { "Accept":"application/json;odata=nometadata" } });
+  if(!info.ok) throw new Error("No se pudo leer la lista (¿nombre correcto?).");
+  const li = await info.json(); const et = li.ListItemEntityTypeFullName;
+  const body = { "__metadata": { "type": et } };
+  for(const [uiKey, internal] of Object.entries(LIST_FIELDS)){
+    if(payload[uiKey] !== undefined){ body[internal] = payload[uiKey]; }
+  }
+  const url = `${SITE_REL}/_api/web/lists/GetByTitle('${encodeURIComponent(LIST_TITLE)}')/items`;
+  return spPost(url, body, digest);
+}
+
+/* ===================== SUBMIT ===================== */
+async function submitDoc(){
+  try{
+    logEl.textContent = ""; log("Validando…");
+    // Valida que cada línea con datos tenga al menos 1 foto
+    for(const tr of body.querySelectorAll('tr')){
+      const id = Number(tr.dataset.row); const files = photos.get(id)||[];
+      const c = tr.querySelectorAll('input');
+      const any = [1,2,3,4,5,6,7,8,9].some(i=> (c[i]?.value||'').trim()!=='');
+      if(any && files.length===0){ alert(`La línea ${id} requiere al menos 1 foto.`); return; }
+    }
+
+    const doc = getDoc();
+    const q = doc.questionnaire;
+    const fechaBase = q.fecha ? new Date(`${q.fecha}T${q.hora||'00:00'}`) : (doc.datetime? new Date(doc.datetime) : new Date());
+    const yyyy = fechaBase.getFullYear(), mm = String(fechaBase.getMonth()+1).padStart(2,'0'), dd = String(fechaBase.getDate()).padStart(2,'0');
+    const dateFolder = `${yyyy}-${mm}-${dd}`;
+
+    // Ruta: {Naviera}/{YYYY-MM-DD}/{Container}/Respaldos
+    const folderPath = `${q.naviera||'NAVIERA'}/${dateFolder}/${q.container||'UNIDAD'}/Respaldos`;
+
+    log("Obteniendo digest…");
+    const digest = await getDigest();
+
+    // 1) Asegurar carpeta
+    log("Creando/validando carpetas…");
+    const targetFolder = await ensureFolderPath(LIB_SERVER_RELATIVE, folderPath, digest);
+    log(`Destino: ${targetFolder}`);
+
+    // 2) Subir fotos (subcarpeta por línea)
+    for(const [rowId, fileList] of photos.entries()){
+      if(!fileList || fileList.length===0) continue;
+      const perLine = await ensureFolderPath(targetFolder, `line_${rowId}`, digest);
+      for(const f of fileList){
+        log(`Subiendo L${rowId}: ${f.name}`);
+        if(f.size <= LARGE_FILE_THRESHOLD) await uploadSmall(perLine, f, digest);
+        else await uploadLarge(perLine, f, digest);
+      }
+    }
+
+    // 3) Guardar JSON resumen en la carpeta (repair_estimate_*.json)
+    const jsonBlob = new Blob([JSON.stringify(doc, null, 2)], {type:"application/json"});
+    const jsonFile = new File([jsonBlob], `repair_estimate_${Date.now()}.json`);
+    await uploadSmall(targetFolder, jsonFile, digest);
+    log("JSON de resumen guardado.");
+
+    // 4) Crear registro en la Lista (cuestionario + totales)
+    log("Creando ítem en la lista…");
+    const item = await createListItem(digest, {
+      Title: q.container,
+      Container: q.container, Folio: q.folio, Estado: q.estado, Tipo: q.tipo, Para: q.para,
+      Naviera: q.naviera, Lugar: q.lugar,
+      FechaHora: fechaBase.toISOString(),
+      Vacio: q.vacio, OOG: q.oog, Transportista: q.transportista, Patente: q.patente,
+      Nave: q.nave, PtoEmbarque: q.pto_embarque, PtoDescarga: q.pto_descarga,
+      TaraKgs: q.tara_kgs, GrossKgs: q.gross_kgs, Class: q.class, Status: q.status, InteriorCondition: q.interior_condition,
+      Inspector: doc.inspector, InspectorEmail: doc.inspector_email, Remarks: doc.remarks,
+      TotalHH: doc.totals.hh, TotalMat: doc.totals.mat
+    });
+    log(`Ítem creado Id=${item.Id}`);
+
+    alert("Enviado con éxito.\nCarpeta: " + targetFolder);
+  }catch(err){
+    console.error(err);
+    log("ERROR: " + (err.message || err));
+    alert("Error: " + (err.message || err));
+  }
+}
+
+/* ===================== BOTONES + INIT ===================== */
+function init(){
+  $('#btnAdd').onclick = ()=>{ addRow(); };
+  $('#btnClear').onclick = ()=>{ body.innerHTML=''; seq=0; addRow(); recalc(); };
+  $('#btnCSV').onclick = ()=>{ const d=getDoc(); download(`maersk_repair_${Date.now()}.csv`, toCSV(d), 'text/csv'); };
+  $('#btnJSON').onclick = ()=>{ const d=getDoc(); download(`maersk_repair_${Date.now()}.json`, JSON.stringify(d, null, 2), 'application/json'); };
+  document.getElementById('btnSubmit').onclick = submitDoc;
+
+  // crear primera línea y calcular totales
+  addRow(); recalc();
+}
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
