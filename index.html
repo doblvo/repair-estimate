@@ -31,7 +31,7 @@
     tfoot td{border-top:2px solid var(--line);font-weight:700;padding:8px 6px;background:#fafbfd}
     input[type="text"], input[type="number"], textarea{width:100%;border:1px solid #dbe2ea;border-radius:8px;padding:6px 8px;font:inherit}
     input[readonly]{background:#f3f4f6}
-    .cell-photos{width:120px}
+    .cell-photos{width:140px}
     .cell-del{width:34px;text-align:center}
     .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
     .grid>div label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -161,7 +161,6 @@
 
 <script>
 /* ===================== CONFIG (GAS BACKEND) ===================== */
-// Pon aquí tu Web App de Google Apps Script:
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDraU8nzdzu1N6e0RwYhBZsn7ITBP0ZCysc2cKqP99DRmmg/exec';
 
 /* ===================== UTIL/UI ===================== */
@@ -304,7 +303,7 @@ async function submitToGAS(doc){
 
   const res = await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type':'application/json' },
+    headers: { 'Content-Type':'text/plain;charset=utf-8' }, // evita preflight CORS
     body: JSON.stringify(payload)
   });
   if(!res.ok) throw new Error('HTTP '+res.status);
@@ -327,7 +326,7 @@ async function submitDoc(){
     }
 
     const doc = getDoc();
-    log("Enviando a Google Apps Script… (esto puede tardar según fotos)");
+    log("Enviando a Google Apps Script… (según fotos puede tardar)");
     const result = await submitToGAS(doc);
 
     log(`OK. Carpeta destino: ${result.folderUrl}`);
@@ -347,6 +346,7 @@ function init(){
   $('#btnJSON').onclick = ()=>{ const d=getDoc(); download(`maersk_repair_${Date.now()}.json`, JSON.stringify(d, null, 2), 'application/json'); };
   document.getElementById('btnSubmit').onclick = submitDoc;
 
+  // Arranca con 1 línea visible
   addRow(); recalc();
 }
 window.addEventListener('DOMContentLoaded', init);
