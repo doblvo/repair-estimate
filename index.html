@@ -31,133 +31,203 @@
     tfoot td{border-top:2px solid var(--line);font-weight:700;padding:8px 6px;background:#fafbfd}
     input[type="text"], input[type="number"], textarea{width:100%;border:1px solid #dbe2ea;border-radius:8px;padding:6px 8px;font:inherit}
     input[readonly]{background:#f3f4f6}
-    .cell-photos{width:140px}
+    .cell-photos{width:160px}
     .cell-del{width:34px;text-align:center}
     .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
     .grid>div label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
     .submitbar{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
     @media (max-width:1000px){ .qgrid{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:600px){
-      header{flex-direction:column;align-items:flex-start}
+      body{padding:12px}
+      header{flex-direction:column;align-items:flex-start;gap:6px}
       .qgrid{grid-template-columns:1fr}
       .grid{grid-template-columns:1fr}
       table{font-size:13px}
+      .cell-photos{width:140px}
+      .submitbar{justify-content:stretch}
+      .submitbar button{flex:1}
     }
     #log{white-space:pre-wrap;background:#0b1220;color:#cbd5e1;padding:12px;border-radius:10px;margin:12px;max-height:220px;overflow:auto}
+
+    /* Overlay de carga */
+    #overlay{
+      position:fixed;inset:0;background:rgba(15,23,42,.55);
+      display:none;align-items:center;justify-content:center;z-index:9999;
+      backdrop-filter: blur(2px);
+    }
+    .spinner{
+      width:56px;height:56px;border-radius:50%;
+      border:6px solid rgba(255,255,255,.35);border-top-color:#fff;
+      animation:spin 1s linear infinite;margin:0 auto;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-card{
+      background:#0b1220;color:#e5edf5;border-radius:16px;padding:18px 16px;min-width:240px;text-align:center;border:1px solid #263045
+    }
+    .loading-card p{margin:10px 0 0 0;font-size:14px;color:#b8c4d6}
+
+    /* Vista de éxito */
+    #view-done{display:none}
+    .done-wrap{padding:28px 20px;text-align:center}
+    .done-emoji{font-size:44px;line-height:1;margin-bottom:6px}
+    .done-title{font-size:18px;font-weight:700;margin:4px 0 8px}
+    .done-sub{color:var(--muted);margin:0 0 16px}
+    .done-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .done-actions a, .done-actions button{min-width:180px}
+
+    /* Toast sutil */
+    #toast{
+      position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;
+      display:none;padding:10px 12px;border-radius:10px;border:1px solid #dbe2ea;background:#ffffffcc;
+      backdrop-filter:saturate(180%) blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.08);font-size:14px
+    }
   </style>
 </head>
 <body>
 <div class="wrap card">
-  <header>
-    <h1>MAERSK — Cuestionario inicial</h1>
-    <div class="toolbar">
-      <button id="btnCSV" type="button">Exportar CSV</button>
-      <button id="btnJSON" type="button">Exportar JSON</button>
+  <!-- VISTA FORMULARIO -->
+  <div id="view-form">
+    <header>
+      <h1>MAERSK — Cuestionario inicial</h1>
+      <div class="toolbar">
+        <button id="btnCSV" type="button">Exportar CSV</button>
+        <button id="btnJSON" type="button">Exportar JSON</button>
+      </div>
+    </header>
+
+    <!-- CUESTIONARIO -->
+    <section class="qwrap">
+      <div class="qgrid">
+        <div class="qcard"><div class="qtitle">Container Nº</div><div class="row"><input id="q_container" type="text" placeholder="MSKU1234567"></div></div>
+        <div class="qcard"><div class="qtitle">Folio Nº</div><div class="row"><input id="q_folio" type="text"></div></div>
+        <div class="qcard"><div class="qtitle">Estado</div><div class="row">
+          <label><input type="radio" name="q_estado" value="B"> B</label>
+          <label><input type="radio" name="q_estado" value="M"> M</label>
+          <span class="pill">(opcional)</span>
+        </div></div>
+        <div class="qcard"><div class="qtitle">Tipo</div><div class="row">
+          <select id="q_tipo"><option>20 DRY</option><option selected>40 DRY</option><option>40 HC</option><option>20 RF</option><option>40 RF</option></select>
+        </div></div>
+
+        <div class="qcard"><div class="qtitle">Para</div><div class="row">
+          <label><input type="radio" name="q_para" value="EXP"> EXP</label>
+          <label><input type="radio" name="q_para" value="IMP"> IMP</label>
+          <label><input type="radio" name="q_para" value="CFS"> CFS</label>
+          <span class="pill">(opcional)</span>
+        </div></div>
+        <div class="qcard"><div class="qtitle">Naviera</div><div class="row">
+          <select id="q_naviera">
+            <option>MAERSK</option><option>HAPAG-LLOYD</option><option>COSCO</option><option>TRANSMARES</option><option>OOCL</option><option>OTRA</option>
+          </select>
+        </div></div>
+        <div class="qcard"><div class="qtitle">Lugar</div><div class="row"><input id="q_lugar" type="text" placeholder="CL"></div></div>
+        <div class="qcard"><div class="qtitle">Fecha y Hora</div><div class="row">
+          <input id="q_fecha" class="half" type="date"><input id="q_hora" class="half" type="time">
+        </div></div>
+
+        <div class="qcard"><div class="qtitle">Vacio</div><div class="row">
+          <label><input type="radio" name="q_vacio" value="S"> S</label>
+          <label><input type="radio" name="q_vacio" value="N"> N</label>
+          <span class="pill">(opcional)</span>
+        </div></div>
+        <div class="qcard"><div class="qtitle">OOG</div><div class="row">
+          <label><input type="radio" name="q_oog" value="S"> S</label>
+          <label><input type="radio" name="q_oog" value="N"> N</label>
+          <span class="pill">(opcional)</span>
+        </div></div>
+        <div class="qcard"><div class="qtitle">Transportista</div><div class="row"><input id="q_transportista" type="text"></div></div>
+        <div class="qcard"><div class="qtitle">Patente Camión</div><div class="row"><input id="q_patente" type="text"></div></div>
+        <div class="qcard"><div class="qtitle">Nave</div><div class="row"><input id="q_nave" type="text"></div></div>
+        <div class="qcard"><div class="qtitle">Pto Embarque / Descarga</div><div class="row"><input id="q_ptoemb" class="half" type="text" placeholder="CL"><input id="q_ptodesc" class="half" type="text"></div></div>
+        <div class="qcard"><div class="qtitle">Tara / Gross (KGS)</div><div class="row"><input id="q_tara" class="half" type="number" step="0.01" placeholder="7250"><input id="q_gross" class="half" type="number" step="0.01" placeholder="32500"></div></div>
+        <div class="qcard"><div class="qtitle">Class / Status</div><div class="row"><input id="q_class" class="half" type="text" placeholder="S"><input id="q_status" class="half" type="text" placeholder="PTI"></div></div>
+        <div class="qcard"><div class="qtitle">Interior Condition</div><div class="row"><input id="q_interior" type="text" placeholder="06-25"></div></div>
+      </div>
+    </section>
+
+    <!-- REPAIR ESTIMATE -->
+    <header>
+      <h1>REPAIR ESTIMATE — líneas dinámicas</h1>
+      <div class="toolbar">
+        <button id="btnAdd" class="primary" type="button">+ Agregar línea</button>
+        <button id="btnClear" class="ghost" type="button">Vaciar líneas</button>
+      </div>
+    </header>
+
+    <div style="overflow:auto;">
+      <table id="tabla">
+        <thead>
+          <tr>
+            <th style="width:54px">#</th>
+            <th style="min-width:110px">Location</th>
+            <th style="min-width:120px">Type of Damage</th>
+            <th style="min-width:190px">Component & Repair Method</th>
+            <th style="min-width:130px">Size of Repair</th>
+            <th style="width:70px">Qty</th>
+            <th style="min-width:80px">Code</th>
+            <th style="width:110px">Man Hours</th>
+            <th style="width:140px">Material Cost</th>
+            <th style="width:60px">R</th>
+            <th class="cell-photos">Cargar fotos</th>
+            <th class="cell-del"></th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7">Totales</td>
+            <td id="totHH">0.0</td>
+            <td id="totMat">0.00</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-  </header>
 
-  <!-- CUESTIONARIO -->
-  <section class="qwrap">
-    <div class="qgrid">
-      <div class="qcard"><div class="qtitle">Container Nº</div><div class="row"><input id="q_container" type="text" placeholder="MSKU1234567"></div></div>
-      <div class="qcard"><div class="qtitle">Folio Nº</div><div class="row"><input id="q_folio" type="text"></div></div>
-      <div class="qcard"><div class="qtitle">Estado</div><div class="row">
-        <label><input type="radio" name="q_estado" value="B"> B</label>
-        <label><input type="radio" name="q_estado" value="M"> M</label>
-        <span class="pill">(opcional)</span>
-      </div></div>
-      <div class="qcard"><div class="qtitle">Tipo</div><div class="row">
-        <select id="q_tipo"><option>20 DRY</option><option selected>40 DRY</option><option>40 HC</option><option>20 RF</option><option>40 RF</option></select>
-      </div></div>
-
-      <div class="qcard"><div class="qtitle">Para</div><div class="row">
-        <label><input type="radio" name="q_para" value="EXP"> EXP</label>
-        <label><input type="radio" name="q_para" value="IMP"> IMP</label>
-        <label><input type="radio" name="q_para" value="CFS"> CFS</label>
-        <span class="pill">(opcional)</span>
-      </div></div>
-      <div class="qcard"><div class="qtitle">Naviera</div><div class="row">
-        <select id="q_naviera">
-          <option>MAERSK</option><option>HAPAG-LLOYD</option><option>COSCO</option><option>TRANSMARES</option><option>OOCL</option><option>OTRA</option>
-        </select>
-      </div></div>
-      <div class="qcard"><div class="qtitle">Lugar</div><div class="row"><input id="q_lugar" type="text" placeholder="CL"></div></div>
-      <div class="qcard"><div class="qtitle">Fecha y Hora</div><div class="row">
-        <input id="q_fecha" class="half" type="date"><input id="q_hora" class="half" type="time">
-      </div></div>
-
-      <div class="qcard"><div class="qtitle">Vacio</div><div class="row">
-        <label><input type="radio" name="q_vacio" value="S"> S</label>
-        <label><input type="radio" name="q_vacio" value="N"> N</label>
-        <span class="pill">(opcional)</span>
-      </div></div>
-      <div class="qcard"><div class="qtitle">OOG</div><div class="row">
-        <label><input type="radio" name="q_oog" value="S"> S</label>
-        <label><input type="radio" name="q_oog" value="N"> N</label>
-        <span class="pill">(opcional)</span>
-      </div></div>
-      <div class="qcard"><div class="qtitle">Transportista</div><div class="row"><input id="q_transportista" type="text"></div></div>
-      <div class="qcard"><div class="qtitle">Patente Camión</div><div class="row"><input id="q_patente" type="text"></div></div>
-      <div class="qcard"><div class="qtitle">Nave</div><div class="row"><input id="q_nave" type="text"></div></div>
-      <div class="qcard"><div class="qtitle">Pto Embarque / Descarga</div><div class="row"><input id="q_ptoemb" class="half" type="text" placeholder="CL"><input id="q_ptodesc" class="half" type="text"></div></div>
-      <div class="qcard"><div class="qtitle">Tara / Gross (KGS)</div><div class="row"><input id="q_tara" class="half" type="number" step="0.01" placeholder="7250"><input id="q_gross" class="half" type="number" step="0.01" placeholder="32500"></div></div>
-      <div class="qcard"><div class="qtitle">Class / Status</div><div class="row"><input id="q_class" class="half" type="text" placeholder="S"><input id="q_status" class="half" type="text" placeholder="PTI"></div></div>
-      <div class="qcard"><div class="qtitle">Interior Condition</div><div class="row"><input id="q_interior" type="text" placeholder="06-25"></div></div>
+    <div class="grid">
+      <div><label>Remarks</label><textarea id="remarks" rows="3" placeholder="Observaciones generales..."></textarea></div>
+      <div><label>Nombre Técnico</label><input id="insp" type="text" placeholder="Nombre" /></div>
+      <div><label>Correo Técnico</label><input id="insp_email" type="text" placeholder="tecnico@empresa.cl" /></div>
+      <div><label>Fecha / Lugar</label><input id="fecha" type="datetime-local" /></div>
     </div>
-  </section>
 
-  <!-- REPAIR ESTIMATE -->
-  <header>
-    <h1>REPAIR ESTIMATE — líneas dinámicas</h1>
-    <div class="toolbar">
-      <button id="btnAdd" class="primary" type="button">+ Agregar línea</button>
-      <button id="btnClear" class="ghost" type="button">Vaciar líneas</button>
+    <div class="submitbar">
+      <button id="btnSubmit" class="primary" type="button">Submit</button>
     </div>
-  </header>
 
-  <div style="overflow:auto;">
-    <table id="tabla">
-      <thead>
-        <tr>
-          <th style="width:54px">#</th>
-          <th style="min-width:110px">Location</th>
-          <th style="min-width:120px">Type of Damage</th>
-          <th style="min-width:190px">Component & Repair Method</th>
-          <th style="min-width:130px">Size of Repair</th>
-          <th style="width:70px">Qty</th>
-          <th style="min-width:80px">Code</th>
-          <th style="width:110px">Man Hours</th>
-          <th style="width:140px">Material Cost</th>
-          <th style="width:60px">R</th>
-          <th class="cell-photos">Cargar fotos</th>
-          <th class="cell-del"></th>
-        </tr>
-      </thead>
-      <tbody id="body"></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="7">Totales</td>
-          <td id="totHH">0.0</td>
-          <td id="totMat">0.00</td>
-          <td colspan="3"></td>
-        </tr>
-      </tfoot>
-    </table>
+    <div id="log"></div>
   </div>
 
-  <div class="grid">
-    <div><label>Remarks</label><textarea id="remarks" rows="3" placeholder="Observaciones generales..."></textarea></div>
-    <div><label>Nombre Técnico</label><input id="insp" type="text" placeholder="Nombre" /></div>
-    <div><label>Correo Técnico</label><input id="insp_email" type="text" placeholder="tecnico@empresa.cl" /></div>
-    <div><label>Fecha / Lugar</label><input id="fecha" type="datetime-local" /></div>
+  <!-- VISTA ÉXITO -->
+  <div id="view-done">
+    <header>
+      <h1>Enviado correctamente</h1>
+      <div class="toolbar">
+        <span class="pill">✅ Listo</span>
+      </div>
+    </header>
+    <div class="done-wrap">
+      <div class="done-emoji">✅</div>
+      <div class="done-title">Tu inspección fue enviada</div>
+      <p class="done-sub" id="done-sub">Puedes iniciar otra cuando quieras.</p>
+      <div class="done-actions">
+        <button id="btnAnother" class="primary" type="button">Enviar otra inspección</button>
+        <a id="btnFolder" class="ghost" target="_blank" rel="noopener">Abrir carpeta</a>
+      </div>
+    </div>
   </div>
-
-  <div class="submitbar">
-    <button id="btnSubmit" class="primary" type="button">Submit</button>
-  </div>
-
-  <div id="log"></div>
 </div>
+
+<!-- Overlay de carga -->
+<div id="overlay" role="alert" aria-live="polite" aria-busy="true">
+  <div class="loading-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Enviando…</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
 
 <script>
 /* ===================== CONFIG (GAS BACKEND) ===================== */
@@ -166,7 +236,7 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDr
 /* ===================== UTIL/UI ===================== */
 function $(q, el){ return (el||document).querySelector(q); }
 var logEl = null;
-function log(m){ logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
+function log(m){ if(!logEl) return; logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
 
 /* Radios des-seleccionables (sin template strings) */
 document.addEventListener('click', function(e){
@@ -180,6 +250,30 @@ document.addEventListener('click', function(e){
     }
   }
 });
+
+/* ===================== TOAST ===================== */
+var toastTimer=null;
+function showToast(msg, ms){
+  var t = $('#toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.display='none'; }, ms||2600);
+}
+
+/* ===================== VISTAS ===================== */
+function showView(idToShow){
+  var form = $('#view-form'), done = $('#view-done');
+  if(idToShow==='done'){ form.style.display='none'; done.style.display='block'; }
+  else { done.style.display='none'; form.style.display='block'; }
+}
+function setLoading(on){
+  var ov = $('#overlay');
+  var btns = document.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++){ btns[i].disabled = !!on; }
+  ov.style.display = on ? 'flex' : 'none';
+}
 
 /* ===================== CUESTIONARIO/REPAIR ===================== */
 function getRadio(name){
@@ -233,7 +327,7 @@ function addRow(p){
     '<td><input type="number" min="0" step="0.01" value="'+(p.material!==undefined?p.material:'')+'" oninput="recalc()"></td>' +
     '<td><input type="text" placeholder="D/U/I" value="'+(p.r||'')+'"></td>' +
     '<td class="cell-photos">' +
-      '<input id="file_'+id+'" type="file" accept="image/*" multiple style="display:none">' +
+      '<input id="file_'+id+'" type="file" accept="image/*" capture="environment" multiple style="display:none">' +
       '<button type="button" onclick="document.getElementById(\'file_'+id+'\').click()">Cargar fotos</button>' +
       '<div id="fc_'+id+'" class="pill" style="margin-top:6px">0 archivo(s)</div>' +
     '</td>' +
@@ -381,7 +475,7 @@ async function submitToGAS(doc){
 async function submitDoc(){
   try{
     logEl.textContent = ""; log("Validando…");
-    // si línea tiene datos, exigir 1 foto
+    // Validación: si línea tiene datos, exigir 1 foto
     var trs = bodyEl.querySelectorAll('tr');
     for(var t=0;t<trs.length;t++){
       var tr = trs[t];
@@ -393,19 +487,49 @@ async function submitDoc(){
         var v = c[i] ? String(c[i].value||'').trim() : '';
         if(v!==''){ any=true; break; }
       }
-      if(any && files.length===0){ alert('La línea '+id+' requiere al menos 1 foto.'); return; }
+      if(any && files.length===0){
+        showToast('La línea '+id+' requiere al menos 1 foto.', 3000);
+        return;
+      }
     }
 
-    var doc = getDoc();
+    setLoading(true);
     log("Enviando a Google Apps Script…");
-    var result = await submitToGAS(doc);
+    var result = await submitToGAS(getDoc());
     log("OK. Carpeta: " + result.folderUrl);
-    alert("Enviado con éxito. Carpeta: " + result.folderUrl);
+
+    // Mostrar vista "Enviado correctamente"
+    var folderBtn = $('#btnFolder');
+    if(result.folderUrl){
+      folderBtn.href = result.folderUrl;
+      folderBtn.style.display = 'inline-block';
+    }else{
+      folderBtn.removeAttribute('href');
+      folderBtn.style.display = 'none';
+    }
+    showView('done');
+    showToast('Enviado correctamente ✅', 2200);
   }catch(err){
     console.error(err);
     log("ERROR: " + (err.message || err));
-    alert("Error: " + (err.message || err));
+    showToast('Error al enviar: ' + (err.message || err), 4000);
+  }finally{
+    setLoading(false);
   }
+}
+
+/* ===================== RESET PARA OTRA INSPECCIÓN ===================== */
+function resetAll(){
+  // limpiar cuestionario
+  var inputs = document.querySelectorAll('#view-form input[type="text"], #view-form input[type="number"], #view-form input[type="date"], #view-form input[type="time"], #view-form textarea');
+  for(var i=0;i<inputs.length;i++){ inputs[i].value=''; }
+  var radios = document.querySelectorAll('#view-form input[type="radio"]');
+  for(var r=0;r<radios.length;r++){ radios[r].checked=false; radios[r]._was=false; }
+
+  // limpiar líneas
+  bodyEl.innerHTML=''; seq=0; photos.clear(); addRow(); recalc();
+  logEl.textContent = "";
+  showView('form');
 }
 
 /* ===================== BOTONES + INIT ===================== */
@@ -413,12 +537,15 @@ function init(){
   logEl = $('#log');
   bodyEl = $('#body');
   $('#btnAdd').onclick = function(){ addRow(); };
-  $('#btnClear').onclick = function(){ bodyEl.innerHTML=''; seq=0; addRow(); recalc(); };
+  $('#btnClear').onclick = function(){ bodyEl.innerHTML=''; seq=0; photos.clear(); addRow(); recalc(); };
   $('#btnCSV').onclick = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.csv', toCSV(d), 'text/csv'); };
   $('#btnJSON').onclick = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.json', JSON.stringify(d, null, 2), 'application/json'); };
   $('#btnSubmit').onclick = submitDoc;
 
+  $('#btnAnother').onclick = resetAll;
+
   addRow(); recalc();
+  showView('form');
 }
 window.addEventListener('DOMContentLoaded', init);
 </script>
