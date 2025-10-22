@@ -95,13 +95,13 @@
     .scan-actions button{ flex:1 }
 
     /* Tabla: anchos por columna */
-    td.td-loc input{ max-width:80px }
-    td.td-dano input{ max-width:90px }
+    td.td-loc  input{ max-width:80px  }
+    td.td-dano input{ max-width:90px  }
     td.td-comp input{ min-width:160px } /* igual */
-    td.td-mrep input{ max-width:90px }
+    td.td-mrep input{ max-width:90px  }
     td.td-size input{ max-width:120px }
-    td.td-qty  input{ max-width:120px } /* más grande */
-    td.td-resp input{ max-width:140px } /* más grande */
+    td.td-qty  input{ min-width:150px; font-size:16px } /* más grande + evitar zoom */
+    td.td-resp input{ min-width:170px; font-size:16px } /* más grande + evitar zoom */
 
     /* Botón marcador circular "R" */
     .marker-btn{
@@ -125,7 +125,7 @@
       <div class="qcard">
         <div class="qtitle">Container ID</div>
         <div class="start-row">
-          <input id="start_unit" type="text" inputmode="latin" autocomplete="off" maxlength="11" placeholder="Ej: MSKU1549768" />
+          <input id="start_unit" type="text" inputmode="latin" autocomplete="off" maxlength="11" placeholder="EJ: MSKU1549768" />
           <button id="btnStartSearch" class="primary" type="button" title="Validar">🔎</button>
           <button id="btnStartScan" class="ghost" type="button" title="Escanear">📷</button>
           <button id="btnStartProceed" class="ghost" type="button" title="Continuar" style="display:none">✏️</button>
@@ -180,6 +180,10 @@
         <div class="qcard"><div class="qtitle">Folio</div><div class="row"><input id="q_folio" type="text" readonly></div></div>
         <div class="qcard"><div class="qtitle">Tipo</div><div class="row"><input id="q_tipo" type="text" readonly></div></div>
 
+        <!-- Muevo Gate y Fecha inmediatamente acá -->
+        <div class="qcard"><div class="qtitle">Gate</div><div class="row"><input id="q_gate" type="text" readonly></div></div>
+        <div class="qcard"><div class="qtitle">Fecha</div><div class="row"><input id="q_fecha" type="date" readonly></div></div>
+
         <div class="qcard"><div class="qtitle">Estado</div><div class="row">
           <label><input type="radio" name="q_estado" value="B"> B</label>
           <label><input type="radio" name="q_estado" value="M"> M</label>
@@ -200,9 +204,6 @@
         </div></div>
 
         <div class="qcard"><div class="qtitle">Lugar</div><div class="row"><input id="q_lugar" type="text"></div></div>
-
-        <div class="qcard"><div class="qtitle">Gate</div><div class="row"><input id="q_gate" type="text" readonly></div></div>
-        <div class="qcard"><div class="qtitle">Fecha</div><div class="row"><input id="q_fecha" type="date" readonly></div></div>
 
         <div class="qcard"><div class="qtitle">Vacio</div><div class="row">
           <label><input type="radio" name="q_vacio" value="S"> S</label>
@@ -245,8 +246,8 @@
             <th style="min-width:160px">Comp</th>
             <th style="min-width:100px">M. Rep</th>
             <th style="min-width:120px">Size</th>
-            <th style="width:110px">Qty</th>
-            <th style="width:140px">Resp</th>
+            <th style="width:150px">Qty</th>
+            <th style="width:170px">Resp</th>
             <th class="cell-photos">Cargar fotos</th>
             <th class="cell-del"></th>
           </tr>
@@ -308,7 +309,7 @@
         <button id="scanCapture" class="ghost" type="button">Capturar</button>
         <button id="scanUse" class="primary" type="button">Usar</button>
       </div>
-      <div class="hint">Apunta al ID (texto/código). Si no detecta, pulsa “Capturar” para OCR.</div>
+      <div class="hint">Apunta al ID (texto/código). Si no detecta, “Usar” intentará OCR del fotograma.</div>
     </div>
   </div>
 </div>
@@ -323,7 +324,7 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDr
 /* ===================== UTIL/UI ===================== */
 function $(q, el){ return (el||document).querySelector(q); }
 var logEl = null;
-function log(m){ if(!logEl) return; logEl.textContent += m + "\\n"; logEl.scrollTop = logEl.scrollHeight; }
+function log(m){ if(!logEl) return; logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
 
 var toastTimer=null;
 function showToast(msg, ms){
@@ -421,12 +422,12 @@ async function startScanner(){
       };
       loop();
     }else{
-      showToast('Escáner nativo no disponible. Usa Capturar para OCR.', 2800);
+      showToast('Escáner nativo no disponible. Usa “Usar” para OCR.', 2800);
     }
   }catch(err){
     console.error(err);
     $('#scanModal').style.display='none';
-    showToast('No se pudo abrir la cámara.', 3000);
+    showToast('No se pudo abrir la cámara (revisa permisos).', 3000);
   }
 }
 
@@ -440,33 +441,46 @@ function stopScanner(){
   $('#scanModal').style.display='none';
 }
 
+async function ocrCurrentFrame(){
+  const video = $('#scanVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 1280;
+  canvas.height= video.videoHeight|| 720;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+  const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+  const worker = Tesseract;
+  const res = await worker.recognize(dataURL, 'eng', { logger:()=>{} });
+  const text = (res && res.data && res.data.text ? res.data.text : '') || '';
+  const match = text.toUpperCase().match(/[A-Z]{4}\d{7}/);
+  return match ? match[0] : null;
+}
+
 async function scanUse(){
-  if(scanCandidate){
-    $('#start_unit').value = scanCandidate;
-    stopScanner();
-    handleStartSearch();
-    return;
+  try{
+    if(!scanCandidate){
+      showToast('Intentando OCR…', 1200);
+      scanCandidate = await ocrCurrentFrame();
+    }
+    if(scanCandidate){
+      $('#start_unit').value = scanCandidate;
+      stopScanner();
+      handleStartSearch();
+    }else{
+      showToast('No se detectó. Acércate más o usa “Capturar”.', 2600);
+    }
+  }catch(err){
+    console.error(err);
+    showToast('Error en OCR.', 2500);
   }
-  showToast('Aún no se detecta. Prueba Capturar para OCR.', 2600);
 }
 
 async function scanCapture(){
   try{
-    // Fallback: capturamos un frame y hacemos OCR
-    const video = $('#scanVideo');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height= video.videoHeight|| 720;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0,0, canvas.width, canvas.height);
-    const dataURL = canvas.toDataURL('image/jpeg', 0.9);
     showToast('Procesando OCR…', 1200);
-    const worker = Tesseract;
-    const res = await worker.recognize(dataURL, 'eng', { logger:()=>{} });
-    const text = (res && res.data && res.data.text ? res.data.text : '') || '';
-    const match = text.toUpperCase().match(/[A-Z]{4}\d{7}/);
-    if(match){
-      scanCandidate = match[0];
+    const id = await ocrCurrentFrame();
+    if(id){
+      scanCandidate = id;
       showToast('Detectado: '+scanCandidate, 1500);
     }else{
       showToast('No se detectó un ID en la captura.', 2500);
@@ -552,7 +566,7 @@ function addRow(p){
     '<td class="td-comp"><input type="text" value="'+(p.component||'')+'"></td>' +
     '<td class="td-mrep"><input type="text" value="'+(p.method||'')+'"></td>' +
     '<td class="td-size"><input type="text" value="'+(p.size||'')+'"></td>' +
-    '<td class="td-qty"><input type="number" min="0" step="1" value="'+(p.qty!==undefined?p.qty:'')+'"></td>' +
+    '<td class="td-qty"><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" value="'+(p.qty!==undefined?p.qty:'')+'"></td>' +
     '<td class="td-resp"><input type="text" value="'+(p.resp||'')+'"></td>' +
     '<td class="cell-photos">' +
       '<input id="file_'+id+'" type="file" accept="image/*" capture="environment" multiple style="display:none">' +
@@ -624,8 +638,8 @@ function toCSV(data){
   }
   body=[head].concat(rows).map(function(a){
     return a.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',');
-  }).join('\\n');
-  return headPairs.join('\\n')+'\\n'+tailPairs.join('\\n')+'\\n\\n'+body;
+  }).join('\n');
+  return headPairs.join('\n')+'\n'+tailPairs.join('\n')+'\n\n'+body;
 }
 function download(name, content, mime){
   var a=document.createElement('a');
