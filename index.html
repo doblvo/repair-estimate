@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAERSK – Cuestionario + Repair Estimate (SharePoint REST)</title>
+  <title>MAERSK – Cuestionario + Repair Estimate (GAS Backend)</title>
   <style>
-    :root{ --brand:#0b74c7; --bg:#f6f8fb; --ink:#1f2937; --muted:#6b7280; --card:#fff; --line:#e5e7eb; --radius:14px; }
+    :root{ --brand:#0b74c7; --bg:#f6f8fb; --ink:#1f2937; --muted:#6b7280; --card:#fff; --line:#e5e7eb; --radius:14px }
     *{box-sizing:border-box}
     body{margin:0;padding:24px;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui, Segoe UI, Roboto, Helvetica, Arial}
     .wrap{max-width:1200px;margin:0 auto}
@@ -160,73 +160,26 @@
 </div>
 
 <script>
-/* ===================== CONFIG (SharePoint) ===================== */
-// Sitio (server-relative) robusto: funciona desde /sites/ o /teams/ y evita /:u:/r/ del visor
-function resolveSiteRel() {
-  if (window._spPageContextInfo && _spPageContextInfo.webServerRelativeUrl) {
-    return _spPageContextInfo.webServerRelativeUrl.replace(/\/$/, "");
-  }
-  const m = location.pathname.match(/\/(?:sites|teams)\/[^\/]+/);
-  return m ? m[0] : "";
-}
-const SITE_REL = resolveSiteRel();
-
-// Biblioteca de documentos donde guardar fotos/JSON
-// Si tu biblioteca no es la estándar, cambia la ruta:
-const LIB_SERVER_RELATIVE = SITE_REL + "/Shared Documents";
-
-// Lista donde guardaremos un registro ligero del envío (cuestionario+totales)
-const LIST_TITLE = "Control USDA – Reefer"; // cámbiala si tu lista tiene otro nombre
-
-// Mapeo de campos (usa los InternalName de tu lista)
-const LIST_FIELDS = {
-  Title: "Container",          // pondremos el Container como Title
-  Container: "Container",
-  Folio: "Folio",
-  Estado: "Estado",
-  Tipo: "Tipo",
-  Para: "Para",
-  Naviera: "Naviera",
-  Lugar: "Lugar",
-  FechaHora: "FechaHora",      // DateTime
-  Vacio: "Vacio",
-  OOG: "OOG",
-  Transportista: "Transportista",
-  Patente: "Patente",
-  Nave: "Nave",
-  PtoEmbarque: "PtoEmbarque",
-  PtoDescarga: "PtoDescarga",
-  TaraKgs: "TaraKgs",
-  GrossKgs: "GrossKgs",
-  Class: "Class",
-  Status: "Status",
-  InteriorCondition: "InteriorCondition",
-  Inspector: "Inspector",
-  InspectorEmail: "InspectorEmail",
-  Remarks: "Remarks",
-  TotalHH: "TotalHH",
-  TotalMat: "TotalMat"
-};
-
-// Tamaño umbral para subir directo vs fragmentado
-const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024;
+/* ===================== CONFIG (GAS BACKEND) ===================== */
+// Pon aquí tu Web App de Google Apps Script:
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDraU8nzdzu1N6e0RwYhBZsn7ITBP0ZCysc2cKqP99DRmmg/exec';
 
 /* ===================== UTIL/UI ===================== */
 const $ = (q, el=document) => el.querySelector(q);
 const logEl = $('#log');
-function log(m){ logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
+function log(m){ logEl.textContent += m + "\\n"; logEl.scrollTop = logEl.scrollHeight; }
 
 /* Radios des-seleccionables */
 document.addEventListener('click', (e)=>{
   if(e.target.matches('input[type="radio"]')){
-    const r = e.target; if(r._was){ r.checked=false; r._was=false; } else {
-      document.querySelectorAll(`input[name="${r.name}"]`).forEach(x=>x._was=false); r._was=true;
-    }
+    const r = e.target;
+    if(r._was){ r.checked=false; r._was=false; }
+    else{ document.querySelectorAll(\`input[name="\${r.name}"]\`).forEach(x=>x._was=false); r._was=true; }
   }
 });
 
 /* ===================== CUESTIONARIO/REPAIR ===================== */
-function getRadio(name){ const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ""; }
+function getRadio(name){ const el = document.querySelector(\`input[name="\${name}"]:checked\`); return el ? el.value : ""; }
 function getQuestionnaire(){ return {
   container: $('#q_container').value.trim(),
   folio: $('#q_folio').value.trim(),
@@ -302,163 +255,83 @@ function recalc(){ const d=getDoc(); $('#totHH').textContent=d.totals.hh.toFixed
 /* ===================== EXPORT LOCAL ===================== */
 function toCSV(data){
   const q=data.questionnaire;
-  const headPairs=Object.entries(q).map(([k,v])=>`${k.toUpperCase()},"${String(v).replace(/"/g,'""')}"`).join('\n');
-  const tailPairs=[['INSPECTOR',data.inspector],['INSPECTOR_EMAIL',data.inspector_email],['DATETIME',data.datetime],['TOTAL_HH',data.totals.hh],['TOTAL_MAT',data.totals.mat],['REMARKS',data.remarks]].map(([k,v])=>`${k},"${String(v).replace(/"/g,'""')}"`).join('\n');
+  const headPairs=Object.entries(q).map(([k,v])=>`${k.toUpperCase()},"${String(v).replace(/"/g,'""')}"`).join('\\n');
+  const tailPairs=[['INSPECTOR',data.inspector],['INSPECTOR_EMAIL',data.inspector_email],['DATETIME',data.datetime],['TOTAL_HH',data.totals.hh],['TOTAL_MAT',data.totals.mat],['REMARKS',data.remarks]].map(([k,v])=>`${k},"${String(v).replace(/"/g,'""')}"`).join('\\n');
   const head=['Line','Location','Damage','ComponentMethod','SizeRepair','Qty','Code','ManHours','MaterialCost','R','HasPhotos'];
   const rows=data.lines.map(r=>[r.line,r.location,r.damage,r.component,r.size,r.qty,r.code,r.man_hours,r.material_cost,r.r,r.hasPhotos]);
-  const csvBody=[head,...rows].map(arr=>arr.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  return headPairs+'\n'+tailPairs+'\n\n'+csvBody;
+  const csvBody=[head,...rows].map(arr=>arr.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\\n');
+  return headPairs+'\\n'+tailPairs+'\\n\\n'+csvBody;
 }
 function download(name, content, mime){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type:mime})); a.download=name; a.click(); }
 
-/* ===================== SHAREPOINT REST HELPERS ===================== */
-async function getDigest(){
-  const res = await fetch(`${SITE_REL}/_api/contextinfo`, {
-    method:"POST",
-    credentials: "same-origin",
-    headers:{ "Accept":"application/json;odata=nometadata" }
+/* ===================== FRONTEND→GAS ===================== */
+function fileToBase64(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => { const s = String(fr.result); res(s.substring(s.indexOf(',')+1)); };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
   });
-  if(!res.ok) throw new Error("No se pudo obtener X-RequestDigest");
-  const j = await res.json(); return j.FormDigestValue;
 }
-async function spPost(url, body, digest, extraHeaders={}){
-  const res = await fetch(url, {
-    method:"POST",
-    credentials: "same-origin",
-    headers:{
-      "Accept":"application/json;odata=nometadata",
-      "Content-Type":"application/json;odata=nometadata",
-      "X-RequestDigest": digest,
-      ...extraHeaders
+
+async function submitToGAS(doc){
+  const q = doc.questionnaire;
+  const fechaBase = q.fecha || (doc.datetime ? doc.datetime.slice(0,10) : new Date().toISOString().slice(0,10));
+
+  // Empaquetar fotos [{name,mimeType,dataBase64,line}]
+  const photosPayload = [];
+  for (const [rowId, fileList] of photos.entries()){
+    if(!fileList || fileList.length===0) continue;
+    for (const f of fileList){
+      const b64 = await fileToBase64(f);
+      photosPayload.push({ name: f.name, mimeType: f.type, dataBase64: b64, line: rowId });
+    }
+  }
+
+  const payload = {
+    meta:  { naviera: q.naviera, fecha: fechaBase, unidad: q.container },
+    form:  {
+      ...q,
+      inspector: doc.inspector,
+      inspector_email: doc.inspector_email,
+      remarks: doc.remarks,
+      totals: doc.totals,
+      fechaHora: doc.datetime
     },
-    body: body ? JSON.stringify(body) : undefined
+    lines:  doc.lines,
+    photos: photosPayload
+  };
+
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify(payload)
   });
-  const j = await res.json().catch(()=> ({}));
-  if(!res.ok) throw new Error(j.error && j.error.message ? j.error.message : `HTTP ${res.status}`);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error || 'Error en backend');
   return j;
-}
-async function spPostBinary(url, blob, digest, extraHeaders={}){
-  const res = await fetch(url, {
-    method:"POST",
-    credentials: "same-origin",
-    headers:{ "Accept":"application/json;odata=nometadata", "X-RequestDigest": digest, ...extraHeaders },
-    body: blob
-  });
-  const j = await res.json().catch(()=> ({}));
-  if(!res.ok) throw new Error(j.error && j.error.message ? j.error.message : `HTTP ${res.status}`);
-  return j;
-}
-async function ensureFolderPath(baseServerRelative, path, digest){
-  const parts = path.split('/').filter(Boolean);
-  let current = baseServerRelative;
-  for(const p of parts){
-    const url = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(current)}')/folders`;
-    try{
-      await spPost(url, { "__metadata": { "type": "SP.Folder" }, "ServerRelativeUrl": `${current}/${p}` }, digest);
-      log(`Carpeta creada: ${current}/${p}`);
-    }catch(e){ log(`Carpeta OK: ${current}/${p}`); }
-    current = `${current}/${p}`;
-  }
-  return current;
-}
-async function uploadSmall(serverRelativeFolder, file, digest){
-  const url = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(serverRelativeFolder)}')/files/add(overwrite=true,url='${encodeURIComponent(file.name)}')`;
-  return spPostBinary(url, file, digest);
-}
-async function uploadLarge(serverRelativeFolder, file, digest){
-  const guid = (crypto.randomUUID && crypto.randomUUID()) || '00000000-0000-4000-8000-000000000000';
-  const startUrl = `${SITE_REL}/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(serverRelativeFolder)}')/files/add(overwrite=true,url='${encodeURIComponent(file.name)}')/startupload(uploadId=guid'${guid}')`;
-  const chunkSize = 2 * 1024 * 1024;
-  let offset = 0;
-  const first = file.slice(0, Math.min(chunkSize, file.size));
-  await spPostBinary(startUrl, first, await getDigest());
-  offset = first.size; log(`StartUpload ${offset}/${file.size}`);
-  while(offset < file.size){
-    const next = Math.min(chunkSize, file.size - offset);
-    const chunk = file.slice(offset, offset + next);
-    const contUrl = `${SITE_REL}/_api/web/getfilebyserverrelativeurl('${encodeURIComponent(serverRelativeFolder + "/" + file.name)}')/continueupload(uploadId=guid'${guid}',fileOffset=${offset})`;
-    await spPostBinary(contUrl, chunk, await getDigest());
-    offset += next; log(`ContinueUpload ${offset}/${file.size}`);
-  }
-  const finishUrl = `${SITE_REL}/_api/web/getfilebyserverrelativeurl('${encodeURIComponent(serverRelativeFolder + "/" + file.name)}')/finishupload(uploadId=guid'${guid}',fileOffset=${file.size})`;
-  await spPostBinary(finishUrl, new Blob([]), await getDigest());
-  log(`FinishUpload OK`);
-}
-async function createListItem(digest, payload){
-  const info = await fetch(`${SITE_REL}/_api/web/lists/GetByTitle('${encodeURIComponent(LIST_TITLE)}')?$select=ListItemEntityTypeFullName`,
-    { credentials:"same-origin", headers: { "Accept":"application/json;odata=nometadata" } });
-  if(!info.ok) throw new Error("No se pudo leer la lista (¿nombre correcto?).");
-  const li = await info.json(); const et = li.ListItemEntityTypeFullName;
-  const body = { "__metadata": { "type": et } };
-  for(const [uiKey, internal] of Object.entries(LIST_FIELDS)){
-    if(payload[uiKey] !== undefined){ body[internal] = payload[uiKey]; }
-  }
-  const url = `${SITE_REL}/_api/web/lists/GetByTitle('${encodeURIComponent(LIST_TITLE)}')/items`;
-  return spPost(url, body, digest);
 }
 
 /* ===================== SUBMIT ===================== */
 async function submitDoc(){
   try{
     logEl.textContent = ""; log("Validando…");
-    // Valida que cada línea con datos tenga al menos 1 foto
+
+    // Requiere 1 foto si la línea tiene campos llenos
     for(const tr of body.querySelectorAll('tr')){
       const id = Number(tr.dataset.row); const files = photos.get(id)||[];
       const c = tr.querySelectorAll('input');
-      const any = [1,2,3,4,5,6,7,8,9].some(i=> (c[i]?.value||'').trim()!=='');
+      const any = [1,2,3,4,5,6,7,8,9].some(i=> (c[i]?.value||'').trim()!=="");
       if(any && files.length===0){ alert(`La línea ${id} requiere al menos 1 foto.`); return; }
     }
 
     const doc = getDoc();
-    const q = doc.questionnaire;
-    const fechaBase = q.fecha ? new Date(`${q.fecha}T${q.hora||'00:00'}`) : (doc.datetime? new Date(doc.datetime) : new Date());
-    const yyyy = fechaBase.getFullYear(), mm = String(fechaBase.getMonth()+1).padStart(2,'0'), dd = String(fechaBase.getDate()).padStart(2,'0');
-    const dateFolder = `${yyyy}-${mm}-${dd}`;
+    log("Enviando a Google Apps Script… (esto puede tardar según fotos)");
+    const result = await submitToGAS(doc);
 
-    // Ruta: {Naviera}/{YYYY-MM-DD}/{Container}/Respaldos
-    const folderPath = `${q.naviera||'NAVIERA'}/${dateFolder}/${q.container||'UNIDAD'}/Respaldos`;
-
-    log("Obteniendo digest…");
-    const digest = await getDigest();
-
-    // 1) Asegurar carpeta
-    log("Creando/validando carpetas…");
-    const targetFolder = await ensureFolderPath(LIB_SERVER_RELATIVE, folderPath, digest);
-    log(`Destino: ${targetFolder}`);
-
-    // 2) Subir fotos (subcarpeta por línea)
-    for(const [rowId, fileList] of photos.entries()){
-      if(!fileList || fileList.length===0) continue;
-      const perLine = await ensureFolderPath(targetFolder, `line_${rowId}`, digest);
-      for(const f of fileList){
-        log(`Subiendo L${rowId}: ${f.name}`);
-        if(f.size <= LARGE_FILE_THRESHOLD) await uploadSmall(perLine, f, digest);
-        else await uploadLarge(perLine, f, digest);
-      }
-    }
-
-    // 3) Guardar JSON resumen en la carpeta (repair_estimate_*.json)
-    const jsonBlob = new Blob([JSON.stringify(doc, null, 2)], {type:"application/json"});
-    const jsonFile = new File([jsonBlob], `repair_estimate_${Date.now()}.json`);
-    await uploadSmall(targetFolder, jsonFile, digest);
-    log("JSON de resumen guardado.");
-
-    // 4) Crear registro en la Lista (cuestionario + totales)
-    log("Creando ítem en la lista…");
-    const item = await createListItem(digest, {
-      Title: q.container,
-      Container: q.container, Folio: q.folio, Estado: q.estado, Tipo: q.tipo, Para: q.para,
-      Naviera: q.naviera, Lugar: q.lugar,
-      FechaHora: fechaBase.toISOString(),
-      Vacio: q.vacio, OOG: q.oog, Transportista: q.transportista, Patente: q.patente,
-      Nave: q.nave, PtoEmbarque: q.pto_embarque, PtoDescarga: q.pto_descarga,
-      TaraKgs: q.tara_kgs, GrossKgs: q.gross_kgs, Class: q.class, Status: q.status, InteriorCondition: q.interior_condition,
-      Inspector: doc.inspector, InspectorEmail: doc.inspector_email, Remarks: doc.remarks,
-      TotalHH: doc.totals.hh, TotalMat: doc.totals.mat
-    });
-    log(`Ítem creado Id=${item.Id}`);
-
-    alert("Enviado con éxito.\nCarpeta: " + targetFolder);
+    log(`OK. Carpeta destino: ${result.folderUrl}`);
+    alert("Enviado con éxito. Carpeta: " + result.folderUrl);
   }catch(err){
     console.error(err);
     log("ERROR: " + (err.message || err));
@@ -474,7 +347,6 @@ function init(){
   $('#btnJSON').onclick = ()=>{ const d=getDoc(); download(`maersk_repair_${Date.now()}.json`, JSON.stringify(d, null, 2), 'application/json'); };
   document.getElementById('btnSubmit').onclick = submitDoc;
 
-  // crear primera línea y calcular totales
   addRow(); recalc();
 }
 window.addEventListener('DOMContentLoaded', init);
