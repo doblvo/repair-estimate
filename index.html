@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MAERSK – Cuestionario + Repair Estimate (GAS Backend)</title>
+  <!-- OCR (para escanear con cámara) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <style>
     :root{ --brand:#0b74c7; --bg:#f6f8fb; --ink:#1f2937; --muted:#6b7280; --card:#fff; --line:#e5e7eb; --radius:14px }
     *{box-sizing:border-box}
@@ -117,11 +119,13 @@
       <div class="qcard">
         <div class="qtitle">Container ID</div>
         <div class="start-row">
-          <input id="start_unit" type="text" inputmode="latin" autocomplete="off" maxlength="11" placeholder="Ej: MSKU1234567" />
-          <button id="btnStartSearch" class="primary" type="button">🔎</button>
+          <input id="start_unit" type="text" inputmode="latin" autocomplete="off" maxlength="11" placeholder="Ej: MSKU1549768" />
+          <button id="btnStartSearch" class="primary" type="button" title="Buscar">🔎</button>
+          <button id="btnStartScan" class="ghost" type="button" title="Escanear">📷</button>
           <button id="btnStartProceed" class="ghost" type="button" title="Editar" style="display:none">✏️</button>
+          <input id="start_file" type="file" accept="image/*" capture="environment" style="display:none">
         </div>
-        <div class="hint">Ingresa 11 caracteres (4 letras + 7 dígitos) con dígito verificador válido.</div>
+        <div class="hint">Debe tener 11 caracteres (4 letras + 7 dígitos). Sin guiones.</div>
       </div>
     </div>
   </div>
@@ -267,18 +271,15 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDr
 /* ===================== UTIL/UI ===================== */
 function $(q, el){ return (el||document).querySelector(q); }
 var logEl = null;
-function log(m){ if(!logEl) return; logEl.textContent += m + "\\n"; logEl.scrollTop = logEl.scrollHeight; }
+function log(m){ if(!logEl) return; logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; }
 
 var toastTimer=null;
 function showToast(msg, ms){
-  var t = $('#toast');
-  if(!t) return;
-  t.textContent = msg;
-  t.style.display = 'block';
+  var t = $('#toast'); if(!t) return;
+  t.textContent = msg; t.style.display = 'block';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function(){ t.style.display='none'; }, ms||2600);
 }
-
 function showView(which){
   $('#view-start').style.display = (which==='start') ? 'block' : 'none';
   $('#view-form' ).style.display = (which==='form')  ? 'block' : 'none';
@@ -291,35 +292,80 @@ function setLoading(on){
   ov.style.display = on ? 'flex' : 'none';
 }
 
-/* ===================== ISO 6346 CHECK ===================== */
-var ISO_MAP = {
-  A:10,B:12,C:13,D:14,E:15,F:16,G:17,H:18,I:19,J:20,K:21,L:23,M:24,N:25,O:26,P:27,Q:28,R:29,S:30,T:31,U:32,V:34,W:35,X:36,Y:37,Z:38
-};
-function isoValue(ch){
-  if(/[0-9]/.test(ch)) return Number(ch);
-  var up = ch.toUpperCase();
-  return ISO_MAP[up] || NaN;
-}
-function iso6346Valid(s){
-  if(!s) return false;
-  var x = s.toUpperCase().trim();
-  if(!/^[A-Z]{4}[0-9]{7}$/.test(x)) return false; // 4 letras + 7 dígitos
-  var sum = 0;
-  for(var i=0;i<10;i++){
-    var v = isoValue(x[i]);
-    if(isNaN(v)) return false;
-    var w = Math.pow(2, i); // pesos 1,2,4,8,...
-    sum += v * w;
+/* ===================== ISO 6346 (11 chars, sin guiones; DV no bloquea) ===================== */
+var ISO_MAP = {A:10,B:12,C:13,D:14,E:15,F:16,G:17,H:18,I:19,J:20,K:21,L:23,M:24,N:25,O:26,P:27,Q:28,R:29,S:30,T:31,U:32,V:34,W:35,X:36,Y:37,Z:38};
+function isoVal(ch){ return /[0-9]/.test(ch) ? Number(ch) : (ISO_MAP[ch]||NaN); }
+function isoCheckDigit(ownerCatSerial10){ var s=ownerCatSerial10.toUpperCase(),sum=0; for(var i=0;i<10;i++){ sum+= isoVal(s[i]) * Math.pow(2,i);} var r=sum%11; return (r%10); }
+function isoClean(s){ return (s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").trim(); }
+function isoPattern11(s){ return /^[A-Z]{4}[0-9]{7}$/.test(s); } // 11 sin guiones
+
+/* ===================== PRE-BUSCADOR ===================== */
+function handleStartSearch(){
+  var el = $('#start_unit');
+  var raw = isoClean(el.value);
+
+  if (raw.length !== 11){
+    $('#btnStartProceed').style.display = 'none';
+    showToast('Debe tener 11 caracteres (4 letras + 7 dígitos).', 2600);
+    return;
   }
-  var r = sum % 11;
-  var check = r % 10; // si r==10, check=0
-  return check === Number(x[10]);
+  if (!isoPattern11(raw)){
+    $('#btnStartProceed').style.display = 'none';
+    showToast('Formato inválido. Ej: MSKU1549768', 2600);
+    return;
+  }
+
+  var expected = isoCheckDigit(raw.slice(0,10));
+  if (Number(raw[10]) !== expected){
+    showToast('DV esperado: '+expected+' (continuar de todas formas)', 2800);
+  } else {
+    showToast('Unidad válida ✓', 1800);
+  }
+  el.value = raw;
+  $('#btnStartProceed').style.display = 'inline-block';
+}
+function handleStartProceed(){
+  var val = isoClean($('#start_unit').value);
+  $('#q_container').value = val;
+  showView('form');
 }
 
+/* ======= Escáner: usa input file (cámara) + OCR con Tesseract ======= */
+async function handleScan(){
+  // Dispara la cámara
+  $('#start_file').click();
+}
+document.addEventListener('change', async function(e){
+  if(e.target && e.target.id === 'start_file' && e.target.files && e.target.files[0]){
+    try{
+      showToast('Leyendo imagen…', 1500);
+      const file = e.target.files[0];
+      const imgURL = URL.createObjectURL(file);
+      const worker = Tesseract; // global del script
+      const res = await worker.recognize(imgURL, 'eng', { logger:()=>{} });
+      URL.revokeObjectURL(imgURL);
+      const text = (res && res.data && res.data.text ? res.data.text : '') || '';
+      // Buscar patrón ISO: 4 letras + 7 dígitos
+      const match = text.toUpperCase().match(/[A-Z]{4}\d{7}/);
+      if(match){
+        $('#start_unit').value = match[0];
+        handleStartSearch();
+      }else{
+        showToast('No se detectó un ID válido. Intenta acercar más la cámara.', 3000);
+      }
+    }catch(err){
+      console.error(err);
+      showToast('Error al leer la imagen.', 3000);
+    }finally{
+      e.target.value = ''; // reset
+    }
+  }
+});
+
 /* ===================== Radios des-seleccionables ===================== */
-document.addEventListener('click', function(e){
-  if(e.target && e.target.matches('input[type="radio"]')){
-    var r = e.target;
+document.addEventListener('click', function(ev){
+  if(ev.target && ev.target.matches('input[type="radio"]')){
+    var r = ev.target;
     if(r._was){ r.checked=false; r._was=false; }
     else{
       var list = document.querySelectorAll('input[name="' + r.name + '"]');
@@ -328,24 +374,6 @@ document.addEventListener('click', function(e){
     }
   }
 });
-
-/* ===================== PRE-BUSCADOR ===================== */
-function handleStartSearch(){
-  var val = $('#start_unit').value.trim().toUpperCase();
-  if(!iso6346Valid(val)){
-    showToast('ID inválido (ISO 6346). Revisa el dígito verificador.', 3000);
-    $('#btnStartProceed').style.display = 'none';
-    return;
-  }
-  // Éxito local → mostrar lápiz
-  $('#btnStartProceed').style.display = 'inline-block';
-  showToast('Unidad válida. Pulsa ✏️ para continuar.', 2200);
-}
-function handleStartProceed(){
-  var val = $('#start_unit').value.trim().toUpperCase();
-  $('#q_container').value = val;
-  showView('form');
-}
 
 /* ===================== CUESTIONARIO/REPAIR ===================== */
 function getRadio(name){
@@ -395,6 +423,8 @@ function addRow(p){
   var tr = document.createElement('tr');
   tr.setAttribute('data-row', String(id));
   tr.setAttribute('data-reparado', p.reparado ? '1' : '0');
+
+  // Construimos celdas
   tr.innerHTML =
     '<td style="text-align:center">' +
       '<button class="marker-btn'+(p.reparado?' active':'')+'" type="button">'+(p.reparado?'R':'')+'</button>' +
@@ -408,26 +438,28 @@ function addRow(p){
     '<td><input type="text" value="'+(p.resp||'')+'"></td>' +
     '<td class="cell-photos">' +
       '<input id="file_'+id+'" type="file" accept="image/*" capture="environment" multiple style="display:none">' +
-      '<button type="button" onclick="document.getElementById(\\'file_'+id+'\\').click()">Cargar fotos</button>' +
+      '<button id="btnf_'+id+'" type="button">Cargar fotos</button>' +
       '<div id="fc_'+id+'" class="pill" style="margin-top:6px">0 archivo(s)</div>' +
     '</td>' +
-    '<td class="cell-del"><button type="button" onclick="delRow('+id+')">✕</button></td>';
+    '<td class="cell-del"><button id="btndel_'+id+'" type="button">✕</button></td>';
+
   bodyEl.appendChild(tr);
 
-  // marker events
-  var marker = tr.querySelector('.marker-btn');
-  marker.addEventListener('click', function(){ toggleMarker(marker); });
+  // Eventos
+  tr.querySelector('.marker-btn').addEventListener('click', function(){ toggleMarker(this); });
 
-  var fi = tr.querySelector('#file_'+id);
+  var fi   = tr.querySelector('#file_'+id);
+  var btnf = tr.querySelector('#btnf_'+id);
+  btnf.addEventListener('click', function(){ fi.click(); });
   fi.addEventListener('change', function(){
     photos.set(id, fi.files);
     $('#fc_'+id).textContent = (fi.files ? fi.files.length : 0) + ' archivo(s)';
   });
-}
 
-function delRow(id){
-  var tr = bodyEl.querySelector('tr[data-row="'+id+'"]');
-  if(tr){ tr.remove(); photos.delete(id); }
+  var btndel = tr.querySelector('#btndel_'+id);
+  btndel.addEventListener('click', function(){
+    tr.remove(); photos.delete(id);
+  });
 }
 
 function getLines(){
@@ -436,19 +468,17 @@ function getLines(){
   for(var r=0; r<rows.length; r++){
     var tr = rows[r];
     var c = tr.querySelectorAll('input');
-    // c[0] is file input hidden, careful: We selected only row inputs, but first column is button; inputs order:
-    // 0: Loc, 1: Daño, 2: Comp, 3: M. Rep, 4: Size, 5: Qty, 6: Resp, 7: file
     out.push({
       line: r+1,
       marker: tr.querySelector('.marker-btn').classList.contains('active') ? 'R' : '',
       reparado: tr.getAttribute('data-reparado') === '1',
-      location: (c[0].value||'').trim(),
-      damage: (c[1].value||'').trim(),
-      component: (c[2].value||'').trim(),
-      method: (c[3].value||'').trim(),
-      size: (c[4].value||'').trim(),
-      qty: Number(c[5].value||0),
-      resp: (c[6].value||'').trim(),
+      location: (c[0].value||'').trim(),   // Loc
+      damage: (c[1].value||'').trim(),     // Daño
+      component: (c[2].value||'').trim(),  // Comp
+      method: (c[3].value||'').trim(),     // M. Rep
+      size: (c[4].value||'').trim(),       // Size
+      qty: Number(c[5].value||0),          // Qty
+      resp: (c[6].value||'').trim(),       // Resp
       hasPhotos: (photos.get(Number(tr.getAttribute('data-row')))||[]).length>0
     });
   }
@@ -482,8 +512,8 @@ function toCSV(data){
   }
   body=[head].concat(rows).map(function(a){
     return a.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',');
-  }).join('\\n');
-  return headPairs.join('\\n')+'\\n'+tailPairs.join('\\n')+'\\n\\n'+body;
+  }).join('\n');
+  return headPairs.join('\n')+'\n'+tailPairs.join('\n')+'\n\n'+body;
 }
 function download(name, content, mime){
   var a=document.createElement('a');
@@ -495,25 +525,17 @@ function download(name, content, mime){
 function fileToBase64(file){
   return new Promise(function(res, rej){
     var fr = new FileReader();
-    fr.onload = function(){
-      var s = String(fr.result);
-      res(s.substring(s.indexOf(',')+1));
-    };
+    fr.onload = function(){ var s = String(fr.result); res(s.substring(s.indexOf(',')+1)); };
     fr.onerror = rej;
     fr.readAsDataURL(file);
   });
 }
-
 async function submitToGAS(doc){
   var q = doc.questionnaire;
   var fechaBase = q.fecha ? q.fecha : (doc.datetime ? doc.datetime.slice(0,10) : new Date().toISOString().slice(0,10));
 
-  // fotos [{name,mimeType,dataBase64,line}]
   var photosPayload = [];
-  var it = photos.entries();
-  for(var ent = it.next(); !ent.done; ent = it.next()){
-    var rowId = ent.value[0];
-    var fileList = ent.value[1];
+  for(const [rowId, fileList] of photos.entries()){
     if(!fileList || fileList.length===0) continue;
     for(var i=0;i<fileList.length;i++){
       var f = fileList[i];
@@ -557,9 +579,8 @@ async function submitDoc(){
       var id = Number(tr.getAttribute('data-row'));
       var files = photos.get(id) || [];
       var c = tr.querySelectorAll('input');
-      // Inputs de datos: 0..6 (loc, daño, comp, mrep, size, qty, resp)
       var any = false;
-      for(var i=0;i<=6;i++){
+      for(var i=0;i<=6;i++){ // 0..6 = loc, daño, comp, mrep, size, qty, resp
         var v = c[i] ? String(c[i].value||'').trim() : '';
         if(v!==''){ any=true; break; }
       }
@@ -611,13 +632,14 @@ function init(){
   // Start view
   $('#btnStartSearch').onclick = handleStartSearch;
   $('#btnStartProceed').onclick = handleStartProceed;
+  $('#btnStartScan').onclick = handleScan;
 
   // Form view
-  $('#btnAdd').onclick = function(){ addRow(); };
+  $('#btnAdd').onclick   = function(){ addRow(); };
   $('#btnClear').onclick = function(){ bodyEl.innerHTML=''; seq=0; photos.clear(); addRow(); };
-  $('#btnCSV').onclick = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.csv', toCSV(d), 'text/csv'); };
-  $('#btnJSON').onclick = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.json', JSON.stringify(d, null, 2), 'application/json'); };
-  $('#btnSubmit').onclick = submitDoc;
+  $('#btnCSV').onclick   = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.csv', toCSV(d), 'text/csv'); };
+  $('#btnJSON').onclick  = function(){ var d=getDoc(); download('maersk_repair_'+Date.now()+'.json', JSON.stringify(d, null, 2), 'application/json'); };
+  $('#btnSubmit').onclick= submitDoc;
   $('#btnAnother').onclick = resetAll;
 
   // Primera fila
