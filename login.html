@@ -6,17 +6,22 @@
 <title>MAERSK — Login</title>
 <style>
 :root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#0f172a;--line:#e5e7eb;--radius:14px}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
 .wrap{max-width:520px;margin:8vh auto;padding:16px}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
-header{padding:14px 16px;border-bottom:1px solid var(--line)} header h1{margin:0;font-size:18px}
-.section{padding:16px} .row{display:grid;gap:10px}
+header{padding:14px 16px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:18px}
+.section{padding:16px}
+.row{display:grid;gap:10px}
 input{width:100%;padding:10px;border:1px solid #dbe2ea;border-radius:10px;font:inherit}
 .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
 .hint{color:#64748b;font-size:12px}
 .pill{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff}
-.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none}
+.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
+.small{font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px}
+.toggle{cursor:pointer;user-select:none}
 </style>
 </head>
 <body>
@@ -31,32 +36,68 @@ input{width:100%;padding:10px;border:1px solid #dbe2ea;border-radius:10px;font:i
         </div>
         <div>
           <div class="hint">Contraseña</div>
-          <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password" style="flex:1">
+            <label class="small toggle"><input id="show" type="checkbox"> Mostrar</label>
+          </div>
         </div>
         <button id="btnLogin" class="btn primary">Entrar</button>
-        <div class="hint">Usuarios de prueba:<br> <span class="pill">user / Contopsa01</span> <span class="pill">admin / Maersk01</span></div>
+        <div class="hint">Usuarios de prueba:
+          <br><span class="pill">user / Contopsa01</span>
+          <span class="pill">admin / Maersk01</span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 <div id="toast" class="toast"></div>
+
 <script>
-const GAS_URL='https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec';
-const $=q=>document.querySelector(q); let tmo; 
+/* Consistencia con el resto (no se usa aquí, pero lo dejamos igual) */
+const GAS_URL='https://script.google.com/macros/s/AKfycby2FX9r_Bd2H0x-wCgcmJj-WmGfKtQza36OfRqelUpSnDLv34Oh1bAih65y575GnfvtDg/exec';
+
+const $=q=>document.querySelector(q);
+let tmo;
 function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
 
+/* Si ya hay sesión, redirige directo a home */
+(function boot(){
+  const url = new URL(location.href);
+  if(url.searchParams.get('logout')==='1'){
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_role');
+  }
+  const u=localStorage.getItem('auth_user');
+  const r=localStorage.getItem('auth_role');
+  if(u&&r) location.href='home.html';
+})();
+
+/* Mostrar/ocultar contraseña */
+$("#show").addEventListener('change',e=>{
+  $("#pass").type = e.target.checked ? 'text' : 'password';
+});
+
+/* Login */
 function login(){
-  const u=$("#user").value.trim(); const p=$("#pass").value;
+  const u=($("#user").value||'').trim();
+  const p=$("#pass").value||'';
   if(!u||!p){ toast("Ingresa usuario y contraseña"); return; }
+
   const okUser=(u==="user" && p==="Contopsa01");
   const okAdmin=(u==="admin" && p==="Maersk01");
+
   if(!(okUser||okAdmin)){ toast("Credenciales inválidas"); return; }
+
   const role= okAdmin ? "admin" : "user";
   localStorage.setItem('auth_user',u);
   localStorage.setItem('auth_role',role);
-  // opcional: ping al GAS para registrar sesión
+
+  // si quieres almacenar defaults de técnico/vendor por usuario, podrías setearlos aquí
+  // localStorage.setItem('tec_name', ''); localStorage.setItem('tec_vendor', '');
+
   location.href='home.html';
 }
+
 $("#btnLogin").onclick=login;
 window.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 </script>
