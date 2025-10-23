@@ -1,296 +1,201 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MAERSK — Dashboard en vivo</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MAERSK — Inspecciones + Dashboard</title>
+<script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <style>
-  :root{ --brand:#0b74c7; --bg:#f6f8fb; --ink:#0f172a; --muted:#64748b; --card:#fff; --line:#e2e8f0; --radius:14px }
-  *{ box-sizing:border-box }
-  body{ margin:0; background:var(--bg); color:var(--ink); font:14px/1.35 system-ui, Segoe UI, Roboto, Helvetica, Arial }
-  .wrap{ max-width:1200px; margin:0 auto; padding:16px }
-  .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.06) }
-  header{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:center; justify-content:space-between }
-  header h1{ margin:0; font-size:18px }
-  .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center }
-  .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--line); border-radius:999px; font-size:12px; color:#334155; background:#fff }
-  .btn{ border:1px solid var(--line); background:#fff; border-radius:10px; padding:8px 12px; cursor:pointer }
-  .btn.primary{ background:var(--brand); color:#fff; border-color:var(--brand) }
-  .btn:disabled{ opacity:.55; cursor:not-allowed }
-  .hide{ display:none !important }
-  .section{ padding:12px 14px }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-  input[type="text"], input[type="password"], select{ border:1px solid var(--line); border-radius:10px; padding:8px 10px; font:inherit; background:#fff }
-  table{ width:100%; border-collapse:separate; border-spacing:0 }
-  thead th{ position:sticky; top:0; background:#f1f5f9; border-bottom:1px solid var(--line); font-weight:600; padding:8px; z-index:1; text-align:left }
-  tbody td{ border-bottom:1px dashed #e9eef5; padding:8px 10px; vertical-align:top }
-  .badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid #cbd5e1; background:#fff }
-  .b-pend{ border-color:#f59e0b; color:#92400e; background:#fffbeb }
-  .b-send{ border-color:#10b981; color:#065f46; background:#ecfdf5 }
-  .b-fail{ border-color:#ef4444; color:#7f1d1d; background:#fef2f2 }
-  .b-prog{ border-color:#3b82f6; color:#1e3a8a; background:#eff6ff }
-  @media (max-width:640px){ .wrap{padding:12px} table{font-size:13px} }
+:root{
+  --brand:#0b74c7; --brand-dark:#075ea6;
+  --bg:#f6f8fb; --ink:#1f2937; --muted:#64748b;
+  --card:#fff; --line:#e2e8f0; --radius:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font:14px/1.4 system-ui,Segoe UI,Roboto;color:var(--ink);}
+.wrap{max-width:1200px;margin:auto;padding:16px}
 
-  /* Modal login */
-  #loginModal{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:9999; align-items:center; justify-content:center; }
-  .login-card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; width:min(420px,94vw); }
-  .login-card h3{ margin:0 0 10px; font-size:18px }
-  .login-grid{ display:grid; gap:10px }
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+box-shadow:0 4px 20px rgba(0,0,0,.05);overflow:hidden;}
+header{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+h1{margin:0;font-size:18px;font-weight:600}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#fff;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;cursor:pointer;transition:.2s;}
+.pill.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.small{font-size:12px;padding:4px 8px}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.section{padding:12px 14px}
+
+/* table */
+table{width:100%;border-collapse:separate;border-spacing:0}
+thead th{background:#f8fafc;border-bottom:1px solid var(--line);padding:8px;font-weight:600;text-align:left;position:sticky;top:0;z-index:1}
+tbody td{border-bottom:1px dashed #e2e8f0;padding:6px 8px;vertical-align:top}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
+.b-pend{background:#fffbeb;color:#92400e;border:1px solid #f59e0b}
+.b-prog{background:#eff6ff;color:#1e3a8a;border:1px solid #3b82f6}
+.b-send{background:#ecfdf5;color:#065f46;border:1px solid #10b981}
+.b-fail{background:#fef2f2;color:#7f1d1d;border:1px solid #ef4444}
+
+/* search bar compact */
+.searchbar{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);
+border-radius:999px;padding:4px 10px;width:240px;}
+.searchbar input{border:none;outline:none;flex:1;font:inherit;background:transparent}
+
+/* pagination bottom */
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px}
+.pager select{border:1px solid var(--line);border-radius:6px;padding:4px 6px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="card">
-    <header>
-      <h1>MAERSK — Dashboard en vivo</h1>
-      <div class="toolbar">
-        <span class="pill" id="adminBadge">👤 Invitado</span>
-        <button class="btn" id="btnLogin">Iniciar sesión</button>
-        <button class="btn" id="btnLogout" style="display:none">Cerrar sesión</button>
-        <button class="btn" id="btnRefresh">Refrescar</button>
-        <button class="btn primary hide" id="btnExportSel">Exportar seleccionadas</button>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="view-admin" class="card">
+  <header>
+    <h1>MAERSK — Dashboard en vivo</h1>
+    <div class="toolbar">
+      <span class="pill" id="adminBadge">👤 Invitado</span>
+      <button class="btn" id="btnAdminRefresh">Refrescar</button>
+      <button class="btn small primary" id="btnExportSel" style="display:none">Exportar seleccionadas</button>
+    </div>
+  </header>
+
+  <div class="section">
+    <div class="row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      <span class="pill active" data-st="all">All</span>
+      <span class="pill" data-st="pendiente">Pendientes</span>
+      <span class="pill" data-st="enviando">Enviando</span>
+      <span class="pill" data-st="enviado">Enviadas</span>
+      <span class="pill" data-st="fallido">Fallidas</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div class="searchbar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="#64748b" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+        <input id="a_txtSearch" type="text" placeholder="Buscar contenedor…">
       </div>
-    </header>
+      <span class="pill" id="a_lastUpdate">—</span>
+    </div>
 
-    <div class="section">
-      <div class="row" style="justify-content:space-between">
-        <div class="row">
-          <span class="pill">Pendientes: <b id="kpiPend">0</b></span>
-          <span class="pill">Enviando: <b id="kpiProg">0</b></span>
-          <span class="pill">Enviadas: <b id="kpiOk">0</b></span>
-          <span class="pill">Fallidas: <b id="kpiFail">0</b></span>
-        </div>
-        <div class="row">
-          <input id="txtSearch" type="text" placeholder="Buscar contenedor / folio…">
-          <select id="selStatus">
-            <option value="all">Todos</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="enviando">Enviando</option>
-            <option value="enviado">Enviadas</option>
-            <option value="fallido">Fallidas</option>
-          </select>
-          <span class="pill">Auto-refresh <b id="pollSecs">5</b>s</span>
-        </div>
+    <div style="overflow:auto;margin-top:10px">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px"><input type="checkbox" id="a_checkAll"></th>
+            <th>Fecha</th>
+            <th>Contenedor</th>
+            <th>Gate</th>
+            <th>Naviera</th>
+            <th>Daños</th>
+            <th>Fotos</th>
+            <th>Status</th>
+            <th>Carpeta</th>
+          </tr>
+        </thead>
+        <tbody id="a_tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <div class="row" style="display:flex;gap:8px">
+        <button class="btn small" id="a_prev">«</button>
+        <span id="a_pageInfo" class="pill">Página 1/1</span>
+        <button class="btn small" id="a_next">»</button>
       </div>
-
-      <div style="height:10px"></div>
-
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr>
-              <th id="thSel" class="hide"><input type="checkbox" id="checkAll" /></th>
-              <th>Fecha</th>
-              <th>Contenedor</th>
-              <th>Gate</th>
-              <th>Naviera</th>
-              <th>Folio</th>
-              <th>Estado</th>
-              <th>Líneas</th>
-              <th>Fotos</th>
-              <th>Status</th>
-              <th>Carpeta</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <span class="pill" id="lastUpdate">—</span>
+      <div>
+        <label style="font-size:12px;margin-right:4px">Mostrar:</label>
+        <select id="a_perPage">
+          <option value="20">20</option><option value="40">40</option><option value="100">100</option><option value="200">200</option>
+        </select>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal login -->
-<div id="loginModal">
-  <div class="login-card">
-    <h3>Acceso administrador</h3>
-    <div class="login-grid">
-      <div>
-        <div class="qtitle">Usuario</div>
-        <input id="loginUser" type="text" placeholder="Usuario">
-      </div>
-      <div>
-        <div class="qtitle">Contraseña</div>
-        <input id="loginPass" type="password" placeholder="Contraseña">
-      </div>
-    </div>
-    <div class="row" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn" id="btnLoginCancel">Cancelar</button>
-      <button class="btn primary" id="btnLoginOk">Entrar</button>
-    </div>
-  </div>
 </div>
 
 <script>
-/* ===== CONFIG ===== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec'; // <-- pega aquí tu URL de Web App (termina en /exec)
-const POLL_MS = 5000;
+const API_URL='https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec';
+let IS_ADMIN=true; // para pruebas
+let a_all=[],a_filtered=[],a_selected=new Set(),a_page=1,a_per=20,filterState='all';
 
-/* ===== State ===== */
-let AUTH_USER = null;    // 'contopsa'
-let AUTH_HASH = null;    // sha256 hex de la contraseña
-let IS_ADMIN = false;
-let allData = [];
-let timer = null;
-
-/* ===== Helpers ===== */
-const $ = (q,el)=> (el||document).querySelector(q);
-function download(name, content, mime){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type:mime||'application/json'})); a.download=name; a.click(); }
-async function sha256Hex(str){
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  const arr = Array.from(new Uint8Array(buf));
-  return arr.map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-/* ===== API ===== */
-async function apiGet(fn, params={}){
-  const u = new URL(API_URL);
-  u.searchParams.set('fn', fn);
-  if(AUTH_USER) u.searchParams.set('user', AUTH_USER);
-  if(AUTH_HASH) u.searchParams.set('passHash', AUTH_HASH);
-  Object.entries(params).forEach(([k,v])=> u.searchParams.set(k, v));
-  const res = await fetch(u.toString(), { method:'GET' });
-  return res.json();
-}
-async function apiPost(fn, body={}){
-  const u = new URL(API_URL);
-  u.searchParams.set('fn', fn);
-  if(AUTH_USER) body.user = AUTH_USER;
-  if(AUTH_HASH) body.passHash = AUTH_HASH;
-  const res = await fetch(u.toString(), {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify(body)
+const $=(q,el=document)=>el.querySelector(q);
+function toast(m){console.log(m)}
+function a_applyFilters(){
+  const q=($("#a_txtSearch").value||'').trim().toUpperCase();
+  a_filtered=a_all.filter(r=>{
+    const st=filterState==='all'?true:(r.status||'').toLowerCase()===filterState;
+    const mq=!q|| (r.container||'').toUpperCase().includes(q);
+    return st&&mq;
   });
-  return res.json();
+  a_filtered.sort((a,b)=>String(a.fecha)<String(b.fecha)?1:-1);
 }
-
-/* ===== UI ===== */
-function setAdminUI(isAdmin){
-  IS_ADMIN = !!isAdmin;
-  $('#adminBadge').textContent = IS_ADMIN ? `👤 Admin (${AUTH_USER||'—'})` : (AUTH_USER ? `👤 Usuario (${AUTH_USER})` : '👤 Invitado');
-  $('#btnLogin').style.display = IS_ADMIN ? 'none' : 'inline-block';
-  $('#btnLogout').style.display = AUTH_USER ? 'inline-block' : 'none';
-  if(IS_ADMIN){ $('#btnExportSel').classList.remove('hide'); $('#thSel').classList.remove('hide'); }
-  else{ $('#btnExportSel').classList.add('hide'); $('#thSel').classList.add('hide'); }
-}
-function kpis(rows){
-  const pend = rows.filter(x=>x.status==='pendiente').length;
-  const prog = rows.filter(x=>x.status==='enviando').length;
-  const ok   = rows.filter(x=>x.status==='enviado').length;
-  const fail = rows.filter(x=>x.status==='fallido').length;
-  $('#kpiPend').textContent=pend; $('#kpiProg').textContent=prog; $('#kpiOk').textContent=ok; $('#kpiFail').textContent=fail;
-}
-function render(rows){
-  const q = ($('#txtSearch').value||'').trim().toUpperCase();
-  const st = $('#selStatus').value;
-  let data = rows.slice();
-  if(st!=='all') data = data.filter(x=> (x.status||'').toLowerCase()===st);
-  if(q){ data = data.filter(x=> (x.container||'').toUpperCase().includes(q) || (x.folio||'').toUpperCase().includes(q)); }
-  data.sort((a,b)=> (String(a.fecha) < String(b.fecha) ? 1 : -1));
-
-  const tb = $('#tbody'); tb.innerHTML='';
-  for(const r of data){
-    const stClass = r.status==='pendiente'?'b-pend': r.status==='enviado'?'b-send': r.status==='enviando'?'b-prog':'b-fail';
-    const folderCell = r.folderUrl ? `<a href="${r.folderUrl}" target="_blank" rel="noopener">Abrir</a>` : '<span class="muted">—</span>';
-    const checkCol = $('#thSel').classList.contains('hide') ? '' : `<td><input type="checkbox" class="row-check" data-id="${r.id}"></td>`;
+function a_render(){
+  a_applyFilters();
+  const tb=$("#a_tbody");tb.innerHTML='';
+  const total=a_filtered.length,pages=Math.max(1,Math.ceil(total/a_per));if(a_page>pages)a_page=pages;
+  const ini=(a_page-1)*a_per,fin=Math.min(total,ini+a_per);
+  for(let i=ini;i<fin;i++){
+    const r=a_filtered[i];
+    const stc=r.status==='pendiente'?'b-pend':r.status==='enviado'?'b-send':r.status==='enviando'?'b-prog':'b-fail';
+    const checked=a_selected.has(r.id)?'checked':'';
+    const folder=r.folderUrl?`<a href="${r.folderUrl}" target="_blank">Abrir</a>`:'<span class="muted">—</span>';
     const tr=document.createElement('tr');
-    tr.innerHTML =
-      `${checkCol}
-       <td>${String(r.fecha||'').toString().slice(0,10)}</td>
-       <td><b>${r.container||''}</b></td>
-       <td>${r.gate||''}</td>
-       <td>${r.naviera||''}</td>
-       <td>${r.folio||''}</td>
-       <td>${r.estado||''}</td>
-       <td>${r.linesCount??(r.lines?.length||0)}</td>
-       <td>${r.photosCount??r.photos_total??0}</td>
-       <td><span class="badge ${stClass}">${r.status||''}</span></td>
-       <td>${folderCell}</td>`;
+    tr.innerHTML=`<td><input type="checkbox" class="row-check" data-id="${r.id}" ${checked}></td>
+    <td>${String(r.fecha||'').slice(0,10)}</td>
+    <td><b>${r.container||''}</b></td>
+    <td>${r.gate||''}</td>
+    <td>${r.naviera||''}</td>
+    <td>${r.danosCount??0}</td>
+    <td>${r.fotosCount??0}</td>
+    <td><span class="badge ${stc}">${r.status||''}</span></td>
+    <td>${folder}</td>`;
     tb.appendChild(tr);
   }
-  kpis(rows);
-  $('#lastUpdate').textContent = 'Últ. actualización: ' + new Date().toLocaleString();
+  $("#a_pageInfo").textContent=`Página ${a_page}/${Math.max(1,Math.ceil(total/a_per))}`;
+  $("#a_lastUpdate").textContent='Actualizado: '+new Date().toLocaleString();
+  $("#btnExportSel").style.display=a_selected.size?'inline-block':'none';
 }
-async function refresh(){
-  const res = await apiGet('getinspections');
-  if(res?.ok){ allData = res.items||[]; render(allData); }
+async function a_refresh(){
+  const res=await fetch(API_URL+'?fn=getinspections');
+  const j=await res.json();if(j.ok){a_all=j.items||[];a_page=1;a_render();}
 }
-function startPolling(){ if(timer) clearInterval(timer); timer=setInterval(refresh, POLL_MS); $('#pollSecs').textContent=String(POLL_MS/1000|0); }
-
-/* ===== Export ===== */
-function getSelectedIds(){ return Array.from(document.querySelectorAll('.row-check:checked')).map(x=>x.getAttribute('data-id')); }
-async function exportSelected(){
-  const ids = getSelectedIds();
-  if(!ids.length){ alert('Selecciona al menos 1 unidad.'); return; }
-  const btn = $('#btnExportSel'); const txt=btn.textContent; btn.disabled=true; btn.textContent='Preparando…';
-  try{
-    const res = await apiPost('exportinspectionsbyids', { ids });
-    if(!res?.ok) throw new Error(res?.error||'Error exportando');
-    download('inspecciones_seleccionadas_'+Date.now()+'.json', JSON.stringify(res,null,2), 'application/json');
-  }catch(err){ console.error(err); alert(err.message||String(err)); }
-  finally{ btn.disabled=false; btn.textContent=txt; }
-}
-
-/* ===== Login simple ===== */
-function openLogin(){ $('#loginModal').style.display='flex'; $('#loginUser').focus(); }
-function closeLogin(){ $('#loginModal').style.display='none'; }
-async function doLogin(){
-  const u = $('#loginUser').value.trim();
-  const p = $('#loginPass').value;
-  if(!u || !p){ alert('Ingresa usuario y contraseña'); return; }
-  const hash = await sha256Hex(p);
-  AUTH_USER = u; AUTH_HASH = hash;
-  // consultar whoami
-  const info = await apiGet('whoami');
-  if(info?.ok && info.isAdmin){
-    // persistir sesión local
-    localStorage.setItem('auth_user', AUTH_USER);
-    localStorage.setItem('auth_hash', AUTH_HASH);
-    setAdminUI(true);
-    closeLogin();
-    refresh();
-  }else{
-    AUTH_USER = null; AUTH_HASH = null;
-    alert('Credenciales inválidas');
-  }
-}
-function doLogout(){
-  AUTH_USER = null; AUTH_HASH = null; IS_ADMIN = false;
-  localStorage.removeItem('auth_user'); localStorage.removeItem('auth_hash');
-  setAdminUI(false);
-}
-
-/* ===== Inicio ===== */
-window.onload = async function(){
-  // restaurar credenciales locales
-  const u = localStorage.getItem('auth_user'); const h = localStorage.getItem('auth_hash');
-  if(u && h){ AUTH_USER=u; AUTH_HASH=h;
-    const info = await apiGet('whoami');
-    setAdminUI(!!info.isAdmin);
-  }else{
-    setAdminUI(false);
-  }
-
-  // eventos
-  $('#btnLogin').onclick = openLogin;
-  $('#btnLoginCancel').onclick = closeLogin;
-  $('#btnLoginOk').onclick = doLogin;
-  $('#btnLogout').onclick = doLogout;
-
-  $('#btnRefresh').onclick = refresh;
-  $('#txtSearch').oninput = ()=> render(allData);
-  $('#selStatus').onchange = ()=> render(allData);
-  $('#btnExportSel').onclick = exportSelected;
-  $('#checkAll').onclick = (e)=>{ const on=e.target.checked; document.querySelectorAll('.row-check').forEach(ch=> ch.checked=on); };
-
-  refresh(); startPolling();
+$("#a_prev").onclick=()=>{if(a_page>1){a_page--;a_render();}}
+$("#a_next").onclick=()=>{const pages=Math.max(1,Math.ceil(a_filtered.length/a_per));if(a_page<pages){a_page++;a_render();}}
+$("#a_perPage").onchange=()=>{a_per=Number($("#a_perPage").value||20);a_page=1;a_render();}
+$("#a_tbody").addEventListener('change',e=>{
+  const ch=e.target.closest('.row-check');if(!ch)return;
+  const id=ch.dataset.id;if(ch.checked)a_selected.add(id);else a_selected.delete(id);
+  $("#btnExportSel").style.display=a_selected.size?'inline-block':'none';
+});
+$("#a_checkAll").onclick=e=>{
+  const on=e.target.checked;
+  document.querySelectorAll('.row-check').forEach(ch=>{
+    ch.checked=on;const id=ch.dataset.id;if(on)a_selected.add(id);else a_selected.delete(id);
+  });
+  $("#btnExportSel").style.display=a_selected.size?'inline-block':'none';
 };
+document.querySelectorAll('.pill[data-st]').forEach(p=>{
+  p.onclick=()=>{
+    document.querySelectorAll('.pill[data-st]').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');filterState=p.dataset.st;a_page=1;a_render();
+  };
+});
+$("#a_txtSearch").oninput=()=>a_render();
+$("#btnAdminRefresh").onclick=a_refresh;
+$("#btnExportSel").onclick=async()=>{
+  const ids=[...a_selected];if(!ids.length)return;
+  const body={fn:'exportinspectionsbyids',ids};
+  const res=await fetch(API_URL+'?fn=exportinspectionsbyids',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await res.json();
+  if(j.ok){const blob=new Blob([JSON.stringify(j,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='inspecciones_'+Date.now()+'.json';a.click();}
+};
+window.addEventListener('DOMContentLoaded',a_refresh);
 </script>
 </body>
 </html>
-
