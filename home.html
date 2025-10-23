@@ -15,7 +15,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Sego
 
 /* Card compacta */
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.05)}
-header{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between}
+header{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 header h1{margin:0;font-size:16px}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
 .right{margin-left:auto}
@@ -27,9 +27,13 @@ header h1{margin:0;font-size:16px}
 
 .section{padding:10px 12px}
 
+/* Banda de estado */
+.band{margin:10px 12px 0;background:#ecfdf5;border:1px solid #10b981;color:#065f46;border-radius:10px;padding:8px 10px;font-size:13px;display:none}
+.band.warn{background:#fffbeb;border-color:#f59e0b;color:#92400e}
+
 /* Barra superior (filtros + búsqueda) */
-.controls{display:flex;gap:10px;align-items:center;justify-content:space-between}
-.ctrl-left{display:flex;gap:8px;align-items:center}
+.controls{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ctrl-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .ctrl-right{display:flex;gap:8px;align-items:center}
 .search{position:relative}
 .search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 34px 8px 30px;font:inherit;background:#fff;min-width:260px}
@@ -79,6 +83,11 @@ td.t-right{text-align:right}
 
 /* Toast */
 .toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
+
+/* Badge de cola */
+.qbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
+.qbadge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
+.qbadge.warn .dot{background:#f59e0b}
 </style>
 </head>
 <body>
@@ -88,11 +97,15 @@ td.t-right{text-align:right}
       <h1>MAERSK — Principal</h1>
       <div class="toolbar right">
         <span id="badge" class="pill">—</span>
+        <span id="queueBadge" class="qbadge" title="Ítems sin enviar"><span class="dot"></span> Cola: <strong id="queueCount">0</strong></span>
         <button id="btnNew" class="btn primary">+ Nueva inspección</button>
         <button id="btnProfile" class="btn">Mi perfil</button>
         <button id="btnLogout" class="btn">Cerrar sesión</button>
       </div>
     </header>
+
+    <!-- Banda Última enviada -->
+    <div id="bandLast" class="band"></div>
 
     <div class="section">
       <div class="controls">
@@ -167,6 +180,7 @@ $("#badge").textContent = `👤 ${user} · ${role.toUpperCase()}`;
 $("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
 $("#btnNew").onclick=()=> location.href='inspect.html';
 $("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
+$("#btnRefresh").onclick=()=> loadData();
 
 /* === STATE === */
 let all=[], filtered=[], page=1, per=Number(localStorage.getItem('home_per')||20), status=localStorage.getItem('home_status')||'all';
@@ -184,6 +198,47 @@ async function apiGet(fn, params={}){
   Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
   const r=await fetch(u.toString()); return r.json();
 }
+
+/* === IndexedDB (para contador de cola) === */
+const DB='reefer_inspections_db', VER=1, STORE='queue';
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB,VER);
+    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(STORE)){ db.createObjectStore(STORE,{keyPath:'id'});} };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function queueCount(){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAllKeys();
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
+}
+async function refreshQueueBadge(){
+  const n = await queueCount();
+  const el=$("#queueCount"); if(el) el.textContent=String(n);
+  const badge=$("#queueBadge");
+  if(badge){
+    badge.classList.toggle('warn', n>0);
+    badge.title = n>0 ? `Tienes ${n} ítem(s) pendiente(s) por enviar` : 'Sin pendientes';
+  }
+}
+
+/* === Banda “última enviada” === */
+function showLastSent(){
+  const id = localStorage.getItem('last_sent_id');
+  const unit = localStorage.getItem('last_sent_unit');
+  const band = $("#bandLast");
+  if(unit){
+    band.textContent = `✅ Última enviada: ${unit} (ID ${id||'-'})`;
+    band.style.display='block';
+    // se limpia sola luego de unos segundos
+    setTimeout(()=>{ band.style.display='none'; localStorage.removeItem('last_sent_id'); localStorage.removeItem('last_sent_unit'); }, 5000);
+  }else{
+    band.style.display='none';
+  }
+}
+
+/* === LOAD DATA === */
 async function loadData(){
   const btn=$("#btnRefresh"), txt=btn.textContent; btn.disabled=true; btn.textContent='Cargando…';
   try{
@@ -197,7 +252,6 @@ async function loadData(){
 /* === HELPERS DE RENDER === */
 function gateChip(val){
   const v = String(val || '').trim().toUpperCase();
-  // tolerante a variantes: IN, GATE IN, GATEIN, INBOUND, OUT, GATE OUT, GATEOUT, OUTBOUND
   if (v==='IN' || v==='GATE IN' || v==='GATEIN' || v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
   if (v==='OUT' || v==='GATE OUT' || v==='GATEOUT' || v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
   return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
@@ -212,12 +266,10 @@ function statusBadge(v){
 function render(){
   const q=($("#txtSearch").value||'').trim().toUpperCase();
 
-  // filtra por status y búsqueda
   filtered = (all||[]).filter(x=> (x.container||x.folio||x.folderUrl));
   if(status!=='all') filtered=filtered.filter(x=> (String(x.status||'').toLowerCase()===status));
   if(q) filtered=filtered.filter(x=> (String(x.container||'').toUpperCase().includes(q) || String(x.folio||'').toUpperCase().includes(q)));
 
-  // orden descendente por fecha
   filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
 
   const tb=$("#tbody"); tb.innerHTML='';
@@ -226,8 +278,6 @@ function render(){
 
   for(let i=ini;i<fin;i++){
     const r=filtered[i];
-
-    // Conteos robustos
     const danos  = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
     const fotos  = (r.photosCount ?? r.fotosCount ?? r.photos_total) ?? 0;
 
@@ -246,17 +296,21 @@ function render(){
 
   $("#pageInfo").textContent=`Página ${page}/${pages}`;
   $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
+  refreshQueueBadge();
 }
 
 /* === PAGINACIÓN / SEARCH / PER PAGE === */
 $("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
 $("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
 $("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
-
 let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },250); });
 
 /* === INIT === */
-loadData();
+(function init(){
+  showLastSent();
+  loadData();
+  refreshQueueBadge();
+})();
 </script>
 </body>
 </html>
