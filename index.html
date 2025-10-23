@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>MAERSK — Inspecciones (Cola + Formulario + GAS)</title>
+<title>MAERSK — Inspecciones + Dashboard</title>
 
 <!-- OCR fallback para el escáner -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -25,6 +25,7 @@
   .btn.ghost{background:transparent}
   .btn.danger{background:#dc2626;color:#fff;border-color:#dc2626}
   .btn:disabled{opacity:.55;cursor:not-allowed}
+  .hide{display:none !important}
 
   .section{padding:12px 14px}
   .grid{display:grid;gap:12px}
@@ -38,7 +39,7 @@
   .hint{font-size:12px;color:var(--muted)}
   .spacer{height:10px}
 
-  /* Tabla de COLA */
+  /* Tabla cola */
   table{width:100%;border-collapse:separate;border-spacing:0}
   thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px;z-index:1}
   tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
@@ -50,7 +51,7 @@
   .kpi{display:flex;gap:8px;flex-wrap:wrap}
   .kpi .pill{background:#f8fafc}
 
-  /* Formulario (líneas dinámicas) */
+  /* Formulario líneas */
   .qwrap{padding:12px 14px;display:grid;gap:12px}
   .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
   .cell-photos{width:160px}
@@ -76,7 +77,7 @@
   }
   .marker-btn.active{background:#0b74c7;color:#fff;border-color:#0b74c7}
 
-  /* Overlay de carga */
+  /* Overlay */
   #overlay{ position:fixed; inset:0; background:rgba(15,23,42,.55);
     display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter: blur(2px); }
   .spinner{ width:56px; height:56px; border-radius:50%;
@@ -85,7 +86,7 @@
   .loading-card{ background:#0b1220; color:#e5edf5; border-radius:16px; padding:18px 16px; min-width:240px; text-align:center; border:1px solid #263045 }
   .loading-card p{ margin:10px 0 0 0; font-size:14px; color:#b8c4d6 }
 
-  /* Vista de éxito */
+  /* Vista éxito */
   #view-done{display:none}
   .done-wrap{padding:28px 20px;text-align:center}
   .done-emoji{font-size:44px;line-height:1;margin-bottom:6px}
@@ -114,7 +115,11 @@
   .user-card h3{ margin:0 0 8px;font-size:18px }
   .user-grid{ display:grid; gap:10px }
 
-  /* Responsive */
+  /* ============ DASHBOARD interno ============ */
+  #view-admin{display:none}
+  .pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pager .btn{min-width:90px}
+  .select{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
   @media (max-width:1000px){ .qgrid{grid-template-columns:repeat(2,1fr)} }
   @media (max-width:640px){
     .qgrid{grid-template-columns:1fr}
@@ -135,6 +140,11 @@
         <button class="btn" id="btnChangeUser">Cambiar técnico/vendor</button>
         <button class="btn" id="btnNew">+ Nueva inspección</button>
         <button class="btn primary" id="btnSendAll">Enviar todo</button>
+
+        <!-- Admin controls -->
+        <button class="btn" id="btnAdminLogin">Iniciar admin</button>
+        <button class="btn" id="btnAdminLogout" style="display:none">Cerrar sesión</button>
+        <button class="btn" id="btnGoAdmin" style="display:none">Dashboard</button>
       </div>
     </header>
     <div class="section">
@@ -155,7 +165,6 @@
             <option value="fallido">Fallidas</option>
           </select>
           <button class="btn" id="btnRetryFail">Reintentar fallidas</button>
-          <button class="btn" id="btnExportQueue">Exportar cola (JSON)</button>
           <button class="btn danger" id="btnClearSent">Limpiar enviadas</button>
         </div>
       </div>
@@ -192,8 +201,7 @@
       <h1>MAERSK — Cuestionario</h1>
       <div class="toolbar">
         <button class="btn" id="btnBackQueue">← Volver a la cola</button>
-        <button class="btn" id="btnCSV">Exportar CSV</button>
-        <button class="btn" id="btnJSON">Exportar JSON</button>
+        <!-- (Se eliminaron los botones de exportar para usuarios normales) -->
       </div>
     </header>
 
@@ -332,9 +340,81 @@
     </div>
   </div>
 
+  <!-- ============ DASHBOARD INTERNO ============ -->
+  <div id="view-admin" class="card">
+    <header>
+      <h1>MAERSK — Dashboard en vivo</h1>
+      <div class="toolbar">
+        <span class="pill" id="adminBadge">👤 Invitado</span>
+        <button class="btn" id="btnAdminBack">← Volver</button>
+        <button class="btn" id="btnAdminRefresh">Refrescar</button>
+        <button class="btn primary" id="btnExportSel" style="display:none">Exportar seleccionadas</button>
+      </div>
+    </header>
+
+    <div class="section">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span class="pill">Pendientes: <b id="a_kpiPend">0</b></span>
+          <span class="pill">Enviando: <b id="a_kpiProg">0</b></span>
+          <span class="pill">Enviadas: <b id="a_kpiOk">0</b></span>
+          <span class="pill">Fallidas: <b id="a_kpiFail">0</b></span>
+        </div>
+        <div class="row">
+          <input id="a_txtSearch" type="text" placeholder="Buscar contenedor / folio…">
+          <select id="a_selStatus" class="select">
+            <option value="all">Todos</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="enviando">Enviando</option>
+            <option value="enviado">Enviadas</option>
+            <option value="fallido">Fallidas</option>
+          </select>
+          <select id="a_perPage" class="select">
+            <option value="20" selected>20</option>
+            <option value="40">40</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th id="a_thSel" style="width:30px"><input type="checkbox" id="a_checkAll" /></th>
+              <th>Fecha</th>
+              <th>Contenedor</th>
+              <th>Gate</th>
+              <th>Naviera</th>
+              <th>Folio</th>
+              <th>Estado</th>
+              <th>Líneas</th>
+              <th>Fotos</th>
+              <th>Status</th>
+              <th>Carpeta</th>
+            </tr>
+          </thead>
+          <tbody id="a_tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="row pager" style="justify-content:space-between;margin-top:10px">
+        <div class="row">
+          <button class="btn" id="a_prev">« Anterior</button>
+          <span class="pill" id="a_pageInfo">Página 1/1</span>
+          <button class="btn" id="a_next">Siguiente »</button>
+        </div>
+        <span class="pill" id="a_lastUpdate">—</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Overlay de carga -->
+<!-- Overlay -->
 <div id="overlay" role="alert" aria-live="polite" aria-busy="true">
   <div class="loading-card">
     <div class="spinner" aria-hidden="true"></div>
@@ -381,21 +461,42 @@
   </div>
 </div>
 
+<!-- Modal Login Admin -->
+<div id="loginModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:99999;align-items:center;justify-content:center">
+  <div class="user-card" style="max-width:420px">
+    <h3>Acceso administrador</h3>
+    <div class="user-grid">
+      <div><div class="qtitle">Usuario</div><input id="loginUser" type="text" placeholder="Usuario"></div>
+      <div><div class="qtitle">Contraseña</div><input id="loginPass" type="password" placeholder="Contraseña"></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
+      <button class="btn" id="btnLoginCancel">Cancelar</button>
+      <button class="btn primary" id="btnLoginOk">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
 <script>
 /* ===================== CONFIG ===================== */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyZozDbNtG-Qt8vtLSJr93lDraU8nzdzu1N6e0RwYhBZsn7ITBP0ZCysc2cKqP99DRmmg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec'; // <--- para enviar inspecciones
+const API_URL = GAS_URL; // mismo endpoint para dashboard (whoami/getinspections/exportinspectionsbyids)
 
 /* ===================== UTIL UI ===================== */
 const $ = (q,el)=> (el||document).querySelector(q);
 let logEl=null;
-const log = m => { if(!logEl) return; if(logEl.style.display!=='block') logEl.style.display='block'; logEl.textContent += m + "\\n"; logEl.scrollTop = logEl.scrollHeight; };
+const log = m => { if(!logEl) return; if(logEl.style.display!=='block') logEl.style.display='block'; logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; };
 let toastTimer;
 function toast(msg,ms){ const t=$("#toast"); t.textContent=msg; t.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.display='none', ms||2200); }
 function setOverlay(on,msg){ const ov=$("#overlay"); $("#overlayMsg").textContent=msg||"Procesando…"; const btns=document.querySelectorAll("button"); btns.forEach(b=>b.disabled=!!on); ov.style.display=on?'flex':'none'; }
-function show(v){ $("#view-queue").style.display = (v==='queue')?'block':'none'; $("#view-form").style.display=(v==='form')?'block':'none'; $("#view-done").style.display=(v==='done')?'block':'none'; }
+function show(v){
+  $("#view-queue").style.display = (v==='queue')?'block':'none';
+  $("#view-form").style.display  = (v==='form')?'block':'none';
+  $("#view-done").style.display  = (v==='done')?'block':'none';
+  $("#view-admin").style.display = (v==='admin')?'block':'none';
+}
 
 /* ===================== ISO 6346 ===================== */
 const ISO_MAP={A:10,B:12,C:13,D:14,E:15,F:16,G:17,H:18,I:19,J:20,K:21,L:23,M:24,N:25,O:26,P:27,Q:28,R:29,S:30,T:31,U:32,V:34,W:35,X:36,Y:37,Z:38};
@@ -433,7 +534,7 @@ async function ocrFrame(){
 async function scanUse(){ try{ if(!scanCandidate){ toast('Intentando OCR…',1000); scanCandidate=await ocrFrame(); } if(scanCandidate){ $("#q_container").value=scanCandidate; stopScanner(); validateContainer(); } else toast('No se detectó. Prueba “Capturar”.',2200);}catch(e){console.error(e);toast('Error en OCR.',2200);} }
 async function scanCapture(){ try{ toast('Procesando OCR…',1000); const id=await ocrFrame(); if(id){ scanCandidate=id; toast('Detectado: '+id,1500);} else toast('No se detectó un ID.',2200);}catch(e){console.error(e);toast('Error en OCR.',2200);} }
 
-/* ===================== Campos forzar MAYÚSCULAS (líneas) ===================== */
+/* ===================== Forzar MAYÚSCULAS (líneas) ===================== */
 function forceUpperOnBody(){
   $("#body").addEventListener('input',e=>{
     const t=e.target;
@@ -543,7 +644,7 @@ function compressImage(file,maxSide=1280,quality=0.72){
   return new Promise((res,rej)=>{
     const img=new Image(); const fr=new FileReader();
     fr.onload=()=>{ img.onload=()=>{ const c=document.createElement('canvas'); let {width:w,height:h}=img;
-      if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*maxSide/w); w=maxSide; } else { w=Math.round(w*maxSide/h); h=maxSide; } }
+      if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*maxSide/w); w=maxSide; } else { w=Math.round(h*maxSide/w); w=Math.round(w); h=maxSide; } }
       c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
       c.toBlob(b=>res(b), 'image/jpeg', quality);
     }; img.src=fr.result; }; fr.onerror=rej; fr.readAsDataURL(file);
@@ -631,14 +732,13 @@ function makeId(container){
   return `${iso}_${container||'UNKN'}`;
 }
 async function gatherPhotosCompressed(){
-  // photos Map: rowId => FileList; convert to array de arrays (por línea)
   const arr=[];
   const rows=bodyEl.querySelectorAll('tr');
   for(const tr of rows){
     const rowId=Number(tr.dataset.row); const fl=photos.get(rowId)||[];
     const list=[];
     for(const f of fl){ const b=await compressImage(f); list.push({name:f.name.replace(/\.(png|jpg|jpeg|heic|webp)$/i,'.jpg'), type:'image/jpeg', blob:b}); }
-    arr.push(list); // puede ser []
+    arr.push(list);
   }
   return arr;
 }
@@ -658,12 +758,11 @@ async function saveToQueueFromForm(){
   show('queue'); renderQueue();
 }
 
-/* ===================== ENVÍO (uno o varios) ===================== */
+/* ===================== ENVÍO ===================== */
 async function sendItems(items){
   if(!items || !items.length) return;
   setOverlay(true,'Enviando '+items.length+' inspección(es)…');
 
-  // Procesamos en serie o en tandas pequeñas (2 a la vez)
   const concurrency = 2;
   let idx=0;
   async function worker(){
@@ -672,7 +771,6 @@ async function sendItems(items){
       const it = items[k];
       await queueUpdate(it.id,{status:'enviando'}); renderQueue();
       try{
-        // convertir fotos a base64
         const linesPayload = [];
         const photosPayload = [];
         const q = it.questionnaire;
@@ -690,7 +788,6 @@ async function sendItems(items){
           }
         }
 
-        // JSON de estado (unit_state)
         const raw= q.container || '';
         const isoValid = isoPattern11(raw);
         const dvExp = isoValid ? isoCheckDigit(raw.slice(0,10)) : null;
@@ -698,7 +795,8 @@ async function sendItems(items){
         const unit_state = {
           container: raw, iso_valid_format: !!isoValid, dv_expected: dvExp, dv_match: dvMatch,
           gate: q.gate, date: q.fecha, naviera:q.naviera, vacio:q.vacio, oog:q.oog,
-          lines_count: it.lines.length, lines_with_photos: photosPayload.reduce((acc,p)=>acc + (p?1:0),0),
+          lines_count: it.lines.length,
+          lines_with_photos: photosPayload.length,
           any_marked_R: it.lines.some(x=>x.marker==='R'), vendor: it.vendor, tecnico: it.tecnico,
           remarks_len: (it.remarks||'').length, created_at: new Date().toISOString()
         };
@@ -737,34 +835,16 @@ async function sendItems(items){
   toast('Proceso de envío finalizado.',2200);
 }
 
-/* ===================== SUBMIT DIRECTO (form) ===================== */
+/* ===================== SUBMIT DIRECTO ===================== */
 async function submitNow(){
-  // guarda en cola y manda ese ítem
   await saveToQueueFromForm();
   const all=await queueGetAll();
-  // último creado con status pendiente
   const pend=all.filter(x=>x.status==='pendiente').sort((a,b)=> (a.createdAt<b.createdAt?1:-1));
   if(pend[0]) await sendItems([pend[0]]);
-  // Mostrar éxito con link si existe
   const item = await queueGetAll().then(list => list.find(x => x.id===pend[0].id));
   const folderUrl = item?.folderUrl;
   if(folderUrl){ $("#btnFolder").href = folderUrl; $("#btnFolder").style.display='inline-block'; } else { $("#btnFolder").style.display='none'; }
   show('done');
-}
-
-/* ===================== CSV/JSON LOCAL ===================== */
-function toCSV(data){
-  const q=data.questionnaire, headPairs=[], tailPairs=[];
-  for(const k in q){ headPairs.push(k.toUpperCase()+',"' + String(q[k]).replace(/"/g,'""') + '"'); }
-  const tail=[['INSPECTOR',data.tecnico],['VENDOR',data.vendor],['REMARKS',data.remarks]];
-  tail.forEach(t=> tailPairs.push(t[0]+',"' + String(t[1]).replace(/"/g,'""') + '"'));
-  const head=['Line','Marker','Reparado','Loc','Daño','Comp','MRep','Size','Qty','Resp','HasPhotos'];
-  const rows=data.lines.map(L=>[L.n,L.marker,L.reparado,L.loc,L.dano,L.comp,L.mrep,L.size,L.qty,L.resp,L.hasPhotos]);
-  const body=[head].concat(rows).map(a=>a.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\\n');
-  return headPairs.join('\\n')+'\\n'+tailPairs.join('\\n')+'\\n\\n'+body;
-}
-function download(name,content,mime){
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type:mime})); a.download=name; a.click();
 }
 
 /* ===================== USER (técnico/vendor) ===================== */
@@ -776,7 +856,100 @@ function loadUserBadge(){
 function openUserModal(){ $("#u_tecnico").value=localStorage.getItem('tec_name')||''; $("#u_vendor").value=localStorage.getItem('tec_vendor')||''; $("#userModal").style.display='flex'; }
 function saveUserModal(){ localStorage.setItem('tec_name',$("#u_tecnico").value.trim()); localStorage.setItem('tec_vendor',$("#u_vendor").value.trim()); $("#userModal").style.display='none'; loadUserBadge(); toast('Datos guardados.',1400); }
 
-/* ===================== INICIO ===================== */
+/* ===================== ADMIN AUTH/API ===================== */
+let AUTH_USER=null, AUTH_HASH=null, IS_ADMIN=false;
+async function sha256Hex(str){ const enc=new TextEncoder().encode(str); const buf=await crypto.subtle.digest('SHA-256',enc); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function apiGet(fn, params={}){
+  const u=new URL(API_URL); u.searchParams.set('fn',fn);
+  if(AUTH_USER) u.searchParams.set('user', AUTH_USER);
+  if(AUTH_HASH) u.searchParams.set('passHash', AUTH_HASH);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  const res=await fetch(u.toString(),{method:'GET'}); return res.json();
+}
+async function apiPost(fn, body={}){
+  const u=new URL(API_URL); u.searchParams.set('fn',fn);
+  if(AUTH_USER) body.user=AUTH_USER; if(AUTH_HASH) body.passHash=AUTH_HASH;
+  const res=await fetch(u.toString(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return res.json();
+}
+function setAdminUI(isAdmin){
+  IS_ADMIN=!!isAdmin;
+  $("#btnAdminLogin").style.display = IS_ADMIN ? 'none':'inline-block';
+  $("#btnAdminLogout").style.display = AUTH_USER ? 'inline-block':'none';
+  $("#btnGoAdmin").style.display = IS_ADMIN ? 'inline-block':'none';
+  $("#adminBadge").textContent = IS_ADMIN ? `👤 Admin (${AUTH_USER||'—'})` : '👤 Invitado';
+}
+function openLogin(){ $("#loginModal").style.display='flex'; $("#loginUser").focus(); }
+function closeLogin(){ $("#loginModal").style.display='none'; }
+async function doLogin(){
+  const u=$("#loginUser").value.trim(); const p=$("#loginPass").value;
+  if(!u || !p){ toast('Ingresa usuario y contraseña',1800); return; }
+  const h=await sha256Hex(p); AUTH_USER=u; AUTH_HASH=h;
+  const info=await apiGet('whoami'); if(info?.ok && info.isAdmin){ localStorage.setItem('auth_user',AUTH_USER); localStorage.setItem('auth_hash',AUTH_HASH); setAdminUI(true); closeLogin(); toast('Admin activo',1200); } else { AUTH_USER=null; AUTH_HASH=null; toast('Credenciales inválidas',1800); }
+}
+function doLogout(){ AUTH_USER=null; AUTH_HASH=null; IS_ADMIN=false; localStorage.removeItem('auth_user'); localStorage.removeItem('auth_hash'); setAdminUI(false); show('queue'); }
+
+/* ===================== DASHBOARD: datos/paginación ===================== */
+let a_all=[], a_filtered=[], a_selected=new Set(), a_page=1, a_per=20;
+function a_kpis(rows){
+  const pend=rows.filter(x=>x.status==='pendiente').length;
+  const prog=rows.filter(x=>x.status==='enviando').length;
+  const ok=rows.filter(x=>x.status==='enviado').length;
+  const fail=rows.filter(x=>x.status==='fallido').length;
+  $("#a_kpiPend").textContent=pend; $("#a_kpiProg").textContent=prog; $("#a_kpiOk").textContent=ok; $("#a_kpiFail").textContent=fail;
+}
+function a_applyFilters(){
+  const q=($("#a_txtSearch").value||'').trim().toUpperCase();
+  const st=$("#a_selStatus").value;
+  a_filtered = a_all.filter(x=> (x.container||x.folio||x.folderUrl)); // oculta vacíos
+  if(st!=='all') a_filtered=a_filtered.filter(x=>(x.status||'').toLowerCase()===st);
+  if(q) a_filtered=a_filtered.filter(x=> (x.container||'').toUpperCase().includes(q) || (x.folio||'').toUpperCase().includes(q) );
+  a_filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
+}
+function a_render(){
+  a_applyFilters();
+  const tb=$("#a_tbody"); tb.innerHTML='';
+  const total=a_filtered.length; const pages=Math.max(1, Math.ceil(total/a_per)); if(a_page>pages) a_page=pages;
+  const ini=(a_page-1)*a_per, fin=Math.min(total, ini+a_per);
+  for(let i=ini;i<fin;i++){
+    const r=a_filtered[i]; const stc=r.status==='pendiente'?'b-pend': r.status==='enviado'?'b-send': r.status==='enviando'?'b-prog':'b-fail';
+    const checked = a_selected.has(r.id) ? 'checked' : '';
+    const folderCell = r.folderUrl ? `<a href="${r.folderUrl}" target="_blank" rel="noopener">Abrir</a>` : '<span class="muted">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML =
+      `<td><input type="checkbox" class="row-check" data-id="${r.id}" ${checked}></td>
+       <td>${String(r.fecha||'').toString().slice(0,10)}</td>
+       <td><b>${r.container||''}</b></td>
+       <td>${r.gate||''}</td>
+       <td>${r.naviera||''}</td>
+       <td>${r.folio||''}</td>
+       <td>${r.estado||''}</td>
+       <td>${r.linesCount??(r.lines?.length||0)??0}</td>
+       <td>${r.photosCount??r.photos_total??0}</td>
+       <td><span class="badge ${stc}">${r.status||''}</span></td>
+       <td>${folderCell}</td>`;
+    tb.appendChild(tr);
+  }
+  $("#a_pageInfo").textContent = `Página ${a_page}/${Math.max(1,Math.ceil(total/a_per))}`;
+  $("#a_lastUpdate").textContent = 'Últ. actualización: ' + new Date().toLocaleString();
+}
+async function a_refresh(){
+  if(!IS_ADMIN){ toast('Acceso admin requerido',1500); return; }
+  const res=await apiGet('getinspections');
+  if(res?.ok){ a_all=res.items||[]; a_page=1; a_render(); }
+}
+async function a_export(){
+  if(!IS_ADMIN){ toast('Acceso admin requerido',1500); return; }
+  const ids=Array.from(a_selected); if(!ids.length){ toast('Selecciona al menos 1 unidad',1600); return; }
+  const btn=$("#btnExportSel"); const txt=btn.textContent; btn.disabled=true; btn.textContent='Preparando…';
+  try{
+    const res=await apiPost('exportinspectionsbyids',{ids});
+    if(!res?.ok) throw new Error(res?.error||'Error exportando');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(res,null,2)],{type:'application/json'})); a.download='inspecciones_'+Date.now()+'.json'; a.click();
+  }catch(err){ console.error(err); toast(String(err&&err.message||err),2200); }
+  finally{ btn.disabled=false; btn.textContent=txt; }
+}
+
+/* ===================== CARGA/INIT ===================== */
 function attachEvents(){
   // vistas
   $("#btnNew").onclick = ()=>{ show('form'); };
@@ -803,24 +976,46 @@ function attachEvents(){
   // queue actions globales
   $("#btnSendAll").onclick = async ()=>{ const all=await queueGetAll(); const pend=all.filter(x=>x.status==='pendiente'||x.status==='fallido'); if(!pend.length){ toast('No hay pendientes.',1500); return; } sendItems(pend); };
   $("#btnRetryFail").onclick = async ()=>{ const all=await queueGetAll(); const fail=all.filter(x=>x.status==='fallido'); if(!fail.length){ toast('Sin fallidas.',1500); return; } sendItems(fail); };
-  $("#btnExportQueue").onclick = async ()=>{ const all=await queueGetAll(); download('cola_'+Date.now()+'.json', JSON.stringify(all,null,2),'application/json'); };
   $("#btnClearSent").onclick = async ()=>{ const all=await queueGetAll(); for(const it of all){ if(it.status==='enviado') await queueDelete(it.id); } renderQueue(); toast('Enviadas eliminadas.',1400); };
-
-  // búsqueda y filtro
   $("#qSearch").oninput = renderQueue;
   $("#qFilter").onchange = renderQueue;
 
-  // export locales
-  $("#btnCSV").onclick = ()=>{ const d=buildDoc(); download('repair_'+Date.now()+'.csv', toCSV(d), 'text/csv'); };
-  $("#btnJSON").onclick= ()=>{ const d=buildDoc(); download('repair_'+Date.now()+'.json', JSON.stringify(d,null,2), 'application/json'); };
+  // admin
+  $("#btnAdminLogin").onclick = openLogin;
+  $("#btnLoginCancel").onclick = closeLogin;
+  $("#btnLoginOk").onclick = doLogin;
+  $("#btnAdminLogout").onclick = doLogout;
+  $("#btnGoAdmin").onclick = ()=>{ if(!IS_ADMIN){ toast('Acceso admin requerido',1500); return; } show('admin'); a_refresh(); };
+  $("#btnAdminBack").onclick = ()=>{ show('queue'); };
+  $("#btnAdminRefresh").onclick = a_refresh;
+  $("#btnExportSel").onclick = a_export;
 
-  // forzar mayúsculas en líneas
-  forceUpperOnBody();
+  // Admin table interacciones
+  $("#a_tbody").addEventListener('change',(e)=>{
+    const ch=e.target.closest('.row-check'); if(!ch) return;
+    const id=ch.getAttribute('data-id');
+    if(ch.checked) a_selected.add(id); else a_selected.delete(id);
+  });
+  $("#a_checkAll").onclick = (e)=>{
+    const on=e.target.checked;
+    document.querySelectorAll('#a_tbody .row-check').forEach(ch=>{
+      ch.checked=on; const id=ch.getAttribute('data-id'); if(on) a_selected.add(id); else a_selected.delete(id);
+    });
+  };
+  $("#a_txtSearch").oninput = ()=> a_render();
+  $("#a_selStatus").onchange = ()=> a_render();
+  $("#a_perPage").onchange = ()=>{ a_per = Number($("#a_perPage").value||20); a_page=1; a_render(); };
+  $("#a_prev").onclick = ()=>{ if(a_page>1){ a_page--; a_render(); } };
+  $("#a_next").onclick = ()=>{ const pages=Math.max(1, Math.ceil(a_filtered.length/a_per)); if(a_page<pages){ a_page++; a_render(); } };
 }
 
 function init(){
   logEl=$("#log"); bodyEl=$("#body");
   attachEvents(); addRow(); loadUserBadge();
+  // restaurar sesión admin
+  const u=localStorage.getItem('auth_user'), h=localStorage.getItem('auth_hash');
+  if(u && h){ AUTH_USER=u; AUTH_HASH=h; apiGet('whoami').then(info=> setAdminUI(!!info.isAdmin)); }
+  else setAdminUI(false);
   show('queue'); renderQueue();
 }
 
