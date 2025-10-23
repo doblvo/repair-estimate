@@ -39,9 +39,8 @@ tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
 .marker-btn.active{background:#0b74c7;color:#fff;border-color:#0b74c7}
 .toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:99999}
 
-/* --- Status / overlay / badge --- */
-.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);
-  border-radius:999px;font-size:12px;background:#fff}
+/* Status / overlay / badge */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;background:#fff}
 .badge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
 .badge.warn .dot{background:#f59e0b}
 
@@ -193,7 +192,8 @@ const GAS_URL='https://script.google.com/macros/s/AKfycby2FX9r_Bd2H0x-wCgcmJj-Wm
 
 /* UTILS */
 const $=(q,el)=> (el||document).querySelector(q); let tmo;
-function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
+function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2400);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* ISO 6346 */
 const ISO_MAP={A:10,B:12,C:13,D:14,E:15,F:16,G:17,H:18,I:19,J:20,K:21,L:23,M:24,N:25,O:26,P:27,Q:28,R:29,S:30,T:31,U:32,V:34,W:35,X:36,Y:37,Z:38};
@@ -206,11 +206,12 @@ const isoPattern11=s=>/^[A-Z]{4}[0-9]{7}$/.test(s);
 let seq=0, bodyEl=null, photos=new Map();
 
 /* Auth gate */
-if(!localStorage.getItem('auth_user')) location.href='login.html';
+const __user=localStorage.getItem('auth_user'); const __role=localStorage.getItem('auth_role');
+if(!__user||!__role) location.href='login.html';
 
-/* UI ACTIONS */
+/* NAV */
 $("#btnBack").onclick=()=> history.length>1 ? history.back() : location.href='home.html';
-$("#btnLogout").onclick=()=>{ localStorage.removeItem('auth_user'); location.href='login.html'; };
+$("#btnLogout").onclick=()=>{ localStorage.removeItem('auth_user'); localStorage.removeItem('auth_role'); location.href='login.html'; };
 $("#btnAdd").onclick=()=> addRow();
 $("#btnClear").onclick=()=>{ bodyEl.innerHTML=''; photos.clear(); seq=0; addRow(); };
 $("#btnSaveQueue").onclick=saveToQueue;
@@ -371,37 +372,17 @@ function idbOpen(){
 }
 async function queuePut(item){ const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(item); return new Promise((res)=>{ tx.oncomplete=()=>{db.close();res();}; }); }
 async function queueGet(id){ const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id); return new Promise((res)=>{ req.onsuccess=()=>{db.close();res(req.result)}; }); }
-async function queueDelete(id){
-  const db=await idbOpen();
-  const tx=db.transaction(STORE,'readwrite');
-  tx.objectStore(STORE).delete(id);
-  return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
-}
-async function queueCount(){
-  const db=await idbOpen();
-  const tx=db.transaction(STORE,'readonly');
-  const store=tx.objectStore(STORE);
-  const req=store.getAllKeys();
-  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
-}
-async function refreshQueueBadge(){
-  const n = await queueCount();
-  const el=$("#queueCount"); if(el) el.textContent=String(n);
-  const badge=$("#queueBadge");
-  if(badge){
-    badge.classList.toggle('warn', n>0);
-    badge.title = n>0 ? `Tienes ${n} ítem(s) pendiente(s) por enviar` : 'Sin pendientes';
-  }
-}
-function showOverlay(on){
-  const ov=$("#overlaySend");
-  if(!ov) return;
-  ov.style.display = on ? 'flex' : 'none';
-}
+async function queueDelete(id){ const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id); return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; }); }
+async function queueCount(){ const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAllKeys(); return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; }); }
+async function refreshQueueBadge(){ const n = await queueCount(); const el=$("#queueCount"); if(el) el.textContent=String(n); const badge=$("#queueBadge"); if(badge){ badge.classList.toggle('warn', n>0); badge.title = n>0 ? `Tienes ${n} ítem(s) pendiente(s) por enviar` : 'Sin pendientes'; } }
 
-/* SAVE / SUBMIT */
+/* OVERLAY */
+function showOverlay(on){ const ov=$("#overlaySend"); if(!ov) return; ov.style.display = on ? 'flex' : 'none'; }
+
+/* HELPERS */
 function makeId(container){ const d=new Date().toISOString().replace(/[:.]/g,'').slice(0,15); return `${d}_${container||'UNKN'}`;}
 
+/* GATHER PHOTOS (comprimidas) */
 async function gatherPhotosCompressed(lines){
   const out=[]; const rows=bodyEl.querySelectorAll('tr');
   for(let i=0;i<rows.length;i++){
@@ -411,6 +392,34 @@ async function gatherPhotosCompressed(lines){
   } return out;
 }
 
+/* === REGISTRO LIVIANO EN SHEET (pendiente) === */
+async function registerPendingLight(item){
+  try{
+    const q=item.questionnaire||{};
+    const payload = {
+      fn: 'registerPending',
+      pending: {
+        id: item.id,
+        container: q.container,
+        fecha: q.fecha || new Date().toISOString().slice(0,10),
+        gate: q.gate,
+        naviera: q.naviera,
+        tipo: q.tipo,
+        tecnico: item.tecnico || '',
+        vendor: item.vendor || '',
+        linesCount: (item.lines||[]).length,
+        photosCount: (item.photos||[]).reduce((a,row)=> a + (Array.isArray(row)? row.length : 0), 0),
+        status: 'pendiente',
+        createdAt: item.createdAt
+      }
+    };
+    const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
+    // Si tu GAS aún no soporta registerPending, evitamos romper UX
+    if(!res.ok){ /* opcional: const txt=await res.text(); console.warn(txt); */ }
+  }catch(e){ /* silencioso; el guardado local ya quedó */ }
+}
+
+/* SAVE / SUBMIT */
 async function saveToQueue(){
   if(!validate()) return null;
   const doc=getDoc(); const id=makeId(doc.questionnaire.container);
@@ -418,6 +427,8 @@ async function saveToQueue(){
   const item={id, questionnaire:doc.questionnaire, lines:doc.lines, remarks:doc.remarks, tecnico:doc.tecnico, vendor:doc.vendor, photos:ph, status:'pendiente', createdAt:new Date().toISOString()};
   await queuePut(item);
   await refreshQueueBadge();
+  // Intento de registro liviano en la Sheet (pendiente)
+  await registerPendingLight(item);
   toast('✅ Guardado en cola.');
   return id;
 }
@@ -462,7 +473,9 @@ async function submitNow(){
     localStorage.setItem('last_sent_id', id);
     localStorage.setItem('last_sent_unit', q.container);
     toast('✅ Enviado correctamente');
-    setTimeout(()=>{ showOverlay(false); location.href='home.html'; }, 600);
+    await sleep(600);
+    showOverlay(false);
+    location.href='home.html';
   }catch(err){
     console.error(err);
     showOverlay(false);
@@ -476,8 +489,17 @@ function init(){
   const u=localStorage.getItem('tec_name'); const v=localStorage.getItem('tec_vendor');
   if(u) $("#insp").value=u; if(v) $("#vendor").value=v;
   refreshQueueBadge();
+
+  // Autofecha si viene vacío
+  if(!$("#q_fecha").value){
+    const today=new Date().toISOString().slice(0,10);
+    $("#q_fecha").value=today;
+  }
 }
 window.addEventListener('DOMContentLoaded',init);
+
+/* Accesibilidad mínima: cerrar toast con click */
+$("#toast").addEventListener('click',()=>$("#toast").style.display='none');
 </script>
 </body>
 </html>
