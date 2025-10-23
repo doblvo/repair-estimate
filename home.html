@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MAERSK — Login</title>
+<style>
+:root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#0f172a;--line:#e5e7eb;--radius:14px}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:520px;margin:8vh auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
+header{padding:14px 16px;border-bottom:1px solid var(--line)} header h1{margin:0;font-size:18px}
+.section{padding:16px} .row{display:grid;gap:10px}
+input{width:100%;padding:10px;border:1px solid #dbe2ea;border-radius:10px;font:inherit}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.hint{color:#64748b;font-size:12px}
+.pill{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff}
+.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header><h1>Acceso</h1></header>
+    <div class="section">
+      <div class="row">
+        <div>
+          <div class="hint">Usuario</div>
+          <input id="user" type="text" placeholder="user o admin" autocomplete="username">
+        </div>
+        <div>
+          <div class="hint">Contraseña</div>
+          <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button id="btnLogin" class="btn primary">Entrar</button>
+        <div class="hint">Usuarios de prueba:<br> <span class="pill">user / Contopsa01</span> <span class="pill">admin / Maersk01</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec';
+const $=q=>document.querySelector(q); let tmo; 
+function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
+
+function login(){
+  const u=$("#user").value.trim(); const p=$("#pass").value;
+  if(!u||!p){ toast("Ingresa usuario y contraseña"); return; }
+  const okUser=(u==="user" && p==="Contopsa01");
+  const okAdmin=(u==="admin" && p==="Maersk01");
+  if(!(okUser||okAdmin)){ toast("Credenciales inválidas"); return; }
+  const role= okAdmin ? "admin" : "user";
+  localStorage.setItem('auth_user',u);
+  localStorage.setItem('auth_role',role);
+  // opcional: ping al GAS para registrar sesión
+  location.href='home.html';
+}
+$("#btnLogin").onclick=login;
+window.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+</script>
+</body>
+</html>
