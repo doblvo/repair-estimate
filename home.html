@@ -3,62 +3,154 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>MAERSK — Login</title>
+<title>MAERSK — Principal</title>
 <style>
-:root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#0f172a;--line:#e5e7eb;--radius:14px}
+:root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#0f172a;--muted:#6b7280;--line:#e5e7eb;--radius:14px}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-.wrap{max-width:520px;margin:8vh auto;padding:16px}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
-header{padding:14px 16px;border-bottom:1px solid var(--line)} header h1{margin:0;font-size:18px}
-.section{padding:16px} .row{display:grid;gap:10px}
-input{width:100%;padding:10px;border:1px solid #dbe2ea;border-radius:10px;font:inherit}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
-.hint{color:#64748b;font-size:12px}
-.pill{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff}
+header{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:18px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;background:#fff}
+input[type="text"],select{border:1px solid #dbe2ea;border-radius:10px;padding:8px 10px;font:inherit}
+.section{padding:12px 14px}
+table{width:100%;border-collapse:separate;border-spacing:0}
+thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px;z-index:1}
+tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#fff}
+.b-pend{border-color:#f59e0b;color:#92400e;background:#fffbeb}
+.b-send{border-color:#10b981;color:#065f46;background:#ecfdf5}
+.b-fail{border-color:#ef4444;color:#7f1d1d;background:#fef2f2}
+.b-prog{border-color:#3b82f6;color:#1e3a8a;background:#eff6ff}
+.pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <header><h1>Acceso</h1></header>
+    <header>
+      <h1>MAERSK — Principal</h1>
+      <div class="toolbar">
+        <span id="badge" class="pill">—</span>
+        <button id="btnNew" class="btn primary">+ Nueva inspección</button>
+        <button id="btnProfile" class="btn">Mi perfil</button>
+        <button id="btnLogout" class="btn">Cerrar sesión</button>
+      </div>
+    </header>
+
     <div class="section">
-      <div class="row">
-        <div>
-          <div class="hint">Usuario</div>
-          <input id="user" type="text" placeholder="user o admin" autocomplete="username">
+      <div class="toolbar" style="justify-content:space-between">
+        <div class="toolbar">
+          <button class="btn pill" data-st="all">All</button>
+          <button class="btn pill" data-st="pendiente">Pendientes</button>
+          <button class="btn pill" data-st="enviado">Enviados</button>
+          <button class="btn pill" data-st="fallido">Fallidas</button>
         </div>
-        <div>
-          <div class="hint">Contraseña</div>
-          <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="toolbar">
+          <input id="txtSearch" type="text" placeholder="Buscar contenedor / folio…" style="min-width:240px">
+          <select id="perPage">
+            <option value="20" selected>20</option><option value="40">40</option>
+            <option value="100">100</option><option value="200">200</option>
+          </select>
+          <button id="btnRefresh" class="btn">Refrescar</button>
         </div>
-        <button id="btnLogin" class="btn primary">Entrar</button>
-        <div class="hint">Usuarios de prueba:<br> <span class="pill">user / Contopsa01</span> <span class="pill">admin / Maersk01</span></div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Contenedor</th><th>Gate</th><th>Naviera</th>
+              <th>Folio</th><th>Estado</th><th>Líneas</th><th>Fotos</th><th>Status</th><th>Carpeta</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="section pager" style="justify-content:space-between">
+        <div class="pager">
+          <button id="prev" class="btn">« Anterior</button>
+          <span id="pageInfo" class="pill">Página 1/1</span>
+          <button id="next" class="btn">Siguiente »</button>
+        </div>
+        <span id="countInfo" class="pill">—</span>
       </div>
     </div>
   </div>
 </div>
+
 <div id="toast" class="toast"></div>
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec';
 const $=q=>document.querySelector(q); let tmo; 
 function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
 
-function login(){
-  const u=$("#user").value.trim(); const p=$("#pass").value;
-  if(!u||!p){ toast("Ingresa usuario y contraseña"); return; }
-  const okUser=(u==="user" && p==="Contopsa01");
-  const okAdmin=(u==="admin" && p==="Maersk01");
-  if(!(okUser||okAdmin)){ toast("Credenciales inválidas"); return; }
-  const role= okAdmin ? "admin" : "user";
-  localStorage.setItem('auth_user',u);
-  localStorage.setItem('auth_role',role);
-  // opcional: ping al GAS para registrar sesión
-  location.href='home.html';
+// --- auth gate ---
+const user=localStorage.getItem('auth_user'); const role=localStorage.getItem('auth_role');
+if(!user||!role){ location.href='login.html'; }
+$("#badge").textContent = `👤 ${user} · ${role.toUpperCase()}`;
+
+// --- UI actions ---
+$("#btnLogout").onclick=()=>{ localStorage.removeItem('auth_user'); localStorage.removeItem('auth_role'); location.href='login.html'; };
+$("#btnNew").onclick=()=> location.href='inspect.html';
+$("#btnProfile").onclick=()=> toast("Perfil simple: nombre/empresa se configuran en la página de inspección.");
+$("#btnRefresh").onclick=loadData;
+
+// --- filters/pagination state ---
+let all=[], filtered=[], page=1, per=20, status='all';
+document.querySelectorAll('[data-st]').forEach(b=> b.onclick=()=>{ status=b.dataset.st; page=1; render(); });
+$("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); page=1; render(); }
+$("#txtSearch").oninput=()=>{ page=1; render(); }
+$("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
+$("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
+
+// --- data loading (desde tu GAS) ---
+async function apiGet(fn, params={}){
+  const u=new URL(GAS_URL); u.searchParams.set('fn',fn);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r=await fetch(u.toString()); return r.json();
 }
-$("#btnLogin").onclick=login;
-window.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+async function loadData(){
+  const res=await apiGet('getinspections'); // tu Google Apps Script debe exponer esta función
+  if(!res?.ok){ toast("No se pudo cargar desde la hoja"); return; }
+  all = res.items||[];
+  render();
+}
+function render(){
+  const q=($("#txtSearch").value||'').trim().toUpperCase();
+  filtered = all.filter(x=> (x.container||x.folio||x.folderUrl));
+  if(status!=='all') filtered=filtered.filter(x=>(x.status||'').toLowerCase()===status);
+  if(q) filtered=filtered.filter(x=> (x.container||'').toUpperCase().includes(q) || (x.folio||'').toUpperCase().includes(q));
+  filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
+  const tb=$("#tbody"); tb.innerHTML='';
+  const total=filtered.length; const pages=Math.max(1,Math.ceil(total/per)); if(page>pages) page=pages;
+  const ini=(page-1)*per, fin=Math.min(total,ini+per);
+  for(let i=ini;i<fin;i++){
+    const r=filtered[i]; const stc=r.status==='pendiente'?'b-pend': r.status==='enviado'?'b-send': r.status==='enviando'?'b-prog':'b-fail';
+    const folder = r.folderUrl ? `<a href="${r.folderUrl}" target="_blank" rel="noopener">Abrir</a>` : '<span class="muted">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${String(r.fecha||'').slice(0,10)}</td>
+      <td><b>${r.container||''}</b></td>
+      <td>${r.gate||''}</td>
+      <td>${r.naviera||''}</td>
+      <td>${r.folio||''}</td>
+      <td>${r.estado||''}</td>
+      <td>${r.linesCount ?? (r.lines?.length||0) ?? 0}</td>
+      <td>${r.photosCount ?? r.photos_total ?? 0}</td>
+      <td><span class="badge ${stc}">${r.status||''}</span></td>
+      <td>${folder}</td>`;
+    tb.appendChild(tr);
+  }
+  $("#pageInfo").textContent=`Página ${page}/${pages}`;
+  $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
+}
+loadData();
 </script>
 </body>
 </html>
