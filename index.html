@@ -191,6 +191,7 @@ tbody td{
 </head>
 <body>
 <div class="wrap">
+  <!-- ==================== UNIDADES EN COLA ==================== -->
   <div id="view-queue" class="card">
     <header>
       <h1>Unidades en cola</h1>
@@ -204,6 +205,7 @@ tbody td{
         <button class="btn" id="btnGoAdmin" style="display:none">Dashboard</button>
       </div>
     </header>
+
     <div class="section">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="kpi">
@@ -225,13 +227,21 @@ tbody td{
           <button class="btn danger" id="btnClearSent">Limpiar enviadas</button>
         </div>
       </div>
+
       <div class="spacer"></div>
+
       <div style="overflow:auto">
         <table>
           <thead>
             <tr>
-              <th>Fecha</th><th>Contenedor</th><th>Gate</th><th>Naviera</th>
-              <th>Daños</th><th>Fotos</th><th>Status</th><th>Acciones</th>
+              <th>Fecha</th>
+              <th>Contenedor</th>
+              <th>Gate</th>
+              <th>Naviera</th>
+              <th>Daños</th>
+              <th>Fotos</th>
+              <th>Status</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyQueue"></tbody>
@@ -240,7 +250,6 @@ tbody td{
     </div>
   </div>
   <div class="spacer"></div>
-
   <!-- ============ FORMULARIO INSPECCIÓN ============ -->
   <div id="view-form" class="card" style="display:none">
     <header>
@@ -356,7 +365,6 @@ tbody td{
         <div class="qcard"><div class="qtitle">Interior Condition</div><div class="row"><input id="q_interior" type="text"></div></div>
       </div>
     </section>
-
     <header>
       <h1>REPAIR ESTIMATE — líneas dinámicas</h1>
       <div class="toolbar">
@@ -384,6 +392,7 @@ tbody td{
         <tbody id="body"></tbody>
       </table>
     </div>
+
     <div class="section grid" style="grid-template-columns:1fr 1fr 1fr">
       <div>
         <label class="qtitle">Remarks</label>
@@ -406,7 +415,6 @@ tbody td{
 
     <div id="log" class="section" style="white-space:pre-wrap;background:#0b1220;color:#cbd5e1;border-radius:10px;display:none"></div>
   </div>
-
   <!-- ============ ÉXITO ============ -->
   <div id="view-done" class="card" style="display:none">
     <header>
@@ -423,7 +431,6 @@ tbody td{
       </div>
     </div>
   </div>
-
   <!-- ============ DASHBOARD INTERNO ============ -->
   <div id="view-admin" class="card" style="display:none">
     <header>
@@ -493,8 +500,7 @@ tbody td{
       </div>
     </div>
   </div>
-</div>
-
+</div> <!-- cierra .wrap -->
 <!-- Overlay -->
 <div id="overlay" role="alert" aria-live="polite" aria-busy="true">
   <div class="loading-card">
@@ -541,6 +547,7 @@ tbody td{
     </div>
   </div>
 </div>
+
 <!-- Modal Login Admin -->
 <div id="loginModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:99999;align-items:center;justify-content:center">
   <div class="user-card" style="max-width:420px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px">
@@ -564,7 +571,6 @@ tbody td{
 
 <!-- Toast -->
 <div id="toast"></div>
-
 <script>
 /* ===================== CONFIG ===================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz22e7uZGaBmSDQujQCNVYJWlKJZYmsf3ch3yMt5wzZx-UXBRb8Rte0mFG5ZzbjzcQD8w/exec';
@@ -576,7 +582,7 @@ let logEl=null;
 const log = m => {
   if(!logEl) return;
   if(logEl.style.display!=='block') logEl.style.display='block';
-  logEl.textContent += m + "\\n";
+  logEl.textContent += m + "\n";
   logEl.scrollTop = logEl.scrollHeight;
 };
 let toastTimer;
@@ -634,7 +640,7 @@ async function startScanner(){
           const codes=await det.detect(v);
           if(codes&&codes.length){
             const raw=codes[0].rawValue||'';
-            const m=(raw.toUpperCase().match(/[A-Z]{4}\\d{7}/)||[])[0];
+            const m=(raw.toUpperCase().match(/[A-Z]{4}\d{7}/)||[])[0];
             if(m){ scanCandidate=m; toast('Detectado: '+m,1200); }
           }
         }catch(e){}
@@ -666,7 +672,7 @@ async function ocrFrame(){
   c.getContext('2d').drawImage(v,0,0,c.width,c.height);
   const res=await Tesseract.recognize(c.toDataURL('image/jpeg',0.9),'eng',{logger:()=>{}});
   const t=(res?.data?.text||'').toUpperCase();
-  const m=t.match(/[A-Z]{4}\\d{7}/);
+  const m=t.match(/[A-Z]{4}\d{7}/);
   return m?m[0]:null;
 }
 async function scanUse(){
@@ -690,6 +696,7 @@ async function scanCapture(){
     else toast('No se detectó un ID.',2200);
   }catch(e){console.error(e);toast('Error en OCR.',2200);}
 }
+
 /* ===================== Forzar MAYÚSCULAS (líneas) ===================== */
 function forceUpperOnBody(){
   $("#body").addEventListener('input',e=>{
@@ -837,7 +844,8 @@ function blobToBase64(blob){
     fr.onerror=rej; fr.readAsDataURL(blob);
   });
 }
-
+</script>
+<script>
 /* ===================== IndexedDB (cola) ===================== */
 const DB_NAME='reefer_inspections_db'; const DB_VER=1; const STORE='queue';
 function idbOpen(){
@@ -967,7 +975,7 @@ function loadItemToForm(item){
   });
 }
 
-/* ===================== GUARDAR EN COLA ===================== */
+/* ===================== GUARDAR/ID/COMPRESIÓN FOTO ===================== */
 function makeId(container){
   const d=new Date(); const iso=d.toISOString().replace(/[:.]/g,'').slice(0,15);
   return `${iso}_${container||'UNKN'}`;
@@ -1264,8 +1272,8 @@ function init(){
   else setAdminUI(false);
   show('queue'); renderQueue();
 }
-
 window.addEventListener('DOMContentLoaded', init);
 </script>
+
 </body>
 </html>
