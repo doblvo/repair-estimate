@@ -4,14 +4,23 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>MAERSK — Router</title>
-  <meta http-equiv="refresh" content="0; url=login.html">
-  <script>
-    // Si ya hay sesión, manda directo a Home; si no, a Login
-    (function () {
+  <noscript><meta http-equiv="refresh" content="0; url=login.html"></noscript>
+</head>
+<body>
+<script>
+  (function () {
+    try {
+      var url = new URL(location.href);
+      if (url.searchParams.get('logout') === '1') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_role');
+      }
       var hasAuth = !!localStorage.getItem('auth_user');
       location.replace(hasAuth ? 'home.html' : 'login.html');
-    })();
-  </script>
-</head>
-<body></body>
+    } catch (e) {
+      location.replace('login.html');
+    }
+  })();
+</script>
+</body>
 </html>
