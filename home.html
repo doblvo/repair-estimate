@@ -7,69 +7,77 @@
 <style>
 :root{
   --brand:#0b74c7; --bg:#f6f8fb; --ink:#0f172a; --muted:#6b7280;
-  --card:#fff; --line:#e5e7eb; --radius:14px;
+  --card:#fff; --line:#e5e7eb; --radius:12px;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
 .wrap{max-width:1200px;margin:0 auto;padding:16px}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
-header{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
-header h1{margin:0;font-size:18px}
+/* Card compacta */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.05)}
+header{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:16px}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
 .right{margin-left:auto}
 
-.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
 .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
 .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 
-input[type="text"],select{
-  border:1px solid #dbe2ea;border-radius:10px;padding:8px 36px 8px 36px;font:inherit;background:#fff;
-}
-.searchwrap{position:relative}
-.searchwrap:before{
-  content:"🔎"; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.55;
-}
-.searchwrap input{padding-left:30px}
+.section{padding:10px 12px}
 
-.section{padding:12px 14px}
+/* Barra superior (filtros + búsqueda) */
+.controls{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.ctrl-left{display:flex;gap:8px;align-items:center}
+.ctrl-right{display:flex;gap:8px;align-items:center}
+.search{position:relative}
+.search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 34px 8px 30px;font:inherit;background:#fff;min-width:260px}
+.search:before{content:"🔎";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55}
+
+/* Tabla compacta */
+.table-wrap{overflow:auto}
 table{width:100%;border-collapse:separate;border-spacing:0}
 thead th{
   position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);
-  font-weight:600;padding:10px 8px;z-index:1;text-align:left;white-space:nowrap
+  font-weight:600;padding:8px 8px;z-index:1;text-align:left;white-space:nowrap
 }
-tbody td{border-bottom:1px dashed #eef2f7;padding:8px;vertical-align:middle}
+tbody td{border-bottom:1px dashed #eef2f7;padding:7px 8px;vertical-align:middle}
 tbody tr:hover{background:#fafcff}
 
-th.w-date{width:140px}
-th.w-cont{width:170px}
-th.w-gate{width:120px;text-align:center}
+/* Anchos y alineación */
+th.w-date{width:120px}
+th.w-cont{width:160px}
+th.w-gate{width:100px;text-align:center}
 th.w-ship{width:160px}
 th.w-type{width:110px;text-align:center}
-th.w-lines{width:90px;text-align:center}
-th.w-photos{width:90px;text-align:center}
-th.w-status{width:120px;text-align:center}
+th.w-danos{width:80px;text-align:center}
+th.w-photos{width:80px;text-align:center}
+th.w-status{width:110px;text-align:center}
 
 td.t-center{text-align:center}
+td.t-right{text-align:right}
 
-/* status badge */
+/* Chips */
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#fff}
 .b-pend{border-color:#f59e0b;color:#92400e;background:#fffbeb}
 .b-send{border-color:#10b981;color:#065f46;background:#ecfdf5}
 .b-fail{border-color:#ef4444;color:#7f1d1d;background:#fef2f2}
 .b-prog{border-color:#3b82f6;color:#1e3a8a;background:#eff6ff}
 
-/* gate chip */
 .gate-in{border:1px solid #10b981;color:#065f46;background:#ecfdf5;border-radius:999px;padding:2px 10px;font-size:12px}
 .gate-out{border:1px solid #ef4444;color:#7f1d1d;background:#fef2f2;border-radius:999px;padding:2px 10px;font-size:12px}
 
-/* paginator */
+/* Paginación abajo (tipo AEMS) */
+.pagerbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
 .pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.pager .btn{min-width:92px}
+.pagebtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+.pagebtn[disabled]{opacity:.6;cursor:not-allowed}
+.pp-wrap{display:flex;align-items:center;gap:8px}
+.pp-wrap select{border:1px solid #dbe2ea;border-radius:8px;padding:6px 24px 6px 10px;background:#fff}
 .info{color:var(--muted);font-size:12px}
 
-/* toast */
+/* Toast */
 .toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
 </style>
 </head>
@@ -87,28 +95,20 @@ td.t-center{text-align:center}
     </header>
 
     <div class="section">
-      <div class="toolbar" style="justify-content:space-between">
-        <div class="toolbar">
+      <div class="controls">
+        <div class="ctrl-left">
           <button class="pill" data-st="all">All</button>
           <button class="pill" data-st="pendiente">Pendientes</button>
           <button class="pill" data-st="enviado">Enviados</button>
           <button class="pill" data-st="fallido">Fallidas</button>
         </div>
-        <div class="toolbar">
-          <div class="searchwrap">
-            <input id="txtSearch" type="text" placeholder="Buscar contenedor / folio…">
-          </div>
-          <select id="perPage">
-            <option value="20" selected>20</option>
-            <option value="40">40</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
-          </select>
+        <div class="ctrl-right">
+          <div class="search"><input id="txtSearch" type="text" placeholder="Buscar contenedor / folio…"></div>
           <button id="btnRefresh" class="btn">Refrescar</button>
         </div>
       </div>
 
-      <div style="overflow:auto">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -117,7 +117,7 @@ td.t-center{text-align:center}
               <th class="w-gate t-center">Gate</th>
               <th class="w-ship">Naviera</th>
               <th class="w-type t-center">Tipo</th>
-              <th class="w-lines t-center">Líneas</th>
+              <th class="w-danos t-center">Daños</th>
               <th class="w-photos t-center">Fotos</th>
               <th class="w-status t-center">Status</th>
             </tr>
@@ -126,13 +126,23 @@ td.t-center{text-align:center}
         </table>
       </div>
 
-      <div class="section pager" style="justify-content:space-between">
+      <div class="pagerbar">
         <div class="pager">
-          <button id="prev" class="btn">« Anterior</button>
+          <button id="prev" class="pagebtn">« Anterior</button>
           <span id="pageInfo" class="pill">Página 1/1</span>
-          <button id="next" class="btn">Siguiente »</button>
+          <button id="next" class="pagebtn">Siguiente »</button>
         </div>
-        <span id="countInfo" class="pill">—</span>
+        <div class="pp-wrap">
+          <span class="info">Per page</span>
+          <select id="perPage">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+          <span id="countInfo" class="info">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -156,15 +166,15 @@ $("#badge").textContent = `👤 ${user} · ${role.toUpperCase()}`;
 /* === NAV === */
 $("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
 $("#btnNew").onclick=()=> location.href='inspect.html';
-$("#btnProfile").onclick=()=> toast("Configuración simple de técnico/vendor se hace en la página de inspección.");
+$("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
 
 /* === STATE === */
 let all=[], filtered=[], page=1, per=Number(localStorage.getItem('home_per')||20), status=localStorage.getItem('home_status')||'all';
 $("#perPage").value=String(per);
 
-/* === FILTER BUTTONS === */
+/* === FILTROS === */
 document.querySelectorAll('[data-st]').forEach(b=>{
-  if(b.dataset.st===status) b.classList.add('btn'); // resaltado sutil
+  if(b.dataset.st===status) b.classList.add('btn');
   b.onclick=()=>{ status=b.dataset.st; localStorage.setItem('home_status',status); document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('btn')); b.classList.add('btn'); page=1; render(); };
 });
 
@@ -184,11 +194,12 @@ async function loadData(){
   }finally{ btn.disabled=false; btn.textContent=txt; }
 }
 
-/* === RENDER === */
+/* === HELPERS DE RENDER === */
 function gateChip(val){
-  const v=String(val||'').toUpperCase();
-  if(v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
-  if(v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
+  const v = String(val || '').trim().toUpperCase();
+  // tolerante a variantes: IN, GATE IN, GATEIN, INBOUND, OUT, GATE OUT, GATEOUT, OUTBOUND
+  if (v==='IN' || v==='GATE IN' || v==='GATEIN' || v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
+  if (v==='OUT' || v==='GATE OUT' || v==='GATEOUT' || v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
   return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
 }
 function statusBadge(v){
@@ -196,11 +207,17 @@ function statusBadge(v){
   const cls = s==='pendiente'?'b-pend' : s==='enviando'?'b-prog' : s==='enviado'?'b-send' : 'b-fail';
   return `<span class="badge ${cls}">${s||''}</span>`;
 }
+
+/* === RENDER === */
 function render(){
   const q=($("#txtSearch").value||'').trim().toUpperCase();
-  filtered = all.filter(x=> (x.container||x.folio||x.folderUrl));
-  if(status!=='all') filtered=filtered.filter(x=> (x.status||'').toLowerCase()===status);
-  if(q) filtered=filtered.filter(x=> (x.container||'').toUpperCase().includes(q) || (x.folio||'').toUpperCase().includes(q));
+
+  // filtra por status y búsqueda
+  filtered = (all||[]).filter(x=> (x.container||x.folio||x.folderUrl));
+  if(status!=='all') filtered=filtered.filter(x=> (String(x.status||'').toLowerCase()===status));
+  if(q) filtered=filtered.filter(x=> (String(x.container||'').toUpperCase().includes(q) || String(x.folio||'').toUpperCase().includes(q)));
+
+  // orden descendente por fecha
   filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
 
   const tb=$("#tbody"); tb.innerHTML='';
@@ -210,32 +227,33 @@ function render(){
   for(let i=ini;i<fin;i++){
     const r=filtered[i];
 
-    // Contadores robustos (lee varias variantes)
-    const linesCount  = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
-    const photosCount = (r.photosCount ?? r.fotosCount ?? r.photos_total) ?? 0;
+    // Conteos robustos
+    const danos  = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
+    const fotos  = (r.photosCount ?? r.fotosCount ?? r.photos_total) ?? 0;
 
     const tr=document.createElement('tr');
     tr.innerHTML = `
-      <td class="td-date">${String(r.fecha||'').slice(0,10)}</td>
-      <td class="td-cont"><b>${r.container||''}</b></td>
-      <td class="td-gate t-center">${gateChip(r.gate)}</td>
-      <td class="td-ship">${r.naviera||''}</td>
-      <td class="td-type t-center">${r.tipo||''}</td>
-      <td class="td-lines t-center">${linesCount}</td>
-      <td class="td-photos t-center">${photosCount}</td>
-      <td class="td-status t-center">${statusBadge(r.status)}</td>`;
+      <td>${String(r.fecha||'').slice(0,10)}</td>
+      <td><b>${r.container||''}</b></td>
+      <td class="t-center">${gateChip(r.gate)}</td>
+      <td>${r.naviera||''}</td>
+      <td class="t-center">${r.tipo||''}</td>
+      <td class="t-center">${danos}</td>
+      <td class="t-center">${fotos}</td>
+      <td class="t-center">${statusBadge(r.status)}</td>`;
     tb.appendChild(tr);
   }
+
   $("#pageInfo").textContent=`Página ${page}/${pages}`;
   $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
 }
 
-/* === PAGINATION / SEARCH / PER PAGE === */
+/* === PAGINACIÓN / SEARCH / PER PAGE === */
 $("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
 $("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
 $("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
 
-let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },300); });
+let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },250); });
 
 /* === INIT === */
 loadData();
