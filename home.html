@@ -12,26 +12,22 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
 .wrap{max-width:1200px;margin:0 auto;padding:16px}
-
-/* Card compacta */
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.05)}
 header{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 header h1{margin:0;font-size:16px}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
 .right{margin-left:auto}
-
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
 .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
 .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn:disabled{opacity:.6;cursor:not-allowed}
-
 .section{padding:10px 12px}
 
-/* Banda de estado */
+/* banda */
 .band{margin:10px 12px 0;background:#ecfdf5;border:1px solid #10b981;color:#065f46;border-radius:10px;padding:8px 10px;font-size:13px;display:none}
 .band.warn{background:#fffbeb;border-color:#f59e0b;color:#92400e}
 
-/* Barra superior (filtros + búsqueda) */
+/* filtros */
 .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ctrl-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .ctrl-right{display:flex;gap:8px;align-items:center}
@@ -39,17 +35,12 @@ header h1{margin:0;font-size:16px}
 .search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 34px 8px 30px;font:inherit;background:#fff;min-width:260px}
 .search:before{content:"🔎";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55}
 
-/* Tabla compacta */
+/* tabla */
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:separate;border-spacing:0}
-thead th{
-  position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);
-  font-weight:600;padding:8px 8px;z-index:1;text-align:left;white-space:nowrap
-}
+thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px 8px;z-index:1;text-align:left;white-space:nowrap}
 tbody td{border-bottom:1px dashed #eef2f7;padding:7px 8px;vertical-align:middle}
 tbody tr:hover{background:#fafcff}
-
-/* Anchos y alineación */
 th.w-date{width:120px}
 th.w-cont{width:160px}
 th.w-gate{width:100px;text-align:center}
@@ -58,21 +49,18 @@ th.w-type{width:110px;text-align:center}
 th.w-danos{width:80px;text-align:center}
 th.w-photos{width:80px;text-align:center}
 th.w-status{width:110px;text-align:center}
-
 td.t-center{text-align:center}
-td.t-right{text-align:right}
 
-/* Chips */
+/* chips */
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#fff}
 .b-pend{border-color:#f59e0b;color:#92400e;background:#fffbeb}
 .b-send{border-color:#10b981;color:#065f46;background:#ecfdf5}
 .b-fail{border-color:#ef4444;color:#7f1d1d;background:#fef2f2}
 .b-prog{border-color:#3b82f6;color:#1e3a8a;background:#eff6ff}
-
 .gate-in{border:1px solid #10b981;color:#065f46;background:#ecfdf5;border-radius:999px;padding:2px 10px;font-size:12px}
 .gate-out{border:1px solid #ef4444;color:#7f1d1d;background:#fef2f2;border-radius:999px;padding:2px 10px;font-size:12px}
 
-/* Paginación abajo (tipo AEMS) */
+/* pager */
 .pagerbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
 .pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pagebtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
@@ -81,13 +69,24 @@ td.t-right{text-align:right}
 .pp-wrap select{border:1px solid #dbe2ea;border-radius:8px;padding:6px 24px 6px 10px;background:#fff}
 .info{color:var(--muted);font-size:12px}
 
-/* Toast */
+/* toast */
 .toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
 
-/* Badge de cola */
-.qbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
+/* badge cola */
+.qbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;cursor:pointer}
 .qbadge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
 .qbadge.warn .dot{background:#f59e0b}
+
+/* modal cola */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:9998}
+.modal .box{background:#fff;border-radius:12px;border:1px solid var(--line);padding:14px;max-width:800px;width:96%;max-height:90vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.modal header{border:none;justify-content:space-between;padding:0 0 10px}
+.modal h2{margin:0;font-size:16px}
+.modal table{width:100%;border-collapse:collapse;margin-top:8px}
+.modal th,.modal td{border-bottom:1px solid #eee;padding:6px 8px;font-size:13px}
+.modal th{text-align:left;background:#f9fafb;position:sticky;top:0}
+.modal .actions{margin-top:10px;display:flex;gap:8px;justify-content:flex-end}
+.modal .actions .btn{padding:6px 12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -104,7 +103,6 @@ td.t-right{text-align:right}
       </div>
     </header>
 
-    <!-- Banda Última enviada -->
     <div id="bandLast" class="band"></div>
 
     <div class="section">
@@ -120,25 +118,21 @@ td.t-right{text-align:right}
           <button id="btnRefresh" class="btn">Refrescar</button>
         </div>
       </div>
-
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th class="w-date">Fecha</th>
-              <th class="w-cont">Contenedor</th>
-              <th class="w-gate t-center">Gate</th>
-              <th class="w-ship">Naviera</th>
-              <th class="w-type t-center">Tipo</th>
-              <th class="w-danos t-center">Daños</th>
-              <th class="w-photos t-center">Fotos</th>
-              <th class="w-status t-center">Status</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th class="w-date">Fecha</th>
+            <th class="w-cont">Contenedor</th>
+            <th class="w-gate t-center">Gate</th>
+            <th class="w-ship">Naviera</th>
+            <th class="w-type t-center">Tipo</th>
+            <th class="w-danos t-center">Daños</th>
+            <th class="w-photos t-center">Fotos</th>
+            <th class="w-status t-center">Status</th>
+          </tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
-
       <div class="pagerbar">
         <div class="pager">
           <button id="prev" class="pagebtn">« Anterior</button>
@@ -148,11 +142,8 @@ td.t-right{text-align:right}
         <div class="pp-wrap">
           <span class="info">Per page</span>
           <select id="perPage">
-            <option value="10">10</option>
-            <option value="20" selected>20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
+            <option value="10">10</option><option value="20" selected>20</option>
+            <option value="50">50</option><option value="100">100</option><option value="200">200</option>
           </select>
           <span id="countInfo" class="info">—</span>
         </div>
@@ -161,8 +152,29 @@ td.t-right{text-align:right}
   </div>
 </div>
 
+<!-- Toast -->
 <div id="toast" class="toast"></div>
 
+<!-- Modal Cola -->
+<div id="modalQueue" class="modal">
+  <div class="box">
+    <header>
+      <h2>Cola local de inspecciones</h2>
+      <button id="btnCloseModal" class="btn">✕</button>
+    </header>
+    <table id="tblQueue">
+      <thead><tr>
+        <th><input type="checkbox" id="chkAll"></th>
+        <th>Contenedor</th><th>Fecha</th><th>Líneas</th><th>Fotos</th><th>Status</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="actions">
+      <button id="btnDeleteSel" class="btn">Eliminar seleccionados</button>
+      <button id="btnSendSel" class="btn primary">Enviar seleccionados</button>
+    </div>
+  </div>
+</div>
 <script>
 /* === CONFIG === */
 const GAS_URL='https://script.google.com/macros/s/AKfycby2FX9r_Bd2H0x-wCgcmJj-WmGfKtQza36OfRqelUpSnDLv34Oh1bAih65y575GnfvtDg/exec';
@@ -170,6 +182,7 @@ const GAS_URL='https://script.google.com/macros/s/AKfycby2FX9r_Bd2H0x-wCgcmJj-Wm
 /* === UTILS === */
 const $=q=>document.querySelector(q);
 let tmo; function toast(m){const el=$("#toast");el.textContent=m;el.style.display='block';clearTimeout(tmo);tmo=setTimeout(()=>el.style.display='none',2200);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* === AUTH GATE === */
 const user=localStorage.getItem('auth_user'); const role=localStorage.getItem('auth_role');
@@ -199,7 +212,84 @@ async function apiGet(fn, params={}){
   const r=await fetch(u.toString()); return r.json();
 }
 
-/* === IndexedDB (para contador de cola) === */
+/* === Helpers UI === */
+function gateChip(val){
+  const v = String(val || '').trim().toUpperCase();
+  if (v==='IN' || v==='GATE IN' || v==='GATEIN' || v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
+  if (v==='OUT' || v==='GATE OUT' || v==='GATEOUT' || v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
+  return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
+}
+function statusBadge(v){
+  const s=String(v||'').toLowerCase();
+  const cls = s==='pendiente'?'b-pend' : s==='enviando'?'b-prog' : s==='enviado'?'b-send' : 'b-fail';
+  return `<span class="badge ${cls}">${s||''}</span>`;
+}
+
+/* === Banda “última enviada” === */
+function showLastSent(){
+  const id = localStorage.getItem('last_sent_id');
+  const unit = localStorage.getItem('last_sent_unit');
+  const band = $("#bandLast");
+  if(unit){
+    band.textContent = `✅ Última enviada: ${unit} (ID ${id||'-'})`;
+    band.style.display='block';
+    setTimeout(()=>{ band.style.display='none'; localStorage.removeItem('last_sent_id'); localStorage.removeItem('last_sent_unit'); }, 5000);
+  }else{
+    band.style.display='none';
+  }
+}
+
+/* === LOAD DATA (desde GAS) === */
+async function loadData(){
+  const btn=$("#btnRefresh"), txt=btn.textContent; btn.disabled=true; btn.textContent='Cargando…';
+  try{
+    const res=await apiGet('getinspections');
+    if(!res?.ok){ toast("No se pudo cargar desde la hoja"); return; }
+    all = res.items||[];
+    render();
+  }finally{ btn.disabled=false; btn.textContent=txt; }
+}
+
+/* === RENDER tabla principal === */
+function render(){
+  const q=($("#txtSearch").value||'').trim().toUpperCase();
+  filtered = (all||[]).filter(x=> (x.container||x.folio||x.folderUrl));
+  if(status!=='all') filtered=filtered.filter(x=> (String(x.status||'').toLowerCase()===status));
+  if(q) filtered=filtered.filter(x=> (String(x.container||'').toUpperCase().includes(q) || String(x.folio||'').toUpperCase().includes(q)));
+  filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
+
+  const tb=$("#tbody"); tb.innerHTML='';
+  const total=filtered.length; const pages=Math.max(1,Math.ceil(total/per)); if(page>pages) page=pages;
+  const ini=(page-1)*per, fin=Math.min(total,ini+per);
+
+  for(let i=ini;i<fin;i++){
+    const r=filtered[i];
+    const danos  = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
+    const fotos  = (r.photosCount ?? r.fotosCount ?? r.photos_total) ?? 0;
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${String(r.fecha||'').slice(0,10)}</td>
+      <td><b>${r.container||''}</b></td>
+      <td class="t-center">${gateChip(r.gate)}</td>
+      <td>${r.naviera||''}</td>
+      <td class="t-center">${r.tipo||''}</td>
+      <td class="t-center">${danos}</td>
+      <td class="t-center">${fotos}</td>
+      <td class="t-center">${statusBadge(r.status)}</td>`;
+    tb.appendChild(tr);
+  }
+  $("#pageInfo").textContent=`Página ${page}/${pages}`;
+  $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
+  refreshQueueBadge();
+}
+
+/* === PAGINACIÓN / SEARCH / PER PAGE === */
+$("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
+$("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
+$("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
+let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },250); });
+
+/* === IndexedDB Cola === */
 const DB='reefer_inspections_db', VER=1, STORE='queue';
 function idbOpen(){
   return new Promise((res,rej)=>{
@@ -213,6 +303,18 @@ async function queueCount(){
   const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAllKeys();
   return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
 }
+async function queueAll(){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAll();
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result||[]); }; });
+}
+async function queueGet(id){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id);
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result); }; });
+}
+async function queueDelete(id){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id);
+  return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
+}
 async function refreshQueueBadge(){
   const n = await queueCount();
   const el=$("#queueCount"); if(el) el.textContent=String(n);
@@ -223,87 +325,127 @@ async function refreshQueueBadge(){
   }
 }
 
-/* === Banda “última enviada” === */
-function showLastSent(){
-  const id = localStorage.getItem('last_sent_id');
-  const unit = localStorage.getItem('last_sent_unit');
-  const band = $("#bandLast");
-  if(unit){
-    band.textContent = `✅ Última enviada: ${unit} (ID ${id||'-'})`;
-    band.style.display='block';
-    // se limpia sola luego de unos segundos
-    setTimeout(()=>{ band.style.display='none'; localStorage.removeItem('last_sent_id'); localStorage.removeItem('last_sent_unit'); }, 5000);
-  }else{
-    band.style.display='none';
-  }
-}
+/* === Modal Cola: abrir/cerrar === */
+const modal=$("#modalQueue");
+$("#queueBadge").onclick=async()=>{ await populateQueueTable(); modal.style.display='flex'; };
+$("#btnCloseModal").onclick=()=>{ modal.style.display='none'; };
+modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
 
-/* === LOAD DATA === */
-async function loadData(){
-  const btn=$("#btnRefresh"), txt=btn.textContent; btn.disabled=true; btn.textContent='Cargando…';
+/* === Modal Cola: render tabla === */
+const tblBody = document.querySelector("#tblQueue tbody");
+const chkAll = $("#chkAll");
+chkAll.onchange=()=>{ tblBody.querySelectorAll('input[type="checkbox"][data-id]').forEach(x=>x.checked=chkAll.checked); };
+
+function sumPhotos(item){
   try{
-    const res=await apiGet('getinspections');
-    if(!res?.ok){ toast("No se pudo cargar desde la hoja"); return; }
-    all = res.items||[];
-    render();
-  }finally{ btn.disabled=false; btn.textContent=txt; }
+    const ph=item.photos||[];
+    return ph.reduce((a,row)=> a + (Array.isArray(row)? row.length : 0), 0);
+  }catch{ return 0; }
 }
 
-/* === HELPERS DE RENDER === */
-function gateChip(val){
-  const v = String(val || '').trim().toUpperCase();
-  if (v==='IN' || v==='GATE IN' || v==='GATEIN' || v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
-  if (v==='OUT' || v==='GATE OUT' || v==='GATEOUT' || v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
-  return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
-}
-function statusBadge(v){
-  const s=String(v||'').toLowerCase();
-  const cls = s==='pendiente'?'b-pend' : s==='enviando'?'b-prog' : s==='enviado'?'b-send' : 'b-fail';
-  return `<span class="badge ${cls}">${s||''}</span>`;
-}
-
-/* === RENDER === */
-function render(){
-  const q=($("#txtSearch").value||'').trim().toUpperCase();
-
-  filtered = (all||[]).filter(x=> (x.container||x.folio||x.folderUrl));
-  if(status!=='all') filtered=filtered.filter(x=> (String(x.status||'').toLowerCase()===status));
-  if(q) filtered=filtered.filter(x=> (String(x.container||'').toUpperCase().includes(q) || String(x.folio||'').toUpperCase().includes(q)));
-
-  filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
-
-  const tb=$("#tbody"); tb.innerHTML='';
-  const total=filtered.length; const pages=Math.max(1,Math.ceil(total/per)); if(page>pages) page=pages;
-  const ini=(page-1)*per, fin=Math.min(total,ini+per);
-
-  for(let i=ini;i<fin;i++){
-    const r=filtered[i];
-    const danos  = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
-    const fotos  = (r.photosCount ?? r.fotosCount ?? r.photos_total) ?? 0;
-
+async function populateQueueTable(){
+  const items = await queueAll();
+  tblBody.innerHTML='';
+  for(const it of items){
+    const q=it.questionnaire||{};
     const tr=document.createElement('tr');
-    tr.innerHTML = `
-      <td>${String(r.fecha||'').slice(0,10)}</td>
-      <td><b>${r.container||''}</b></td>
-      <td class="t-center">${gateChip(r.gate)}</td>
-      <td>${r.naviera||''}</td>
-      <td class="t-center">${r.tipo||''}</td>
-      <td class="t-center">${danos}</td>
-      <td class="t-center">${fotos}</td>
-      <td class="t-center">${statusBadge(r.status)}</td>`;
-    tb.appendChild(tr);
+    tr.innerHTML=`
+      <td><input type="checkbox" data-id="${it.id}"></td>
+      <td><b>${q.container||'-'}</b></td>
+      <td>${q.fecha||'-'}</td>
+      <td>${(it.lines||[]).length}</td>
+      <td>${sumPhotos(it)}</td>
+      <td><span class="badge b-pend">${it.status||'pendiente'}</span></td>
+    `;
+    tblBody.appendChild(tr);
   }
-
-  $("#pageInfo").textContent=`Página ${page}/${pages}`;
-  $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
-  refreshQueueBadge();
+  chkAll.checked=false;
 }
 
-/* === PAGINACIÓN / SEARCH / PER PAGE === */
-$("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
-$("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
-$("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
-let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },250); });
+/* === Envío desde Home (seleccionados) === */
+function blobToBase64(blob){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const s=String(fr.result); res(s.substring(s.indexOf(',')+1)); };
+    fr.onerror=rej; fr.readAsDataURL(blob);
+  });
+}
+
+async function sendOneItem(it){
+  // Construir payload como en inspect.html
+  const linesPayload=[], photosPayload=[];
+  for(let i=0;i<(it.lines||[]).length;i++){
+    const L=it.lines[i];
+    linesPayload.push({ line:L.n, marker:L.marker, reparado:L.reparado, location:L.loc, damage:L.dano, component:L.comp, method:L.mrep, size:L.size, qty:L.qty, resp:L.resp });
+    const files=((it.photos||[])[i]||[]);
+    for(const pf of files){
+      const b64=await blobToBase64(pf.blob);
+      photosPayload.push({ name:pf.name, mimeType:pf.type, dataBase64:b64, line:L.n });
+    }
+  }
+  const q=it.questionnaire||{};
+  const payload={
+    meta:{ naviera:q.naviera, fecha:(q.fecha||new Date().toISOString().slice(0,10)), unidad:q.container },
+    form:{ container:q.container, folio:q.folio, tipo:q.tipo, gate:q.gate, fecha:q.fecha, estado:q.estado, para:q.para, naviera:q.naviera, lugar:q.lugar,
+      vacio:q.vacio, oog:q.oog, transportista:q.transportista, patente:q.patente, nave:q.nave, pto_embarque:q.pto_embarque, pto_descarga:q.pto_descarga,
+      tara_kgs:q.tara_kgs, gross_kgs:q.gross_kgs, class:q.class, status:q.status, interior_condition:q.interior_condition, inspector:it.tecnico, vendor:it.vendor, remarks:it.remarks },
+    lines:linesPayload, photos:photosPayload,
+    analytics:{ tecnico:it.tecnico, vendor:it.vendor, lines:(it.lines||[]).length }
+  };
+  const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  const j=await res.json();
+  if(!res.ok||!j?.ok) throw new Error(j?.error||('HTTP '+res.status));
+  return j;
+}
+
+/* === Botones del modal: Enviar y Eliminar === */
+const btnSendSel=$("#btnSendSel");
+const btnDeleteSel=$("#btnDeleteSel");
+
+async function withBusyButtons(fn){
+  btnSendSel.disabled=true; btnDeleteSel.disabled=true;
+  try{ await fn(); } finally{ btnSendSel.disabled=false; btnDeleteSel.disabled=false; }
+}
+
+btnSendSel.onclick=()=>withBusyButtons(async()=>{
+  const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
+  if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
+
+  let ok=0, fail=0;
+  for(const id of ids){
+    try{
+      const it=await queueGet(id);
+      if(!it){ fail++; continue; }
+      // Marca visual como enviando
+      const rowChk = tblBody.querySelector(`input[data-id="${id}"]`);
+      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-prog">enviando…</span>'; }
+      await sendOneItem(it);
+      await queueDelete(id);
+      ok++;
+      // Marca ok
+      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-send">enviado</span>'; }
+      await sleep(150);
+    }catch(err){
+      console.error(err); fail++;
+      const rowChk = tblBody.querySelector(`input[data-id="${id}"]`);
+      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-fail">fallido</span>'; }
+    }
+  }
+  await refreshQueueBadge();
+  await populateQueueTable();
+  toast(`Envío terminado: ${ok} ok, ${fail} error(es).`);
+  // Refresca Home para que aparezcan como enviados si GAS los refleja
+  loadData();
+});
+
+btnDeleteSel.onclick=()=>withBusyButtons(async()=>{
+  const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
+  if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
+  for(const id of ids){ await queueDelete(id); }
+  await refreshQueueBadge();
+  await populateQueueTable();
+  toast(`Se eliminaron ${ids.length} ítem(s) de la cola local.`);
+});
 
 /* === INIT === */
 (function init(){
@@ -311,6 +453,31 @@ let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setT
   loadData();
   refreshQueueBadge();
 })();
+</script>
+<script>
+/* === Accesibilidad y detalles === */
+
+// Cerrar modal con tecla ESC
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && $("#modalQueue").style.display==='flex'){
+    $("#modalQueue").style.display='none';
+  }
+});
+
+// Auto-ocultar toast si el usuario hace clic
+$("#toast").addEventListener('click',()=>$("#toast").style.display='none');
+
+// Si la página vuelve desde inspect.html y hay “última enviada”, muéstrala
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden) showLastSent();
+});
+
+// Limpieza si IndexedDB falla
+window.addEventListener('error',e=>{
+  if(String(e.message).includes('IndexedDB')){
+    toast('⚠️ Error en almacenamiento local (IndexedDB)');
+  }
+});
 </script>
 </body>
 </html>
