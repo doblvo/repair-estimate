@@ -4,13 +4,17 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>MAERSK — Inspección</title>
+
+<!-- OCR fallback para el escáner (si llegas a usarlo) -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
 <style>
 :root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#1f2937;--muted:#6b7280;--card:#fff;--line:#e5e7eb;--radius:14px}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
 .wrap{max-width:1200px;margin:0 auto;padding:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
-header{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
+header{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 header h1{margin:0;font-size:18px}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
 .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
@@ -29,10 +33,28 @@ input[readonly]{background:#f3f4f6}
 table{width:100%;border-collapse:separate;border-spacing:0}
 thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px;z-index:1}
 tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
-.cell-photos{width:170px} .cell-del{width:34px;text-align:center}
+.cell-photos{width:170px}
+.cell-del{width:34px;text-align:center}
 .marker-btn{width:30px;height:30px;border-radius:999px;border:2px solid #94a3b8;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer}
 .marker-btn.active{background:#0b74c7;color:#fff;border-color:#0b74c7}
-.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none}
+.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:99999}
+
+/* --- Status / overlay / badge --- */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);
+  border-radius:999px;font-size:12px;background:#fff}
+.badge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
+.badge.warn .dot{background:#f59e0b}
+
+.overlay{position:fixed;inset:0;background:rgba(255,255,255,.8);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;z-index:9999}
+.spin{width:36px;height:36px;border:3px solid #cbd5e1;border-top-color:var(--brand);
+  border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overlay .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  box-shadow:0 12px 30px rgba(0,0,0,.12);text-align:center;min-width:240px}
+.overlay h3{margin:0 0 6px;font-size:16px}
+.overlay p{margin:0;color:var(--muted);font-size:13px}
+
 @media (max-width:1000px){ .qgrid{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:640px){ .qgrid{grid-template-columns:1fr} }
 </style>
@@ -45,8 +67,12 @@ tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
       <h1>MAERSK — Cuestionario</h1>
       <div class="toolbar">
         <button class="btn" id="btnBack">← Volver</button>
+        <button class="btn" id="btnLogout">Salir</button>
         <button class="btn" id="btnSaveQueue">Guardar en cola</button>
         <button class="btn primary" id="btnSubmit">Guardar y enviar</button>
+        <div class="badge" id="queueBadge" title="Ítems sin enviar">
+          <span class="dot"></span> Cola: <strong id="queueCount">0</strong>
+        </div>
       </div>
     </header>
 
@@ -105,13 +131,16 @@ tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
         <div class="qcard"><div class="qtitle">Transportista</div><input id="q_transportista" type="text"></div>
         <div class="qcard"><div class="qtitle">Patente Camión</div><input id="q_patente" type="text"></div>
         <div class="qcard"><div class="qtitle">Nave</div><input id="q_nave" type="text"></div>
-        <div class="qcard"><div class="qtitle">Pto Embarque / Descarga</div>
+        <div class="qcard">
+          <div class="qtitle">Pto Embarque / Descarga</div>
           <div class="toolbar"><input id="q_ptoemb" class="half" type="text"><input id="q_ptodesc" class="half" type="text"></div>
         </div>
-        <div class="qcard"><div class="qtitle">Tara / Gross (KGS)</div>
+        <div class="qcard">
+          <div class="qtitle">Tara / Gross (KGS)</div>
           <div class="toolbar"><input id="q_tara" class="half" type="number" step="0.01"><input id="q_gross" class="half" type="number" step="0.01"></div>
         </div>
-        <div class="qcard"><div class="qtitle">Class / Status</div>
+        <div class="qcard">
+          <div class="qtitle">Class / Status</div>
           <div class="toolbar"><input id="q_class" class="half" type="text"><input id="q_status" class="half" type="text"></div>
         </div>
         <div class="qcard"><div class="qtitle">Interior Condition</div><input id="q_interior" type="text"></div>
@@ -149,24 +178,39 @@ tbody td{border-bottom:1px dashed #eef2f7;padding:6px 8px;vertical-align:top}
 
 <div id="toast" class="toast"></div>
 
+<!-- Overlay Enviando -->
+<div class="overlay" id="overlaySend">
+  <div class="panel">
+    <div class="spin"></div>
+    <h3>Enviando…</h3>
+    <p>No cierres esta ventana.</p>
+  </div>
+</div>
+
 <script>
-/* CONFIG */
+/* CONFIG (tu GAS) */
 const GAS_URL='https://script.google.com/macros/s/AKfycby2FX9r_Bd2H0x-wCgcmJj-WmGfKtQza36OfRqelUpSnDLv34Oh1bAih65y575GnfvtDg/exec';
+
 /* UTILS */
 const $=(q,el)=> (el||document).querySelector(q); let tmo;
 function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
+
 /* ISO 6346 */
 const ISO_MAP={A:10,B:12,C:13,D:14,E:15,F:16,G:17,H:18,I:19,J:20,K:21,L:23,M:24,N:25,O:26,P:27,Q:28,R:29,S:30,T:31,U:32,V:34,W:35,X:36,Y:37,Z:38};
 const isoVal=ch=>/[0-9]/.test(ch)?Number(ch):(ISO_MAP[ch]||NaN);
 function isoCheckDigit(s10){ const s=s10.toUpperCase(); let sum=0; for(let i=0;i<10;i++){ sum+= isoVal(s[i])*(2**i);} const r=sum%11; return (r%10); }
 const isoClean=s=>(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").trim();
 const isoPattern11=s=>/^[A-Z]{4}[0-9]{7}$/.test(s);
+
 /* STATE */
 let seq=0, bodyEl=null, photos=new Map();
+
 /* Auth gate */
 if(!localStorage.getItem('auth_user')) location.href='login.html';
+
 /* UI ACTIONS */
 $("#btnBack").onclick=()=> history.length>1 ? history.back() : location.href='home.html';
+$("#btnLogout").onclick=()=>{ localStorage.removeItem('auth_user'); location.href='login.html'; };
 $("#btnAdd").onclick=()=> addRow();
 $("#btnClear").onclick=()=>{ bodyEl.innerHTML=''; photos.clear(); seq=0; addRow(); };
 $("#btnSaveQueue").onclick=saveToQueue;
@@ -250,7 +294,7 @@ function getLines(){
   return out;
 }
 
-/* VALIDACIÓN (obligatorios + fotos por línea) */
+/* VALIDACIÓN */
 function markReq(el, on){ if(!el) return; el.classList.toggle('req', !!on); }
 function validate(){
   let ok=true; const q= getDoc().questionnaire;
@@ -278,13 +322,12 @@ function validate(){
     markReq(el,!okf); ok=ok && okf;
   }
 
-  // Líneas: todo obligatorio salvo size; fotos siempre obligatorias
+  // Líneas: todo obligatorio salvo size; fotos obligatorias
   const rows=[...bodyEl.querySelectorAll('tr')]; if(rows.length===0){ toast('Agrega al menos 1 línea'); return false; }
   for(const tr of rows){
     const c=tr.querySelectorAll('input');
     const reqIdx=[1,2,3,4,6,7]; // loc, daño, comp, mrep, qty, resp
     for(const i of reqIdx){ const okf=String(c[i].value||'').trim()!==''; markReq(c[i],!okf); ok=ok && okf; }
-    // fotos
     const id=Number(tr.dataset.row); const fl=photos.get(id)||[]; const okp=(fl.length>0);
     const chip=$('#fc_'+id); chip.textContent=(fl.length||0)+' archivo(s)'; chip.classList.toggle('req',!okp); ok=ok && okp;
   }
@@ -296,23 +339,69 @@ function validate(){
 function compressImage(file,maxSide=1280,quality=0.72){
   return new Promise((res,rej)=>{
     const img=new Image(); const fr=new FileReader();
-    fr.onload=()=>{ img.onload=()=>{ const c=document.createElement('canvas'); let w=img.width,h=img.height;
-      if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*maxSide/w); w=maxSide; } else { w=Math.round(w*maxSide/h); h=maxSide; } }
-      c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
-      c.toBlob(b=>res(b),'image/jpeg',quality);
-    }; img.src=fr.result; }; fr.onerror=rej; fr.readAsDataURL(file);
+    fr.onload=()=>{
+      img.onload=()=>{
+        const c=document.createElement('canvas'); let w=img.width,h=img.height;
+        if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*maxSide/w); w=maxSide; } else { w=Math.round(w*maxSide/h); h=maxSide; } }
+        c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(b=>res(b),'image/jpeg',quality);
+      };
+      img.src=fr.result;
+    };
+    fr.onerror=rej; fr.readAsDataURL(file);
   });
 }
-function blobToBase64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const s=String(fr.result); res(s.substring(s.indexOf(',')+1)); }; fr.onerror=rej; fr.readAsDataURL(blob); }); }
+function blobToBase64(blob){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const s=String(fr.result); res(s.substring(s.indexOf(',')+1)); };
+    fr.onerror=rej; fr.readAsDataURL(blob);
+  });
+}
 
 /* COLA IndexedDB */
 const DB='reefer_inspections_db', VER=1, STORE='queue';
-function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB,VER); r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(STORE)){ db.createObjectStore(STORE,{keyPath:'id'});} }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB,VER);
+    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(STORE)){ db.createObjectStore(STORE,{keyPath:'id'});} };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
 async function queuePut(item){ const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(item); return new Promise((res)=>{ tx.oncomplete=()=>{db.close();res();}; }); }
 async function queueGet(id){ const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id); return new Promise((res)=>{ req.onsuccess=()=>{db.close();res(req.result)}; }); }
+async function queueDelete(id){
+  const db=await idbOpen();
+  const tx=db.transaction(STORE,'readwrite');
+  tx.objectStore(STORE).delete(id);
+  return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
+}
+async function queueCount(){
+  const db=await idbOpen();
+  const tx=db.transaction(STORE,'readonly');
+  const store=tx.objectStore(STORE);
+  const req=store.getAllKeys();
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
+}
+async function refreshQueueBadge(){
+  const n = await queueCount();
+  const el=$("#queueCount"); if(el) el.textContent=String(n);
+  const badge=$("#queueBadge");
+  if(badge){
+    badge.classList.toggle('warn', n>0);
+    badge.title = n>0 ? `Tienes ${n} ítem(s) pendiente(s) por enviar` : 'Sin pendientes';
+  }
+}
+function showOverlay(on){
+  const ov=$("#overlaySend");
+  if(!ov) return;
+  ov.style.display = on ? 'flex' : 'none';
+}
 
 /* SAVE / SUBMIT */
 function makeId(container){ const d=new Date().toISOString().replace(/[:.]/g,'').slice(0,15); return `${d}_${container||'UNKN'}`;}
+
 async function gatherPhotosCompressed(lines){
   const out=[]; const rows=bodyEl.querySelectorAll('tr');
   for(let i=0;i<rows.length;i++){
@@ -321,48 +410,72 @@ async function gatherPhotosCompressed(lines){
     out.push(list);
   } return out;
 }
+
 async function saveToQueue(){
-  if(!validate()) return;
+  if(!validate()) return null;
   const doc=getDoc(); const id=makeId(doc.questionnaire.container);
   const ph=await gatherPhotosCompressed(doc.lines);
   const item={id, questionnaire:doc.questionnaire, lines:doc.lines, remarks:doc.remarks, tecnico:doc.tecnico, vendor:doc.vendor, photos:ph, status:'pendiente', createdAt:new Date().toISOString()};
-  await queuePut(item); toast('Guardado en cola.');
+  await queuePut(item);
+  await refreshQueueBadge();
+  toast('✅ Guardado en cola.');
+  return id;
 }
+
 async function submitNow(){
   if(!validate()) return;
-  await saveToQueue();
-  const id=makeId(isoClean($('#q_container').value)); // mismo formato
-  const it=await queueGet(id); if(!it){ toast('No se encontró en cola'); return; }
-
-  // construir payload
-  const linesPayload=[], photosPayload=[];
-  for(let i=0;i<it.lines.length;i++){
-    const L=it.lines[i]; linesPayload.push({ line:L.n, marker:L.marker, reparado:L.reparado, location:L.loc, damage:L.dano, component:L.comp, method:L.mrep, size:L.size, qty:L.qty, resp:L.resp });
-    const files=(it.photos[i]||[]);
-    for(const pf of files){ const b64=await blobToBase64(pf.blob); photosPayload.push({ name:pf.name, mimeType:pf.type, dataBase64:b64, line:L.n }); }
-  }
-  const q=it.questionnaire;
-  const payload={
-    meta:{ naviera:q.naviera, fecha:(q.fecha||new Date().toISOString().slice(0,10)), unidad:q.container },
-    form:{ container:q.container, folio:q.folio, tipo:q.tipo, gate:q.gate, fecha:q.fecha, estado:q.estado, para:q.para, naviera:q.naviera, lugar:q.lugar,
-      vacio:q.vacio, oog:q.oog, transportista:q.transportista, patente:q.patente, nave:q.nave, pto_embarque:q.pto_embarque, pto_descarga:q.pto_descarga, 
-      tara_kgs:q.tara_kgs, gross_kgs:q.gross_kgs, class:q.class, status:q.status, interior_condition:q.interior_condition, inspector:it.tecnico, vendor:it.vendor, remarks:it.remarks },
-    lines:linesPayload, photos:photosPayload,
-    analytics:{ tecnico:it.tecnico, vendor:it.vendor, lines:it.lines.length }
-  };
+  showOverlay(true);
   try{
+    const id = await saveToQueue();
+    if(!id){ showOverlay(false); toast('No se pudo guardar en cola'); return; }
+    const it=await queueGet(id);
+    if(!it){ showOverlay(false); toast('No se encontró en cola'); return; }
+
+    // construir payload
+    const linesPayload=[], photosPayload=[];
+    for(let i=0;i<it.lines.length;i++){
+      const L=it.lines[i];
+      linesPayload.push({ line:L.n, marker:L.marker, reparado:L.reparado, location:L.loc, damage:L.dano, component:L.comp, method:L.mrep, size:L.size, qty:L.qty, resp:L.resp });
+      const files=(it.photos[i]||[]);
+      for(const pf of files){
+        const b64=await blobToBase64(pf.blob);
+        photosPayload.push({ name:pf.name, mimeType:pf.type, dataBase64:b64, line:L.n });
+      }
+    }
+    const q=it.questionnaire;
+    const payload={
+      meta:{ naviera:q.naviera, fecha:(q.fecha||new Date().toISOString().slice(0,10)), unidad:q.container },
+      form:{ container:q.container, folio:q.folio, tipo:q.tipo, gate:q.gate, fecha:q.fecha, estado:q.estado, para:q.para, naviera:q.naviera, lugar:q.lugar,
+        vacio:q.vacio, oog:q.oog, transportista:q.transportista, patente:q.patente, nave:q.nave, pto_embarque:q.pto_embarque, pto_descarga:q.pto_descarga, 
+        tara_kgs:q.tara_kgs, gross_kgs:q.gross_kgs, class:q.class, status:q.status, interior_condition:q.interior_condition, inspector:it.tecnico, vendor:it.vendor, remarks:it.remarks },
+      lines:linesPayload, photos:photosPayload,
+      analytics:{ tecnico:it.tecnico, vendor:it.vendor, lines:it.lines.length }
+    };
+
     const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-    const j=await res.json(); if(!res.ok||!j?.ok) throw new Error(j?.error||('HTTP '+res.status));
-    toast('Enviado correctamente'); setTimeout(()=> location.href='home.html',900);
-  }catch(err){ console.error(err); toast('Error al enviar: '+err.message); }
+    const j=await res.json();
+    if(!res.ok||!j?.ok) throw new Error(j?.error||('HTTP '+res.status));
+
+    // éxito: borra de cola, badge, marca última enviada y vuelve a home
+    await queueDelete(id);
+    await refreshQueueBadge();
+    localStorage.setItem('last_sent_id', id);
+    localStorage.setItem('last_sent_unit', q.container);
+    toast('✅ Enviado correctamente');
+    setTimeout(()=>{ showOverlay(false); location.href='home.html'; }, 600);
+  }catch(err){
+    console.error(err);
+    showOverlay(false);
+    toast('❌ Error al enviar: '+err.message);
+  }
 }
 
 /* INIT */
 function init(){
   bodyEl=$("#body"); addRow();
-  // precarga técnico/vendor si los guardaste en otro flujo
   const u=localStorage.getItem('tec_name'); const v=localStorage.getItem('tec_vendor');
   if(u) $("#insp").value=u; if(v) $("#vendor").value=v;
+  refreshQueueBadge();
 }
 window.addEventListener('DOMContentLoaded',init);
 </script>
