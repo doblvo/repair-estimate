@@ -5,102 +5,169 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>MAERSK — Login</title>
 <style>
-:root{--brand:#0b74c7;--bg:#f6f8fb;--ink:#0f172a;--line:#e5e7eb;--radius:14px}
+:root{
+  --brand:#0b74c7; --bg:#f6f8fb; --ink:#0f172a; --muted:#6b7280;
+  --card:#fff; --line:#e5e7eb; --radius:12px; --ok:#10b981; --err:#ef4444;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-.wrap{max-width:520px;margin:8vh auto;padding:16px}
-.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.06)}
-header{padding:14px 16px;border-bottom:1px solid var(--line)}
-header h1{margin:0;font-size:18px}
-.section{padding:16px}
-.row{display:grid;gap:10px}
-input{width:100%;padding:10px;border:1px solid #dbe2ea;border-radius:10px;font:inherit}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
-.hint{color:#64748b;font-size:12px}
-.pill{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff}
-.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
-.small{font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px}
-.toggle{cursor:pointer;user-select:none}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial;
+  display:grid;place-items:center;padding:20px
+}
+.card{
+  width:100%;max-width:460px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:16px
+}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--brand);
+  box-shadow:0 0 0 2px var(--brand) inset,0 10px 30px rgba(11,116,199,.25)}
+h1{font-size:18px;margin:0}
+.small{color:var(--muted);font-size:12px}
+
+.form{display:grid;gap:10px;margin-top:8px}
+.field{display:grid;gap:6px}
+label{font-weight:600}
+input,select{
+  border:1px solid #dbe2ea;border-radius:10px;padding:10px 12px;font:inherit;background:#fff
+}
+input:focus,select:focus{outline:none;border-color:#83a9ff;box-shadow:0 0 0 3px rgba(11,116,199,.15)}
+.row{display:grid;grid-template-columns:1fr 140px;gap:10px}
+@media (max-width:520px){ .row{grid-template-columns:1fr} }
+
+.checkbox{display:flex;align-items:center;gap:8px;color:#374151}
+.btn{
+  border:1px solid var(--line);background:var(--brand);border-radius:10px;
+  padding:10px 14px;cursor:pointer;color:#fff;font-weight:700
+}
+.btn:disabled{opacity:.7;cursor:not-allowed}
+.actions{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-top:4px}
+
+.alert{margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;display:none}
+.alert.ok{background:#ecfdf5;border-color:#10b981;color:#065f46;display:block}
+.alert.err{background:#fef2f2;border-color:#ef4444;color:#7f1d1d;display:block}
+.footer{margin-top:14px;display:flex;justify-content:space-between;align-items:center}
+.link{color:#0b74c7;text-decoration:none}
+.link:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <header><h1>Acceso</h1></header>
-    <div class="section">
-      <div class="row">
-        <div>
-          <div class="hint">Usuario</div>
-          <input id="user" type="text" placeholder="user o admin" autocomplete="username">
-        </div>
-        <div>
-          <div class="hint">Contraseña</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password" style="flex:1">
-            <label class="small toggle"><input id="show" type="checkbox"> Mostrar</label>
-          </div>
-        </div>
-        <button id="btnLogin" class="btn primary">Entrar</button>
-        <div class="hint">Usuarios de prueba:
-          <br><span class="pill">user / Contopsa01</span>
-          <span class="pill">admin / Maersk01</span>
-        </div>
+
+<div class="card">
+  <header>
+    <div class="logo"></div>
+    <div>
+      <h1>Ingreso MAERSK</h1>
+      <div class="small">Control de inspecciones · Reefer</div>
+    </div>
+  </header>
+
+  <form id="frm" class="form" novalidate>
+    <div class="field">
+      <label for="user">Usuario</label>
+      <input id="user" placeholder="Nombre y apellido" autocomplete="username" required/>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="role">Rol</label>
+        <select id="role" required>
+          <option value="">— Selecciona —</option>
+          <option value="admin">ADMIN</option>
+          <option value="inspector">INSPECTOR</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="pwd">Clave (opcional)</label>
+        <input id="pwd" type="password" placeholder="••••••" autocomplete="current-password"/>
       </div>
     </div>
+
+    <div class="checkbox">
+      <input id="remember" type="checkbox" checked>
+      <label for="remember">Recordarme en este equipo</label>
+    </div>
+
+    <div class="actions">
+      <button id="btnLogin" type="submit" class="btn">Entrar</button>
+      <span id="status" class="small">Version local</span>
+    </div>
+
+    <div id="msg" class="alert"></div>
+  </form>
+
+  <div class="footer small">
+    <span>© Maersk Line Chile Spa</span>
+    <a class="link" href="#" id="help">¿Necesitas ayuda?</a>
   </div>
 </div>
-<div id="toast" class="toast"></div>
 
 <script>
-/* Consistencia con el resto (no se usa aquí, pero lo dejamos igual) */
-const GAS_URL='https://script.google.com/macros/s/AKfycbyXgHEwB2nvhue9o8qfTZVTLvsy8EVRwVg8KD3m7iJqeDS2TiTv0KyB_86IGiRezqMejw/exec';
-
-const $=q=>document.querySelector(q);
-let tmo;
-function toast(m){const el=$("#toast"); el.textContent=m; el.style.display='block'; clearTimeout(tmo); tmo=setTimeout(()=>el.style.display='none',2200);}
-
-/* Si ya hay sesión, redirige directo a home */
-(function boot(){
-  const url = new URL(location.href);
-  if(url.searchParams.get('logout')==='1'){
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_role');
-  }
-  const u=localStorage.getItem('auth_user');
-  const r=localStorage.getItem('auth_role');
-  if(u&&r) location.href='home.html';
+/* Redirigir si ya hay sesión */
+(function(){
+  try{
+    const u = localStorage.getItem('auth_user');
+    const r = localStorage.getItem('auth_role');
+    if(u && r){ location.replace('home.html'); }
+  }catch(_){}
 })();
 
-/* Mostrar/ocultar contraseña */
-$("#show").addEventListener('change',e=>{
-  $("#pass").type = e.target.checked ? 'text' : 'password';
-});
+const $ = s => document.querySelector(s);
+const msg = $("#msg");
+const btn = $("#btnLogin");
+const statusEl = $("#status");
+const frm = $("#frm");
 
-/* Login */
-function login(){
-  const u=($("#user").value||'').trim();
-  const p=$("#pass").value||'';
-  if(!u||!p){ toast("Ingresa usuario y contraseña"); return; }
-
-  const okUser=(u==="user" && p==="Contopsa01");
-  const okAdmin=(u==="admin" && p==="Maersk01");
-
-  if(!(okUser||okAdmin)){ toast("Credenciales inválidas"); return; }
-
-  const role= okAdmin ? "admin" : "user";
-  localStorage.setItem('auth_user',u);
-  localStorage.setItem('auth_role',role);
-
-  // si quieres almacenar defaults de técnico/vendor por usuario, podrías setearlos aquí
-  // localStorage.setItem('tec_name', ''); localStorage.setItem('tec_vendor', '');
-
-  location.href='home.html';
+function showMsg(text, ok=false){
+  msg.textContent = text;
+  msg.className = "alert " + (ok ? "ok" : "err");
+  msg.style.display = "block";
+  setTimeout(()=>{ msg.style.display="none"; }, 3000);
 }
 
-$("#btnLogin").onclick=login;
-window.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+function onlineStatus(){
+  statusEl.textContent = navigator.onLine ? "En línea" : "Sin conexión (modo local)";
+}
+window.addEventListener('online', onlineStatus);
+window.addEventListener('offline', onlineStatus);
+onlineStatus();
+
+/* Validación simple + persistencia */
+frm.addEventListener("submit", (e)=>{
+  e.preventDefault();
+  const user = $("#user").value.trim();
+  const role = $("#role").value.trim().toLowerCase();
+
+  if(!user){ showMsg("Ingresa tu nombre de usuario"); $("#user").focus(); return; }
+  if(!role){ showMsg("Selecciona un rol"); $("#role").focus(); return; }
+
+  try{
+    localStorage.setItem("auth_user", JSON.stringify(user));
+    localStorage.setItem("auth_role", role);
+    if(!$("#remember").checked){
+      // Sesión volátil — se limpia al cerrar pestaña
+      window.addEventListener('beforeunload', ()=> {
+        localStorage.removeItem("auth_user");
+        localStorage.removeItem("auth_role");
+      }, { once:true });
+    }
+    showMsg("Bienvenido, " + user, true);
+    btn.disabled = true;
+    setTimeout(()=> location.replace('home.html'), 350);
+  }catch(err){
+    console.error(err);
+    showMsg("No se pudo guardar la sesión (revisa permisos del navegador)");
+  }
+});
+
+/* Atajos y detalles UI */
+$("#help").addEventListener("click", (e)=>{
+  e.preventDefault();
+  showMsg("Si olvidaste tu clave, contacta a Sistemas o usa el modo sin clave.", true);
+});
+$("#user").addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ $("#role").focus(); }});
+$("#role").addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ btn.click(); }});
 </script>
 </body>
 </html>
-
