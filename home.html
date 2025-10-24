@@ -23,17 +23,13 @@ header h1{margin:0;font-size:16px}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .section{padding:10px 12px}
 
-/* banda */
+/* banda última enviada (opcional) */
 .band{margin:10px 12px 0;background:#ecfdf5;border:1px solid #10b981;color:#065f46;border-radius:10px;padding:8px 10px;font-size:13px;display:none}
 .band.warn{background:#fffbeb;border-color:#f59e0b;color:#92400e}
 
-/* filtros */
+/* filtros / buscador */
 .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.ctrl-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ctrl-right{display:flex;gap:8px;align-items:center}
-.search{position:relative}
-.search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 34px 8px 30px;font:inherit;background:#fff;min-width:260px}
-.search:before{content:"🔎";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.55}
+.search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 10px;font:inherit;background:#fff;min-width:240px}
 
 /* tabla */
 .table-wrap{overflow:auto}
@@ -46,11 +42,10 @@ th.w-cont{width:160px}
 th.w-gate{width:100px;text-align:center}
 th.w-ship{width:160px}
 th.w-type{width:110px;text-align:center}
-th.w-ship{white-space:nowrap}
 th.w-danos{width:80px;text-align:center}
 th.w-photos{width:80px;text-align:center}
 th.w-status{width:110px;text-align:center}
-th.w-actions{width:120px;text-align:center}
+th.w-actions{width:180px;text-align:center}
 td.t-center{text-align:center}
 
 /* chips */
@@ -62,7 +57,7 @@ td.t-center{text-align:center}
 .gate-in{border:1px solid #10b981;color:#065f46;background:#ecfdf5;border-radius:999px;padding:2px 10px;font-size:12px}
 .gate-out{border:1px solid #ef4444;color:#7f1d1d;background:#fef2f2;border-radius:999px;padding:2px 10px;font-size:12px}
 
-/* pager */
+/* paginación */
 .pagerbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
 .pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pagebtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
@@ -79,16 +74,36 @@ td.t-center{text-align:center}
 .qbadge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
 .qbadge.warn .dot{background:#f59e0b}
 
-/* modal cola */
+/* modal genérico */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:9998}
 .modal .box{background:#fff;border-radius:12px;border:1px solid var(--line);padding:14px;max-width:900px;width:96%;max-height:90vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 .modal header{border:none;justify-content:space-between;padding:0 0 10px;display:flex;align-items:center}
 .modal h2{margin:0;font-size:16px}
+
+/* modal cola */
 .modal table{width:100%;border-collapse:collapse;margin-top:8px}
 .modal th,.modal td{border-bottom:1px solid #eee;padding:6px 8px;font-size:13px}
 .modal th{text-align:left;background:#f9fafb;position:sticky;top:0}
 .modal .actions{margin-top:10px;display:flex;gap:8px;justify-content:flex-end}
 .modal .actions .btn{padding:6px 12px;font-size:13px}
+
+/* sobres */
+.mail-icon{
+  width:18px;height:18px;display:inline-block;margin:0 3px;cursor:pointer;
+  border-radius:3px;border:1px solid #d1d5db;transition:all .15s;vertical-align:middle;
+}
+.mail-gray{background:#e5e7eb;}
+.mail-blue{background:#3b82f6;}
+.mail-green{background:#10b981;}
+.mail-red{background:#ef4444;}
+.mail-icon:hover{transform:scale(1.1)}
+
+/* modal detalle (ficha) */
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 12px;font-size:13px;margin-top:10px}
+.detail-grid div span{display:block;color:var(--muted);font-size:12px}
+.detail-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.detail-table th,.detail-table td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left}
+.detail-table th{background:#f9fafb}
 </style>
 </head>
 <body>
@@ -109,17 +124,18 @@ td.t-center{text-align:center}
 
     <div class="section">
       <div class="controls">
-        <div class="ctrl-left">
+        <div>
           <button class="pill" data-st="all">All</button>
           <button class="pill" data-st="pendiente">Pendientes</button>
           <button class="pill" data-st="enviado">Enviados</button>
           <button class="pill" data-st="fallido">Fallidas</button>
         </div>
-        <div class="ctrl-right">
-          <div class="search"><input id="txtSearch" type="text" placeholder="Buscar contenedor / naviera / inspector…"></div>
+        <div class="search">
+          <input id="txtSearch" placeholder="Buscar contenedor / naviera / inspector…">
           <button id="btnRefresh" class="btn">Refrescar</button>
         </div>
       </div>
+
       <div class="table-wrap">
         <table>
           <thead><tr>
@@ -128,8 +144,6 @@ td.t-center{text-align:center}
             <th class="w-gate t-center">Gate</th>
             <th class="w-ship">Naviera</th>
             <th class="w-type t-center">Tipo</th>
-            <th class="w-ship">Inspector</th>
-            <th class="w-ship">Vendor</th>
             <th class="w-danos t-center">Daños</th>
             <th class="w-photos t-center">Fotos</th>
             <th class="w-status t-center">Status</th>
@@ -138,6 +152,7 @@ td.t-center{text-align:center}
           <tbody id="tbody"></tbody>
         </table>
       </div>
+
       <div class="pagerbar">
         <div class="pager">
           <button id="prev" class="pagebtn">« Anterior</button>
@@ -148,7 +163,7 @@ td.t-center{text-align:center}
           <span class="info">Per page</span>
           <select id="perPage">
             <option value="10">10</option><option value="20" selected>20</option>
-            <option value="50">50</option><option value="100">100</option><option value="200">200</option>
+            <option value="50">50</option><option value="100">100</option>
           </select>
           <span id="countInfo" class="info">—</span>
         </div>
@@ -181,37 +196,36 @@ td.t-center{text-align:center}
   </div>
 </div>
 
+<!-- Modal Detalle -->
+<div id="modalDetail" class="modal">
+  <div class="box">
+    <header><h2>Detalle de Inspección</h2><button id="closeDetail" class="btn">✕</button></header>
+    <div id="detailBody"></div>
+  </div>
+</div>
 <script>
 /* ================== CONFIG / CONST ================== */
 const GAS_URL='https://script.google.com/macros/s/AKfycbyVP_CRMF5ojF3-1fVv76vf0zwnojF_fy_JhHIh-Ktz9g5PUeSkq7eB9nKTDMCXrVslmg/exec';
-
 const $=q=>document.querySelector(q);
 let tmo; function toast(m){const el=$("#toast");el.textContent=m;el.style.display='block';clearTimeout(tmo);tmo=setTimeout(()=>el.style.display='none',2200);}
 
-/* ================== AUTH GUARD (tolerante) ================== */
+/* ================== AUTH GUARD (robusto) ================== */
 (function(){
-  try{
-    const u = localStorage.getItem('auth_user');
-    const r = localStorage.getItem('auth_role');
-    if(!(u && r)){ location.href='login.html'; return; }
-  }catch(_){ location.href='login.html'; }
-})();
-
-/* Header user badge + nav (robusto ante JSON/Texto plano) */
-(function(){
-  function readAny(key, fallback='-'){
-    const raw = localStorage.getItem(key);
-    if (raw == null) return fallback;
-    try { return JSON.parse(raw); } catch { return raw || fallback; }
+  function readAny(k, fb=null){
+    const raw=localStorage.getItem(k);
+    if(raw==null) return fb;
+    try{ return JSON.parse(raw); }catch{ return raw||fb; }
   }
-  const user = readAny('auth_user','-');
-  const role = readAny('auth_role','-');
-
-  $("#badge").textContent = `👤 ${user} · ${String(role).toUpperCase()}`;
-  $("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
-  $("#btnNew").onclick=()=> location.href='inspect.html';
-  $("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
+  const u=readAny('auth_user'); const r=readAny('auth_role');
+  if(!(u&&r)){ location.href='login.html'; return; }
+  $("#badge").textContent=`👤 ${u} · ${String(r).toUpperCase()}`;
 })();
+
+/* ================== NAV ================== */
+$("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
+$("#btnNew").onclick=()=> location.href='inspect.html';
+$("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
+$("#btnRefresh").onclick=()=> loadData();
 
 /* ================== STATE ================== */
 let all=[], filtered=[], page=1, per=Number(localStorage.getItem('home_per')||20), status=localStorage.getItem('home_status')||'all';
@@ -232,8 +246,8 @@ async function apiGetInspections(){
 /* ================== HELPERS UI ================== */
 function gateChip(val){
   const v = String(val || '').trim().toUpperCase();
-  if (v==='IN' || v==='GATE IN' || v==='GATEIN' || v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
-  if (v==='OUT' || v==='GATE OUT' || v==='GATEOUT' || v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
+  if (v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
+  if (v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
   return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
 }
 function statusBadge(v){
@@ -241,6 +255,8 @@ function statusBadge(v){
   const cls = s==='pendiente'?'b-pend' : s==='enviando'?'b-prog' : s==='enviado'?'b-send' : 'b-fail';
   return `<span class="badge ${cls}">${s||''}</span>`;
 }
+
+/* Banda “última enviada” (opcional, si viene de inspect) */
 function showLastSent(){
   const id = localStorage.getItem('last_sent_id');
   const unit = localStorage.getItem('last_sent_unit');
@@ -254,9 +270,33 @@ function showLastSent(){
   }
 }
 
-/* ================== LOAD DATA + RENDER ================== */
-$("#btnRefresh").onclick=()=> loadData();
+/* ================== SOBRES (persistencia + autosync) ================== */
+function getMailState(id){return localStorage.getItem('mail_'+id)||null;}
+function setMailState(id,state){localStorage.setItem('mail_'+id,state);}
+function initialMailStateFromStatus(status){
+  const s=String(status||'').toLowerCase();
+  if(s==='enviado') return 'green';
+  if(s==='fallido') return 'red';
+  if(s==='enviando') return 'blue';
+  return 'gray'; // pendiente / sin info
+}
+function mailIconHTML(id,state){
+  const colorClass = {gray:'mail-gray',blue:'mail-blue',green:'mail-green',red:'mail-red'}[state]||'mail-gray';
+  const titleMap = {gray:'Pendiente / digitado',blue:'En cola (no enviado)',green:'Enviado',red:'Error al enviar'};
+  return `<span class="mail-icon ${colorClass}" title="${titleMap[state]||'—'}" data-mail-id="${id}" data-mail-state="${state}"></span>`;
+}
+function toggleMailState(el){
+  const id = el.dataset.mailId;
+  const current = el.dataset.mailState;
+  const order = ['gray','blue','green','red'];
+  const next = order[(order.indexOf(current)+1)%order.length];
+  el.dataset.mailState = next;
+  el.className = 'mail-icon '+({gray:'mail-gray',blue:'mail-blue',green:'mail-green',red:'mail-red'}[next]);
+  setMailState(id,next);
+  el.title = {gray:'Pendiente / digitado',blue:'En cola (no enviado)',green:'Enviado',red:'Error al enviar'}[next];
+}
 
+/* ================== LOAD + RENDER ================== */
 async function loadData(){
   const btn=$("#btnRefresh"), txt=btn.textContent; btn.disabled=true; btn.textContent='Cargando…';
   try{
@@ -265,16 +305,10 @@ async function loadData(){
     all = res.items||[];
     render();
   }catch(err){
-    console.error(err); toast("Error al obtener datos","err");
+    console.error(err); toast("Error al obtener datos");
   }finally{
     btn.disabled=false; btn.textContent=txt;
   }
-}
-
-function normalizeCounts(r){
-  const lines = (r.linesCount ?? r.danosCount ?? (Array.isArray(r.lines)? r.lines.length : 0)) || 0;
-  const photos= (r.photosCount ?? r.fotosCount ?? r.photos_total ?? 0);
-  return {lines,photos};
 }
 
 function render(){
@@ -296,8 +330,9 @@ function render(){
 
   for(let i=ini;i<fin;i++){
     const r=filtered[i];
-    const {lines,photos}=normalizeCounts(r);
-    const canEdit = String(r.status).toLowerCase()==='pendiente';
+    // sobres: si no hay valor guardado, se inicializa según status
+    let ms = getMailState(r.id);
+    if(!ms){ ms = initialMailStateFromStatus(r.status); setMailState(r.id, ms); }
     const tr=document.createElement('tr');
     tr.innerHTML = `
       <td>${r.fecha? String(r.fecha).slice(0,10) : ''}</td>
@@ -305,36 +340,62 @@ function render(){
       <td class="t-center">${gateChip(r.gate)}</td>
       <td>${r.naviera||''}</td>
       <td class="t-center">${r.tipo||''}</td>
-      <td>${r.inspector||''}</td>
-      <td>${r.vendor||''}</td>
-      <td class="t-center">${lines}</td>
-      <td class="t-center">${photos}</td>
+      <td class="t-center">${(r.linesCount ?? r.danosCount ?? 0)}</td>
+      <td class="t-center">${(r.photosCount ?? r.fotosCount ?? 0)}</td>
       <td class="t-center">${statusBadge(r.status)}</td>
       <td class="t-center">
-        ${ canEdit
-            ? `<button class="btn" data-edit="${r.id}">Editar</button>`
-            : `<span class="pill">—</span>` }
+        ${ String(r.status||'').toLowerCase()==='pendiente'
+            ? `<button class="btn" onclick="location.href='inspect.html?id=${encodeURIComponent(r.id)}'">Editar</button>`
+            : `` }
+        <button class="btn" onclick='viewDetail(${JSON.stringify(r).replace(/"/g,'&quot;')})'>Ver</button>
+        <span class="mail-wrapper">${mailIconHTML(r.id,ms)}</span>
       </td>`;
     tb.appendChild(tr);
   }
+  // click sobres
+  tb.querySelectorAll('.mail-icon').forEach(el=>{ el.onclick=()=>toggleMailState(el); });
+
   $("#pageInfo").textContent=`Página ${page}/${pages}`;
-  $("#countInfo").textContent=`Showing ${Math.min(fin-ini,per)} of ${total}`;
-
-  // bind editores
-  document.querySelectorAll('[data-edit]').forEach(b=>{
-    b.onclick=()=>{ const id=b.getAttribute('data-edit'); location.href='inspect.html?id='+encodeURIComponent(id); };
-  });
-
-  refreshQueueBadge();
+  $("#countInfo").textContent=`Mostrando ${Math.min(fin-ini,per)} de ${total}`;
 }
 
-/* ================== PAGINACIÓN / SEARCH / PER PAGE ================== */
+/* ================== PAGINACIÓN / SEARCH ================== */
 $("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
 $("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
 $("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
 let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },200); });
 
-/* ================== COLA LOCAL — BADGE (IndexedDB) ================== */
+/* ================== MODAL DETALLE ================== */
+const modalDetail=$("#modalDetail");
+$("#closeDetail").onclick=()=>modalDetail.style.display='none';
+modalDetail.addEventListener('click',e=>{ if(e.target===modalDetail) modalDetail.style.display='none'; });
+
+function viewDetail(item){
+  const el=$("#detailBody");
+  const {container,gate,naviera,tipo,inspector,vendor,fecha,linesCount,photosCount,status}=item;
+  el.innerHTML=`
+    <div class="detail-grid">
+      <div><span>Contenedor</span>${container||'-'}</div>
+      <div><span>Gate</span>${gate||'-'}</div>
+      <div><span>Naviera</span>${naviera||'-'}</div>
+      <div><span>Tipo</span>${tipo||'-'}</div>
+      <div><span>Inspector</span>${inspector||'-'}</div>
+      <div><span>Vendor</span>${vendor||'-'}</div>
+      <div><span>Fecha</span>${fecha?String(fecha).slice(0,10):'-'}</div>
+      <div><span>Status</span>${status}</div>
+    </div>
+    <table class="detail-table">
+      <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Daños</td><td>${linesCount||0}</td></tr>
+        <tr><td>Fotos</td><td>${photosCount||0}</td></tr>
+        <!-- Por política: NO mostramos carpeta Drive -->
+      </tbody>
+    </table>`;
+  modalDetail.style.display='flex';
+}
+
+/* ================== IndexedDB Cola ================== */
 const DB='reefer_inspections_db', VER=1, STORE='queue';
 function idbOpen(){
   return new Promise((res,rej)=>{
@@ -348,6 +409,18 @@ async function queueCount(){
   const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAllKeys();
   return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
 }
+async function queueAll(){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAll();
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result||[]); }; });
+}
+async function queueGet(id){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id);
+  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result); }; });
+}
+async function queueDelete(id){
+  const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id);
+  return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
+}
 async function refreshQueueBadge(){
   const n = await queueCount();
   const el=$("#queueCount"); if(el) el.textContent=String(n);
@@ -358,13 +431,13 @@ async function refreshQueueBadge(){
   }
 }
 
-/* ================== MODAL COLA — ABRIR/CERRAR ================== */
-const modal=$("#modalQueue");
-$("#queueBadge").onclick=async()=>{ await populateQueueTable(); modal.style.display='flex'; };
-$("#btnCloseModal").onclick=()=>{ modal.style.display='none'; };
-modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
+/* ================== Modal Cola: abrir/cerrar ================== */
+const modalQueue=$("#modalQueue");
+$("#queueBadge").onclick=async()=>{ await populateQueueTable(); modalQueue.style.display='flex'; };
+$("#btnCloseModal").onclick=()=>{ modalQueue.style.display='none'; };
+modalQueue.addEventListener('click',e=>{ if(e.target===modalQueue) modalQueue.style.display='none'; });
 
-/* ================== MODAL COLA — RENDER ================== */
+/* ================== Modal Cola: render tabla ================== */
 const tblBody = document.querySelector("#tblQueue tbody");
 const chkAll = $("#chkAll");
 chkAll.onchange=()=>{ tblBody.querySelectorAll('input[type="checkbox"][data-id]').forEach(x=>x.checked=chkAll.checked); };
@@ -374,11 +447,6 @@ function sumPhotos(item){
     const ph=item.photos||[];
     return ph.reduce((a,row)=> a + (Array.isArray(row)? row.length : 0), 0);
   }catch{ return 0; }
-}
-
-async function queueAll(){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAll();
-  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result||[]); }; });
 }
 
 async function populateQueueTable(){
@@ -400,30 +468,7 @@ async function populateQueueTable(){
   chkAll.checked=false;
 }
 
-/* ================== INIT ================== */
-(function init(){
-  showLastSent();
-  refreshQueueBadge();
-  loadData();
-})();
-</script>
-
-<script>
-/* =============== ENVÍO DESDE LA COLA (SELECCIONADOS) =============== */
-const btnSendSel=$("#btnSendSel");
-const btnDeleteSel=$("#btnDeleteSel");
-
-/* utilidades básicas */
-async function queueGet(id){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly');
-  const req=tx.objectStore(STORE).get(id);
-  return new Promise(res=>{ req.onsuccess=()=>{ db.close(); res(req.result); }; });
-}
-async function queueDelete(id){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite');
-  tx.objectStore(STORE).delete(id);
-  return new Promise(res=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
-}
+/* ================== ENVÍO DESDE HOME (seleccionados) ================== */
 function blobToBase64(blob){
   return new Promise((res,rej)=>{
     const fr=new FileReader();
@@ -432,25 +477,29 @@ function blobToBase64(blob){
   });
 }
 
-/* construir y enviar un item completo */
 async function sendOneItem(it){
+  // Construye payload (compatible code.gs actual)
   const linesPayload=[], photosPayload=[];
   for(let i=0;i<(it.lines||[]).length;i++){
     const L=it.lines[i];
     linesPayload.push({
       line:L.n||L.num||i+1,
-      code:L.code||L.marker||'',
-      desc:L.desc||L.dano||'',
+      marker:L.marker||L.code||'',
+      reparado:L.reparado||false,
+      location:L.loc||L.location||'',
+      damage:L.dano||L.damage||'',
+      component:L.comp||L.component||'',
+      method:L.mrep||L.method||'',
+      size:L.size||'',
       qty:L.qty||1,
-      hh:L.hh||0
+      resp:L.resp||''
     });
     const files=((it.photos||[])[i]||[]);
     for(const pf of files){
-      const b64=await blobToBase64(pf.blob||pf.file);
+      const b64=await blobToBase64(pf.blob||pf.file||pf);
       photosPayload.push({ name:pf.name||('foto_'+Date.now()), mimeType:pf.type||'image/jpeg', dataBase64:b64, line:(L.n||i+1) });
     }
   }
-
   const q=it.questionnaire||{};
   const payload={
     meta:{ naviera:q.naviera, fecha:(q.fecha||new Date().toISOString().slice(0,10)), unidad:q.container },
@@ -471,13 +520,11 @@ async function sendOneItem(it){
   return j;
 }
 
-/* helpers comunes */
-async function withBusyButtons(fn){
-  btnSendSel.disabled=true; btnDeleteSel.disabled=true;
-  try{ await fn(); }finally{ btnSendSel.disabled=false; btnDeleteSel.disabled=false; }
-}
+/* === Botones del modal: Enviar y Eliminar === */
+const btnSendSel=$("#btnSendSel");
+const btnDeleteSel=$("#btnDeleteSel");
+async function withBusyButtons(fn){ btnSendSel.disabled=true; btnDeleteSel.disabled=true; try{ await fn(); } finally{ btnSendSel.disabled=false; btnDeleteSel.disabled=false; } }
 
-/* ===== Enviar seleccionados ===== */
 btnSendSel.onclick=()=>withBusyButtons(async()=>{
   const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
   if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
@@ -489,7 +536,6 @@ btnSendSel.onclick=()=>withBusyButtons(async()=>{
       if(!it){ fail++; continue; }
       const rowChk = tblBody.querySelector(`input[data-id="${id}"]`);
       if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-prog">enviando…</span>'; }
-
       await sendOneItem(it);
       await queueDelete(id);
       ok++;
@@ -507,7 +553,6 @@ btnSendSel.onclick=()=>withBusyButtons(async()=>{
   loadData();
 });
 
-/* ===== Eliminar seleccionados ===== */
 btnDeleteSel.onclick=()=>withBusyButtons(async()=>{
   const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
   if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
@@ -517,21 +562,20 @@ btnDeleteSel.onclick=()=>withBusyButtons(async()=>{
   toast(`Se eliminaron ${ids.length} ítem(s) de la cola local.`);
 });
 
-/* ===== Accesibilidad / extras ===== */
+/* ================== Accesibilidad / extras ================== */
 window.addEventListener('keydown',e=>{
-  if(e.key==='Escape' && $("#modalQueue").style.display==='flex'){
-    $("#modalQueue").style.display='none';
-  }
+  if(e.key==='Escape' && $("#modalQueue").style.display==='flex'){ $("#modalQueue").style.display='none'; }
+  if(e.key==='Escape' && $("#modalDetail").style.display==='flex'){ $("#modalDetail").style.display='none'; }
 });
 $("#toast").addEventListener('click',()=>$("#toast").style.display='none');
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden) showLastSent();
-});
-window.addEventListener('error',e=>{
-  if(String(e.message).includes('IndexedDB')){
-    toast('⚠️ Error en almacenamiento local (IndexedDB)');
-  }
-});
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) showLastSent(); });
+
+/* ================== INIT ================== */
+(async function init(){
+  showLastSent();
+  await refreshQueueBadge();
+  await loadData();
+})();
 </script>
 </body>
 </html>
