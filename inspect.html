@@ -380,7 +380,7 @@ async function savePending(){
 
     const r = await fetch(API_BASE, {
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     });
     const j = await r.json();
@@ -428,7 +428,7 @@ async function sendFinal(){
 
     const r = await fetch(API_BASE, {
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
       body: JSON.stringify(body)
     });
     const j = await r.json();
