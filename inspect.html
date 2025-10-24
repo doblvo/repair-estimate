@@ -6,35 +6,21 @@
 <title>MAERSK — Inspección de Unidad</title>
 <style>
 :root{
-  --brand:#0b74c7; --bg:#0b1120; --card:#111827; --ink:#f9fafb;
-  --muted:#9ca3af; --line:#1f2937; --radius:12px;
+  --brand:#0b74c7;--bg:#0b1120;--card:#111827;--ink:#f9fafb;
+  --muted:#9ca3af;--line:#1f2937;--radius:12px;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Segoe UI',sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:20px}
-.card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-bottom:16px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.2);
-}
-h1,h2,h3{margin-top:0;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+h1,h2{margin-top:0;font-weight:600}
 h1{font-size:1.4rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-input,select,textarea{
-  width:100%;padding:6px 8px;
-  background:#1e293b;border:1px solid var(--line);
-  border-radius:6px;color:var(--ink);
-}
-input:focus,select:focus,textarea:focus{outline:1px solid var(--brand)}
+input,select,textarea{width:100%;padding:6px 8px;background:#1e293b;border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+input:focus,select:focus{outline:1px solid var(--brand)}
 label{display:block;font-size:13px;margin-bottom:4px;color:var(--muted)}
 .flex{display:flex;gap:12px}
 .flex>div{flex:1}
-button{
-  background:var(--brand);border:none;color:#fff;
-  padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;
-}
+button{background:var(--brand);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}
 button:hover{opacity:.9}
 .btn-muted{background:#374151}
 .btn-warn{background:#f59e0b;color:#111}
@@ -44,6 +30,9 @@ th,td{padding:6px 8px;text-align:left}
 th{background:#1e293b}
 tr:nth-child(even){background:#0f172a}
 hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+.iconR{width:24px;height:24px;border-radius:50%;border:2px solid var(--brand);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:bold;color:var(--brand);transition:all .2s}
+.iconR.active{background:var(--brand);color:#fff}
+.previewFoto img{width:50px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
 .tag{background:#1e293b;padding:4px 10px;border-radius:20px;font-size:12px;margin-right:4px}
 </style>
 </head>
@@ -70,535 +59,206 @@ hr{border:none;border-top:1px solid var(--line);margin:16px 0}
   </div>
 </div>
 
-<!-- NUEVO BLOQUE: Inspección Box -->
+<!-- Bloque: Inspección Box -->
 <div class="card">
   <h2>🧾 Inspección Box</h2>
   <div class="flex">
-    <div>
-      <label>Lugar</label>
-      <input id="lugar" placeholder="Ej: Depot San Antonio">
-    </div>
-    <div>
-      <label>Pto. Embarque</label>
-      <input id="ptoEmbarque" placeholder="Ej: Dummy">
-    </div>
-    <div>
-      <label>Pto. Descarga</label>
-      <input id="ptoDescarga" placeholder="Ej: SAN ANTONIO (CLSALT)">
-    </div>
+    <div><label>Lugar</label><input id="lugar"></div>
+    <div><label>Pto. Embarque</label><input id="ptoEmbarque"></div>
+    <div><label>Pto. Descarga</label><input id="ptoDescarga"></div>
   </div>
-
   <div class="flex">
-    <div>
-      <label>Transportista</label>
-      <input id="transportista" placeholder="Ej: Sergio Órdenes">
-    </div>
-    <div>
-      <label>Patente Camión</label>
-      <input id="patenteCamion" placeholder="Ej: VX3824">
-    </div>
-    <div>
-      <label>Cliente</label>
-      <input id="cliente" placeholder="Ej: Importadora Yaru II Ltda.">
-    </div>
+    <div><label>Transportista</label><input id="transportista"></div>
+    <div><label>Patente Camión</label><input id="patenteCamion"></div>
+    <div><label>Cliente</label><input id="cliente"></div>
   </div>
-
   <div class="flex">
-    <div>
-      <label>Estado Unidad</label>
-      <input id="estadoUnidad" placeholder="Ej: OP-Operativo">
-    </div>
-    <div>
-      <label>Fecha Fabricación</label>
-      <input id="fechaFab" placeholder="Ej: 05/2024">
-    </div>
-    <div>
-      <label>Class / Grado</label>
-      <input id="classGrado" placeholder="Ej: Grado K">
-    </div>
+    <div><label>Estado Unidad</label><input id="estadoUnidad"></div>
+    <div><label>Fecha Fab.</label><input id="fechaFab" placeholder="MM/AAAA"></div>
+    <div><label>Class / Grado</label><input id="classGrado"></div>
   </div>
-
   <div class="flex">
-    <div>
-      <label>MGW</label>
-      <input id="mgw" placeholder="0.00 KGS">
-    </div>
-    <div>
-      <label>TARA</label>
-      <input id="tara" placeholder="Ej: 3700.00 KGS">
-    </div>
-    <div>
-      <label>PAYLOAD</label>
-      <input id="payload" placeholder="0.00 KGS">
-    </div>
+    <div><label>MGW</label><input id="mgw"></div>
+    <div><label>TARA</label><input id="tara"></div>
+    <div><label>PAYLOAD</label><input id="payload"></div>
   </div>
-
   <div class="flex">
-    <div>
-      <label>EIR</label>
-      <input id="eir" placeholder="Ej: EIR03758031">
-    </div>
-    <div>
-      <label>Nave</label>
-      <input id="nave" placeholder="Ej: Maersk Bali">
-    </div>
-    <div>
-      <label>Viaje</label>
-      <input id="viaje" placeholder="Ej: 538S">
-    </div>
+    <div><label>EIR</label><input id="eir"></div>
+    <div><label>Nave</label><input id="nave"></div>
+    <div><label>Viaje</label><input id="viaje"></div>
   </div>
 </div>
 
-<!-- DATOS GENERALES -->
+<!-- Datos generales -->
 <div class="card">
   <h2>⚙️ Datos generales</h2>
   <div class="flex">
-    <div>
-      <label>Container</label>
-      <input id="container" placeholder="Ej: MNBU1234567">
-    </div>
+    <div><label>Container</label><input id="container" placeholder="Ej: MNBU1234567"></div>
     <div>
       <label>Gate</label>
-      <select id="gate">
-        <option value="-">-</option>
-        <option>Gate In</option>
-        <option>Gate Out</option>
-      </select>
+      <select id="gate"><option value="-">-</option><option>Gate In</option><option>Gate Out</option></select>
     </div>
     <div>
       <label>Naviera</label>
       <select id="naviera">
-        <option>Maersk</option>
-        <option>Hapag</option>
-        <option>OOCL</option>
-        <option>COSCO</option>
-        <option>Transmares</option>
+        <option>Maersk</option><option>Hapag</option><option>OOCL</option><option>COSCO</option><option>Transmares</option>
       </select>
     </div>
   </div>
-
   <div class="flex">
     <div>
       <label>Tipo</label>
-      <select id="tipo">
-        <option>-</option>
-        <option>Inspección</option>
-        <option>Reparación</option>
-      </select>
+      <select id="tipo"><option>-</option><option>Inspección</option><option>Reparación</option></select>
     </div>
-    <div>
-      <label>Inspector</label>
-      <input id="inspector" placeholder="Nombre técnico">
-    </div>
-    <div>
-      <label>Vendor</label>
-      <input id="vendor" placeholder="Proveedor / Taller">
-    </div>
+    <div><label>Inspector</label><input id="inspector"></div>
+    <div><label>Vendor</label><input id="vendor"></div>
   </div>
-  <small style="color:var(--muted)">
-    Nota: Si reabres un “pendiente”, este formulario carga los valores guardados y permite agregar/eliminar líneas y fotos sin duplicar el registro.
-  </small>
 </div>
-<!-- DAÑOS / LÍNEAS (dinámicas) -->
-<div class="card" id="daniosCard">
-  <h2>🧩 Daños / Líneas</h2>
+
+<!-- Daños / Líneas -->
+<div class="card">
+  <h2>🧩 Detalle de Daños</h2>
   <table id="tblLines">
     <thead>
       <tr>
-        <th style="width:40px">#</th>
-        <th style="width:180px">Código</th>
-        <th>Descripción</th>
-        <th style="width:70px">Cant.</th>
-        <th style="width:90px">HH</th>
-        <th style="width:50px"></th>
+        <th>#</th>
+        <th>Ubicación</th>
+        <th>Componente</th>
+        <th>Daño</th>
+        <th>Resp.</th>
+        <th>Reparado</th>
+        <th>Foto</th>
+        <th></th>
       </tr>
     </thead>
-    <tbody id="linesBody">
-      <!-- se inserta por JS -->
-    </tbody>
+    <tbody id="linesBody"></tbody>
   </table>
   <div style="margin-top:10px">
     <button class="btn-sm" onclick="addLine()">+ Agregar línea</button>
-    <span style="margin-left:8px;color:var(--muted);">
-      Puedes vincular fotos a una línea (se muestra el N° en el pie de cada miniatura).
-    </span>
   </div>
 </div>
 
-<!-- FOTOS -->
-<div class="card">
-  <h2>📷 Fotos</h2>
-  <div class="flex">
-    <div>
-      <label>Agregar fotos</label>
-      <input id="filePicker" type="file" multiple accept="image/*">
-      <small style="color:var(--muted);display:block;margin-top:6px;">
-        Se conservan las fotos anteriores; puedes eliminar manualmente las que no correspondan.
-      </small>
-    </div>
-    <div>
-      <label>Asociar fotos a línea (opcional)</label>
-      <input id="fotoLinea" placeholder="N° de línea para las nuevas fotos">
-      <small style="color:var(--muted);display:block;margin-top:6px;">
-        Si indicas un número, las fotos que agregues quedarán marcadas con esa línea.
-      </small>
-    </div>
-  </div>
-
-  <div id="galeria" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
-    <!-- miniaturas por JS -->
-  </div>
-</div>
-
-<!-- RESUMEN -->
+<!-- Resumen -->
 <div class="card">
   <h2>📊 Resumen</h2>
   <div class="flex">
-    <div>
-      <label>Estado</label>
-      <input id="status" value="pendiente" readonly>
-    </div>
-    <div>
-      <label>Líneas</label>
-      <input id="resLineas" value="0" readonly>
-    </div>
-    <div>
-      <label>Fotos</label>
-      <input id="resFotos" value="0" readonly>
-    </div>
+    <div><label>Estado</label><input id="status" value="pendiente" readonly></div>
+    <div><label>Líneas</label><input id="resLineas" value="0" readonly></div>
   </div>
 </div>
 
-</div><!-- /wrap -->
+</div><!-- wrap -->
 
 <script>
-/* =========================
-   Config y utilidades
-========================= */
-const GAS_URL =
-  new URLSearchParams(location.search).get('api')
-  || 'https://script.google.com/macros/s/AKfycbyVP_CRMF5ojF3-1fVv76vf0zwnojF_fy_JhHIh-Ktz9g5PUeSkq7eB9nKTDMCXrVslmg/exec'; // <-- reemplaza por tu WebApp si prefieres fijo
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyVP_CRMF5ojF3-1fVv76vf0zwnojF_fy_JhHIh-Ktz9g5PUeSkq7eB9nKTDMCXrVslmg/exec";
 
-const qs = sel => document.querySelector(sel);
-const qsa = sel => Array.from(document.querySelectorAll(sel));
-const byId = id => document.getElementById(id);
-const uid = () => (self.crypto?.randomUUID?.() || ('id_'+Math.random().toString(36).slice(2)));
+const state={id:null,fechaISO:null,lines:[]};
+const byId=id=>document.getElementById(id);
+const qs=s=>document.querySelector(s);
 
-const state = {
-  id: null,
-  fechaISO: null,
-  lines: [],        // [{n, codigo, desc, qty, hh}]
-  fotos: []         // [{id, name, dataURL?, linea?}]
-};
-
-function setTagValues() {
-  const today = new Date();
-  state.fechaISO = today.toISOString();
-  byId('fechaLabel').textContent = today.toLocaleDateString();
-  byId('navieraLabel').textContent = byId('naviera')?.value || '';
-  byId('unidadLabel').textContent = byId('container')?.value || '';
+function goBack(){if(history.length>1)history.back();else location.href='home.html';}
+function setTagValues(){
+  const today=new Date();
+  state.fechaISO=today.toISOString();
+  byId('fechaLabel').textContent=today.toLocaleDateString();
 }
+function updateCounts(){byId('resLineas').value=state.lines.length;}
 
-/* =========================
-   Render de líneas
-========================= */
-function renderLines() {
-  const body = byId('linesBody');
-  body.innerHTML = '';
-  state.lines.forEach((ln, idx) => {
-    ln.n = idx + 1;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="text-align:center">${ln.n}</td>
-      <td><input value="${escapeHTML(ln.codigo||'')}" oninput="onLineChange(${idx}, 'codigo', this.value)"></td>
-      <td><input value="${escapeHTML(ln.desc||'')}" oninput="onLineChange(${idx}, 'desc', this.value)"></td>
-      <td><input type="number" min="0" value="${Number(ln.qty||1)}" oninput="onLineChange(${idx}, 'qty', this.value)"></td>
-      <td><input type="number" min="0" step="0.01" value="${Number(ln.hh||0)}" oninput="onLineChange(${idx}, 'hh', this.value)"></td>
+// Renderizar tabla
+function renderLines(){
+  const body=byId('linesBody');
+  body.innerHTML='';
+  state.lines.forEach((ln,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${idx+1}</td>
+      <td><input value="${ln.ubi||''}" oninput="setLine(${idx},'ubi',this.value)"></td>
+      <td><input value="${ln.comp||''}" oninput="setLine(${idx},'comp',this.value)"></td>
+      <td><input value="${ln.dano||''}" oninput="setLine(${idx},'dano',this.value)"></td>
+      <td><input value="${ln.resp||''}" oninput="setLine(${idx},'resp',this.value)"></td>
       <td style="text-align:center">
-        <button class="btn-sm btn-muted" onclick="removeLine(${idx})">✕</button>
+        <div class="iconR ${ln.reparado?'active':''}" onclick="toggleReparado(${idx},this)">R</div>
       </td>
+      <td style="text-align:center">
+        <input type="file" accept="image/*" capture="environment" style="display:none" id="file_${idx}" onchange="handlePhoto(event,${idx})">
+        <button class="btn-sm" onclick="byId('file_${idx}').click()">📸 Foto</button>
+        <div class="previewFoto">${ln.foto?`<img src="${ln.foto}">`:''}</div>
+      </td>
+      <td><button class="btn-sm btn-muted" onclick="removeLine(${idx})">✕</button></td>
     `;
     body.appendChild(tr);
   });
   updateCounts();
 }
 
-function onLineChange(i, k, v) {
-  if (k === 'qty' || k === 'hh') v = Number(v || 0);
-  state.lines[i][k] = v;
-}
+function addLine(){state.lines.push({ubi:'',comp:'',dano:'',resp:'',reparado:false,foto:null});renderLines();}
+function removeLine(i){state.lines.splice(i,1);renderLines();}
+function setLine(i,k,v){state.lines[i][k]=v;}
+function toggleReparado(i,el){state.lines[i].reparado=!state.lines[i].reparado;el.classList.toggle('active');}
 
-function addLine(line = null) {
-  state.lines.push({
-    n: (state.lines.length + 1),
-    codigo: line?.codigo || '',
-    desc: line?.desc || '',
-    qty: line?.qty ?? 1,
-    hh: line?.hh ?? 0
-  });
-  renderLines();
-}
-
-function removeLine(i) {
-  state.lines.splice(i, 1);
-  renderLines();
-}
-
-/* =========================
-   Fotos: manejo simple
-========================= */
-byId('filePicker').addEventListener('change', async (ev) => {
-  const files = Array.from(ev.target.files || []);
-  const lineaFija = parseInt(byId('fotoLinea').value || '0', 10);
-  for (const f of files) {
-    const dataURL = await fileToDataURL(f).catch(()=>null);
-    state.fotos.push({
-      id: uid(),
-      name: f.name,
-      dataURL,   // si no quieres dataURL, puedes borrar esta línea
-      linea: Number.isFinite(lineaFija) && lineaFija > 0 ? lineaFija : null
-    });
-  }
-  renderFotos();
-  updateCounts();
-  ev.target.value = '';
-});
-
-function renderFotos() {
-  const g = byId('galeria');
-  g.innerHTML = '';
-  state.fotos.forEach((ph, i) => {
-    const box = document.createElement('div');
-    box.style.width = '110px';
-    box.style.border = '1px solid var(--line)';
-    box.style.borderRadius = '8px';
-    box.style.overflow = 'hidden';
-    box.style.background = '#0f172a';
-    box.innerHTML = `
-      <div style="aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111827">
-        ${ph.dataURL ? `<img src="${ph.dataURL}" alt="${escapeHTML(ph.name)}" style="width:100%;height:100%;object-fit:cover">`
-                      : `<div style="font-size:11px;padding:6px;text-align:center;color:var(--muted)">${escapeHTML(ph.name)}</div>`}
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:12px">
-        <span>${ph.linea ? '#'+ph.linea : '-'}</span>
-        <button class="btn-sm btn-muted" onclick="delFoto(${i})">Quitar</button>
-      </div>
-    `;
-    g.appendChild(box);
-  });
-}
-function delFoto(i){ state.fotos.splice(i,1); renderFotos(); updateCounts(); }
-
-/* =========================
-   Resumen + etiquetas
-========================= */
-function updateCounts() {
-  byId('resLineas').value = state.lines.length;
-  byId('resFotos').value  = state.fotos.length;
-  byId('navieraLabel').textContent = byId('naviera')?.value || '';
-  byId('unidadLabel').textContent  = byId('container')?.value || '';
-}
-
-/* =========================
-   Navegación
-========================= */
-function goBack(){
-  // Si vienes de otra página, vuelve; si estás directo, manda a home.html
-  if (history.length > 1) history.back();
-  else location.href = 'home.html';
-}
-
-/* =========================
-   Guardar / Enviar
-========================= */
-async function savePending(){
-  const payload = buildPayload('pendiente');
-  try{
-    const res = await fetch(GAS_URL + '?fn=saveinspection', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
-    if(json?.ok){
-      state.id = json.id || state.id || payload.id;
-      byId('idLabel').textContent = state.id;
-      byId('status').value = 'pendiente';
-      alert('Guardado como pendiente.');
-    }else{
-      alert('No se pudo guardar: ' + (json?.error || 'Error'));
-    }
-  }catch(err){
-    console.error(err);
-    alert('Error de red al guardar.');
-  }
-}
-
-async function submitNow(){
-  const payload = buildPayload('enviado');
-  try{
-    const res = await fetch(GAS_URL + '?fn=saveinspection', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
-    if(json?.ok){
-      state.id = json.id || state.id || payload.id;
-      byId('idLabel').textContent = state.id;
-      byId('status').value = 'enviado';
-      alert('Enviado con éxito.');
-    }else{
-      alert('No se pudo enviar: ' + (json?.error || 'Error'));
-    }
-  }catch(err){
-    console.error(err);
-    alert('Error de red al enviar.');
-  }
-}
-
-function buildPayload(estadoFinal){
-  const base = {
-    id: state.id || uid(),
-    timestamp: state.fechaISO || new Date().toISOString(),
-
-    // --- Inspección Box ---
-    lugar:          byId('lugar').value.trim(),
-    ptoEmbarque:    byId('ptoEmbarque').value.trim(),
-    ptoDescarga:    byId('ptoDescarga').value.trim(),
-    transportista:  byId('transportista').value.trim(),
-    patenteCamion:  byId('patenteCamion').value.trim(),
-    cliente:        byId('cliente').value.trim(),
-    estadoUnidad:   byId('estadoUnidad').value.trim(),
-    fechaFab:       byId('fechaFab').value.trim(),
-    classGrado:     byId('classGrado').value.trim(),
-    mgw:            byId('mgw').value.trim(),
-    tara:           byId('tara').value.trim(),
-    payload:        byId('payload').value.trim(),
-    eir:            byId('eir').value.trim(),
-    nave:           byId('nave').value.trim(),
-    viaje:          byId('viaje').value.trim(),
-
-    // --- Datos generales ---
-    container: byId('container').value.trim(),
-    gate:      byId('gate').value,
-    naviera:   byId('naviera').value,
-    tipo:      byId('tipo').value,
-    inspector: byId('inspector').value.trim(),
-    vendor:    byId('vendor').value.trim(),
-
-    // --- Líneas dinámicas / Fotos ---
-    daniosJSON: JSON.stringify(state.lines),
-    fotosJSON:  JSON.stringify(state.fotos.map(f=>({
-      id:f.id, name:f.name, linea:f.linea || null, dataURL:f.dataURL || null
-    }))),
-
-    status: estadoFinal
-  };
-  return base;
-}
-
-/* =========================
-   Cargar por ?id=...
-========================= */
-async function loadInspectionIfAny(){
-  const id = new URLSearchParams(location.search).get('id');
-  if(!id) { // nuevo
-    state.id = null;
-    byId('idLabel').textContent = 'nuevo';
-    addLine(); // al menos una
-    return;
-  }
-  try{
-    const res = await fetch(GAS_URL + '?fn=getinspection&id=' + encodeURIComponent(id));
-    const json = await res.json();
-    if(!json?.ok || !json?.item){
-      addLine();
-      return;
-    }
-    const it = json.item;
-    state.id = it.id || id;
-    byId('idLabel').textContent = state.id;
-
-    // --- Inspección Box ---
-    byId('lugar').value         = it.lugar || '';
-    byId('ptoEmbarque').value   = it['Pto Embarque'] || it.ptoEmbarque || '';
-    byId('ptoDescarga').value   = it['Pto Descarga'] || it.ptoDescarga || '';
-    byId('transportista').value = it.transportista || '';
-    byId('patenteCamion').value = it['Patente Camion'] || it.patenteCamion || '';
-    byId('cliente').value       = it.cliente || '';
-    byId('estadoUnidad').value  = it['Estado Unidad'] || it.estadoUnidad || '';
-    byId('fechaFab').value      = it['Fecha Fab'] || it.fechaFab || '';
-    byId('classGrado').value    = it['Class Grado'] || it.classGrado || '';
-    byId('mgw').value           = it.MGW || it.mgw || '';
-    byId('tara').value          = it.TARA || it.tara || '';
-    byId('payload').value       = it.PAYLOAD || it.payload || '';
-    byId('eir').value           = it.EIR || it.eir || '';
-    byId('nave').value          = it.Nave || it.nave || '';
-    byId('viaje').value         = it.Viaje || it.viaje || '';
-
-    // --- Datos generales ---
-    byId('container').value = it.Container || it.container || '';
-    byId('gate').value      = it.Gate || it.gate || '-';
-    byId('naviera').value   = it.Naviera || it.naviera || 'Maersk';
-    byId('tipo').value      = it.Tipo || it.tipo || '-';
-    byId('inspector').value = it.Inspector || it.inspector || '';
-    byId('vendor').value    = it.Vendor || it.vendor || '';
-    byId('status').value    = it.Status || it.status || 'pendiente';
-
-    // --- líneas y fotos ---
-    try{
-      const arr = JSON.parse(it.DaniosJSON || it.daniosJSON || '[]');
-      state.lines = Array.isArray(arr) ? arr : [];
-    }catch{ state.lines = []; }
-    if(state.lines.length === 0) state.lines = [{n:1,codigo:'',desc:'',qty:1,hh:0}];
-
-    try{
-      const ph = JSON.parse(it.FotosJSON || it.fotosJSON || '[]');
-      state.fotos = Array.isArray(ph) ? ph : [];
-    }catch{ state.fotos = []; }
-
+async function handlePhoto(ev,idx){
+  const file=ev.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    state.lines[idx].foto=e.target.result;
     renderLines();
-    renderFotos();
-    updateCounts();
-  }catch(err){
-    console.error(err);
-    addLine();
-  }
+  };
+  reader.readAsDataURL(file);
 }
 
-/* =========================
-   Helpers
-========================= */
-function fileToDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const r = new FileReader();
-    r.onload = e => resolve(e.target.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-function escapeHTML(s=''){
-  return s.replace(/[&<>"']/g, m=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[m]));
+// Guardar pendiente
+async function savePending(){
+  const payload=buildPayload('pendiente');
+  const res=await fetch(GAS_URL+"?fn=saveinspection",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const json=await res.json();
+  if(json.ok){byId('idLabel').textContent=json.id;byId('status').value='pendiente';alert('Guardado pendiente');}
+  else alert('Error: '+json.error);
 }
 
-/* =========================
-   Init
-========================= */
+// Enviar
+async function submitNow(){
+  const payload=buildPayload('enviado');
+  const res=await fetch(GAS_URL+"?fn=saveinspection",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const json=await res.json();
+  if(json.ok){byId('idLabel').textContent=json.id;byId('status').value='enviado';alert('Enviado con éxito');}
+  else alert('Error: '+json.error);
+}
+
+function buildPayload(status){
+  return {
+    id:state.id||crypto.randomUUID(),
+    timestamp:state.fechaISO,
+    status,
+    container:byId('container').value.trim(),
+    gate:byId('gate').value,
+    naviera:byId('naviera').value,
+    tipo:byId('tipo').value,
+    inspector:byId('inspector').value.trim(),
+    vendor:byId('vendor').value.trim(),
+    lugar:byId('lugar').value,
+    ptoEmbarque:byId('ptoEmbarque').value,
+    ptoDescarga:byId('ptoDescarga').value,
+    transportista:byId('transportista').value,
+    patenteCamion:byId('patenteCamion').value,
+    cliente:byId('cliente').value,
+    estadoUnidad:byId('estadoUnidad').value,
+    fechaFab:byId('fechaFab').value,
+    classGrado:byId('classGrado').value,
+    mgw:byId('mgw').value,
+    tara:byId('tara').value,
+    payload:byId('payload').value,
+    eir:byId('eir').value,
+    nave:byId('nave').value,
+    viaje:byId('viaje').value,
+    daniosJSON:JSON.stringify(state.lines)
+  };
+}
+
+// Inicializar
 window.addEventListener('DOMContentLoaded',()=>{
   setTagValues();
-  addEvents();
-  loadInspectionIfAny();
+  addLine();
 });
-
-function addEvents(){
-  ['naviera','container'].forEach(id=>{
-    const el = byId(id);
-    if(el) el.addEventListener('input', updateCounts);
-  });
-}
 </script>
 </body>
 </html>
