@@ -6,259 +6,680 @@
 <title>MAERSK — Inspección de Unidad</title>
 <style>
 :root{
-  --brand:#0b74c7;--bg:#0b1120;--card:#111827;--ink:#f9fafb;
-  --muted:#9ca3af;--line:#1f2937;--radius:12px;
+  --brand:#0b74c7; --bg:#0b1120; --card:#111827; --ink:#f9fafb;
+  --muted:#9ca3af; --line:#1f2937; --radius:12px;
+  --danger:#ef4444; --ok:#10b981;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Segoe UI',sans-serif}
-.wrap{max-width:1200px;margin:0 auto;padding:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-h1,h2{margin-top:0;font-weight:600}
-h1{font-size:1.4rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-input,select,textarea{width:100%;padding:6px 8px;background:#1e293b;border:1px solid var(--line);border-radius:6px;color:var(--ink)}
-input:focus,select:focus{outline:1px solid var(--brand)}
-label{display:block;font-size:13px;margin-bottom:4px;color:var(--muted)}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+h1,h2{margin:0 0 12px 0;font-weight:600}
+h1{font-size:1.35rem;display:flex;align-items:center;gap:8px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 6px}
+input,select,textarea{
+  width:100%;padding:8px 10px;border-radius:8px;color:var(--ink);
+  background:#0f172a;border:1px solid var(--line);
+}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--brand);border-color:var(--brand)}
 .flex{display:flex;gap:12px}
 .flex>div{flex:1}
-button{background:var(--brand);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}
-button:hover{opacity:.9}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media (max-width:900px){ .row{grid-template-columns:1fr 1fr} }
+@media (max-width:640px){ .row{grid-template-columns:1fr} }
+
+.btn{
+  background:var(--brand);color:#fff;border:none;border-radius:10px;
+  padding:10px 14px;font-weight:700;cursor:pointer
+}
+.btn:hover{opacity:.92}
 .btn-muted{background:#374151}
 .btn-warn{background:#f59e0b;color:#111}
-.btn-sm{padding:4px 10px;font-size:13px}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{padding:6px 8px;text-align:left}
-th{background:#1e293b}
-tr:nth-child(even){background:#0f172a}
-hr{border:none;border-top:1px solid var(--line);margin:16px 0}
-.iconR{width:24px;height:24px;border-radius:50%;border:2px solid var(--brand);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:bold;color:var(--brand);transition:all .2s}
-.iconR.active{background:var(--brand);color:#fff}
-.previewFoto img{width:50px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
-.tag{background:#1e293b;padding:4px 10px;border-radius:20px;font-size:12px;margin-right:4px}
+.btn-sm{padding:6px 10px;border-radius:8px;font-weight:600}
+.btn-ghost{background:#0f172a;border:1px dashed var(--line);color:var(--muted)}
+.actions-top, .actions-bottom{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end
+}
+
+/* Info chips */
+.tag{background:#0f172a;border:1px solid var(--line);padding:4px 10px;border-radius:18px;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+
+/* Tabla responsive en contenedor scrolleable */
+.table-wrap{
+  width:100%;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#0b1222
+}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:8px 10px;text-align:left;vertical-align:middle}
+th{background:#0f1a2a;color:#cbd5e1;position:sticky;top:0;z-index:1}
+tbody tr:nth-child(even){background:#0f172a}
+
+/* Círculo “R” reparado */
+.r-circle{
+  width:28px;height:28px;border-radius:999px;border:2px solid var(--brand);
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--brand);background:transparent;font-weight:800;cursor:pointer;user-select:none
+}
+.r-circle.active{background:var(--brand);color:#fff}
+
+/* Mosaico de miniaturas por línea (múltiples fotos) */
+.line-photos{
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center
+}
+.thumb{
+  width:54px;height:54px;border-radius:8px;border:1px solid var(--line);overflow:hidden;background:#0f172a;position:relative
+}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rm{
+  position:absolute;top:2px;right:2px;background:#0009;border:none;color:#fff;
+  width:18px;height:18px;border-radius:999px;font-size:12px;cursor:pointer
+}
+
+/* Botón de foto por línea */
+.photo-btn{display:inline-flex;gap:6px;align-items:center}
+.photo-btn input[type=file]{display:none}
+
+/* Resumen */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){ .summary-grid{grid-template-columns:1fr} }
+
+/* Pie pegado en móvil: acciones abajo siempre visibles (opcional) */
+.sticky-footer{
+  position:sticky;bottom:0;z-index:20;margin-top:16px;
+  background:linear-gradient(180deg, transparent, rgba(11,17,32,.85) 25%, rgba(11,17,32,.95) 100%);
+  backdrop-filter: blur(4px);padding-top:8px
+}
+
+/* Ajustes finos móviles */
+@media (max-width:480px){
+  .btn{width:100%}
+  .actions-top{justify-content:flex-start}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- Encabezado -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-  <h1>🔎 Inspección de Unidad</h1>
-  <div>
-    <button class="btn-muted" onclick="goBack()">← Volver</button>
-    <button class="btn-warn" onclick="savePending()">Guardar pendiente</button>
-    <button onclick="submitNow()">Enviar</button>
-  </div>
-</div>
-
-<!-- Info superior -->
-<div class="card" id="infoBox">
-  <div class="flex">
-    <div><span class="tag">ID: <b id="idLabel">nuevo</b></span></div>
-    <div><span class="tag">Fecha: <b id="fechaLabel"></b></span></div>
-    <div><span class="tag">Naviera: <b id="navieraLabel"></b></span></div>
-    <div><span class="tag">Unidad: <b id="unidadLabel"></b></span></div>
-  </div>
-</div>
-
-<!-- Bloque: Inspección Box -->
-<div class="card">
-  <h2>🧾 Inspección Box</h2>
-  <div class="flex">
-    <div><label>Lugar</label><input id="lugar"></div>
-    <div><label>Pto. Embarque</label><input id="ptoEmbarque"></div>
-    <div><label>Pto. Descarga</label><input id="ptoDescarga"></div>
-  </div>
-  <div class="flex">
-    <div><label>Transportista</label><input id="transportista"></div>
-    <div><label>Patente Camión</label><input id="patenteCamion"></div>
-    <div><label>Cliente</label><input id="cliente"></div>
-  </div>
-  <div class="flex">
-    <div><label>Estado Unidad</label><input id="estadoUnidad"></div>
-    <div><label>Fecha Fab.</label><input id="fechaFab" placeholder="MM/AAAA"></div>
-    <div><label>Class / Grado</label><input id="classGrado"></div>
-  </div>
-  <div class="flex">
-    <div><label>MGW</label><input id="mgw"></div>
-    <div><label>TARA</label><input id="tara"></div>
-    <div><label>PAYLOAD</label><input id="payload"></div>
-  </div>
-  <div class="flex">
-    <div><label>EIR</label><input id="eir"></div>
-    <div><label>Nave</label><input id="nave"></div>
-    <div><label>Viaje</label><input id="viaje"></div>
-  </div>
-</div>
-
-<!-- Datos generales -->
-<div class="card">
-  <h2>⚙️ Datos generales</h2>
-  <div class="flex">
-    <div><label>Container</label><input id="container" placeholder="Ej: MNBU1234567"></div>
-    <div>
-      <label>Gate</label>
-      <select id="gate"><option value="-">-</option><option>Gate In</option><option>Gate Out</option></select>
-    </div>
-    <div>
-      <label>Naviera</label>
-      <select id="naviera">
-        <option>Maersk</option><option>Hapag</option><option>OOCL</option><option>COSCO</option><option>Transmares</option>
-      </select>
+  <!-- Encabezado -->
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <h1>🔎 Inspección de Unidad</h1>
+    <div class="actions-top">
+      <!-- ARRIBA: solo botón Volver; Guardar/Enviar se mueven abajo -->
+      <button class="btn btn-muted" onclick="goBack()">← Volver</button>
     </div>
   </div>
-  <div class="flex">
-    <div>
-      <label>Tipo</label>
-      <select id="tipo"><option>-</option><option>Inspección</option><option>Reparación</option></select>
+
+  <!-- Chips de estado -->
+  <div class="card" id="infoBox">
+    <div class="flex" style="flex-wrap:wrap;gap:8px">
+      <span class="tag">ID: <b id="idLabel">nuevo</b></span>
+      <span class="tag">Fecha: <b id="fechaLabel"></b></span>
+      <span class="tag">Naviera: <b id="navieraLabel"></b></span>
+      <span class="tag">Unidad: <b id="unidadLabel"></b></span>
+      <span class="tag">Estado: <b id="statusChip">pendiente</b></span>
     </div>
-    <div><label>Inspector</label><input id="inspector"></div>
-    <div><label>Vendor</label><input id="vendor"></div>
   </div>
-</div>
 
-<!-- Daños / Líneas -->
-<div class="card">
-  <h2>🧩 Detalle de Daños</h2>
-  <table id="tblLines">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Ubicación</th>
-        <th>Componente</th>
-        <th>Daño</th>
-        <th>Resp.</th>
-        <th>Reparado</th>
-        <th>Foto</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="linesBody"></tbody>
-  </table>
-  <div style="margin-top:10px">
-    <button class="btn-sm" onclick="addLine()">+ Agregar línea</button>
+  <!-- 1) DATOS GENERALES (debe ir primero) -->
+  <div class="card">
+    <h2>⚙️ Datos generales</h2>
+    <div class="row">
+      <div>
+        <label>Container</label>
+        <input id="container" placeholder="Ej: MNBU1234567">
+      </div>
+      <div>
+        <label>Gate</label>
+        <select id="gate">
+          <option value="-">-</option>
+          <option>Gate In</option>
+          <option>Gate Out</option>
+        </select>
+      </div>
+      <div>
+        <label>Naviera</label>
+        <select id="naviera">
+          <option>Maersk</option>
+          <option>Hapag</option>
+          <option>OOCL</option>
+          <option>COSCO</option>
+          <option>Transmares</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Tipo</label>
+        <select id="tipo">
+          <option>-</option>
+          <option>Inspección</option>
+          <option>Reparación</option>
+        </select>
+      </div>
+      <div>
+        <label>Inspector</label>
+        <input id="inspector" placeholder="Nombre técnico">
+      </div>
+      <div>
+        <label>Vendor</label>
+        <input id="vendor" placeholder="Proveedor / Taller">
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- Resumen -->
-<div class="card">
-  <h2>📊 Resumen</h2>
-  <div class="flex">
-    <div><label>Estado</label><input id="status" value="pendiente" readonly></div>
-    <div><label>Líneas</label><input id="resLineas" value="0" readonly></div>
+  <!-- 2) INSPECCIÓN BOX (va debajo) -->
+  <div class="card">
+    <h2>🧾 Inspección Box</h2>
+    <div class="row">
+      <div><label>Lugar</label><input id="lugar" placeholder="Ej: Depot San Antonio"></div>
+      <div><label>Pto. Embarque</label><input id="ptoEmbarque" placeholder="Ej: Dummy"></div>
+      <div><label>Pto. Descarga</label><input id="ptoDescarga" placeholder="Ej: SAN ANTONIO (CLSALT)"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>Transportista</label><input id="transportista" placeholder="Ej: Sergio Órdenes"></div>
+      <div><label>Patente Camión</label><input id="patenteCamion" placeholder="Ej: VX3824"></div>
+      <div><label>Cliente</label><input id="cliente" placeholder="Ej: Importadora Yaru II Ltda."></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>Estado Unidad</label><input id="estadoUnidad" placeholder="Ej: OP-Operativo"></div>
+      <div><label>Fecha Fabricación</label><input id="fechaFab" placeholder="MM/AAAA"></div>
+      <div><label>Class / Grado</label><input id="classGrado" placeholder="Ej: Grado K"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>MGW</label><input id="mgw" placeholder="0.00 KGS"></div>
+      <div><label>TARA</label><input id="tara" placeholder="3700.00 KGS"></div>
+      <div><label>PAYLOAD</label><input id="payload" placeholder="0.00 KGS"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>EIR</label><input id="eir" placeholder="Ej: EIR03758031"></div>
+      <div><label>Nave</label><input id="nave" placeholder="Ej: Maersk Bali"></div>
+      <div><label>Viaje</label><input id="viaje" placeholder="Ej: 538S"></div>
+    </div>
   </div>
-</div>
 
-</div><!-- wrap -->
+  <!-- 3) DETALLE DE DAÑOS (líneas dinámicas con múltiples fotos por línea) -->
+  <div class="card" id="daniosCard">
+    <h2>🧩 Detalle de Daños</h2>
+    <div class="table-wrap">
+      <table id="tblLines" aria-label="Detalle de daños">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th style="min-width:160px">Ubicación</th>
+            <th style="min-width:160px">Componente</th>
+            <th style="min-width:160px">Daño</th>
+            <th style="min-width:140px">M.Rep</th>
+            <th style="width:90px">Cant.</th>
+            <th style="min-width:120px">Resp.</th>
+            <th style="width:72px;text-align:center">R</th>
+            <th style="min-width:220px">Fotos</th>
+            <th style="width:70px"></th>
+          </tr>
+        </thead>
+        <tbody id="linesBody">
+          <!-- Filas dinámicas insertadas por JS (Parte 2) -->
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-sm btn-ghost" id="btnAddLineTop">+ Agregar línea</button>
+      <small style="color:var(--muted)">En móvil, las columnas se desplazan horizontalmente dentro del recuadro. Cada línea puede tener <b>múltiples fotos</b>.</small>
+    </div>
+  </div>
 
+  <!-- 4) RESUMEN -->
+  <div class="card">
+    <h2>📊 Resumen</h2>
+    <div class="summary-grid">
+      <div>
+        <label>Estado</label>
+        <input id="status" value="pendiente" readonly>
+      </div>
+      <div>
+        <label>Total líneas</label>
+        <input id="resLineas" value="0" readonly>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5) ACCIONES ABAJO -->
+  <div class="sticky-footer">
+    <div class="card" style="margin:0">
+      <div class="actions-bottom">
+        <button class="btn btn-warn" id="btnSavePending">Guardar pendiente</button>
+        <button class="btn" id="btnSubmit">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- /.wrap -->
 <script>
+/* =========================
+   Config
+========================= */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyVP_CRMF5ojF3-1fVv76vf0zwnojF_fy_JhHIh-Ktz9g5PUeSkq7eB9nKTDMCXrVslmg/exec";
 
-const state={id:null,fechaISO:null,lines:[]};
-const byId=id=>document.getElementById(id);
-const qs=s=>document.querySelector(s);
+const state = {
+  id: null,
+  fechaISO: null,
+  lines: [] // [{ubi, comp, dano, mrep, cant, resp, reparado, fotos:[{id,name,dataURL}], _uid}]
+};
 
-function goBack(){if(history.length>1)history.back();else location.href='home.html';}
-function setTagValues(){
-  const today=new Date();
-  state.fechaISO=today.toISOString();
-  byId('fechaLabel').textContent=today.toLocaleDateString();
+const $ = (sel, ctx=document) => ctx.querySelector(sel);
+const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+const byId = id => document.getElementById(id);
+
+/* =========================
+   Utilidades
+========================= */
+function uid(){ return (crypto?.randomUUID?.() || ('id_'+Math.random().toString(36).slice(2))); }
+function escapeHTML(s=''){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function setChipValues(){
+  const today = new Date();
+  state.fechaISO = today.toISOString();
+  byId('fechaLabel').textContent = today.toLocaleDateString();
+  updateHeaderChips();
 }
-function updateCounts(){byId('resLineas').value=state.lines.length;}
+function updateHeaderChips(){
+  byId('navieraLabel').textContent = byId('naviera')?.value || '';
+  byId('unidadLabel').textContent  = byId('container')?.value || '';
+  byId('statusChip').textContent   = byId('status')?.value || 'pendiente';
+}
+function goBack(){ if(history.length>1) history.back(); else location.href='home.html'; }
+function updateCounts(){ byId('resLineas').value = state.lines.length; updateHeaderChips(); }
 
-// Renderizar tabla
+/* =========================
+   Compresión de imagen (cliente)
+   - Redimensiona y convierte a JPEG (calidad ~0.8)
+========================= */
+async function compressToJPEG(file, maxW=1280, maxH=960, quality=0.8){
+  // Lee como DataURL
+  const dataURL = await new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+
+  // Crea imagen
+  const img = await new Promise((resolve,reject)=>{
+    const im = new Image();
+    im.onload = ()=>resolve(im);
+    im.onerror = reject;
+    im.src = dataURL;
+  });
+
+  // Calcula nuevo tamaño
+  let {width, height} = img;
+  const ratio = Math.min(maxW/width, maxH/height, 1);
+  const w = Math.round(width * ratio);
+  const h = Math.round(height * ratio);
+
+  // Dibuja en canvas y exporta a JPEG
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const out = canvas.toDataURL('image/jpeg', quality);
+  return out; // dataURL JPEG comprimido
+}
+
+/* =========================
+   Render de tabla de líneas
+========================= */
 function renderLines(){
-  const body=byId('linesBody');
-  body.innerHTML='';
-  state.lines.forEach((ln,idx)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
+  const body = byId('linesBody');
+  body.innerHTML = '';
+
+  state.lines.forEach((ln, idx) => {
+    // Asegura estructura
+    ln._uid = ln._uid || uid();
+    ln.fotos = Array.isArray(ln.fotos) ? ln.fotos : [];
+
+    const tr = document.createElement('tr');
+    tr.dataset.uid = ln._uid;
+    tr.innerHTML = `
       <td>${idx+1}</td>
-      <td><input value="${ln.ubi||''}" oninput="setLine(${idx},'ubi',this.value)"></td>
-      <td><input value="${ln.comp||''}" oninput="setLine(${idx},'comp',this.value)"></td>
-      <td><input value="${ln.dano||''}" oninput="setLine(${idx},'dano',this.value)"></td>
-      <td><input value="${ln.resp||''}" oninput="setLine(${idx},'resp',this.value)"></td>
+      <td><input value="${escapeHTML(ln.ubi||'')}" oninput="onLineChange(${idx},'ubi',this.value)" placeholder="Ej: Puerta / Techo"></td>
+      <td><input value="${escapeHTML(ln.comp||'')}" oninput="onLineChange(${idx},'comp',this.value)" placeholder="Ej: Bisagra / Panel"></td>
+      <td><input value="${escapeHTML(ln.dano||'')}" oninput="onLineChange(${idx},'dano',this.value)" placeholder="Ej: Abolladura / Corte"></td>
+      <td><input value="${escapeHTML(ln.mrep||'')}" oninput="onLineChange(${idx},'mrep',this.value)" placeholder="Motivo de reparación"></td>
+      <td><input type="number" min="0" value="${Number(ln.cant ?? 1)}" oninput="onLineChange(${idx},'cant',this.value)" style="max-width:100px"></td>
+      <td><input value="${escapeHTML(ln.resp||'')}" oninput="onLineChange(${idx},'resp',this.value)" placeholder="Responsable"></td>
       <td style="text-align:center">
-        <div class="iconR ${ln.reparado?'active':''}" onclick="toggleReparado(${idx},this)">R</div>
+        <div class="r-circle ${ln.reparado?'active':''}" onclick="toggleR(${idx}, this)">${ln.reparado?'R':''}</div>
       </td>
-      <td style="text-align:center">
-        <input type="file" accept="image/*" capture="environment" style="display:none" id="file_${idx}" onchange="handlePhoto(event,${idx})">
-        <button class="btn-sm" onclick="byId('file_${idx}').click()">📸 Foto</button>
-        <div class="previewFoto">${ln.foto?`<img src="${ln.foto}">`:''}</div>
+      <td>
+        <div class="line-photos" id="photos_${ln._uid}">
+          ${ln.fotos.map((ph,i)=>(
+            `<span class="thumb">
+               <img src="${ph.dataURL}" alt="${escapeHTML(ph.name||('foto_'+(i+1)))}">
+               <button class="rm" title="Quitar" onclick="removePhoto('${ln._uid}', ${i})">×</button>
+             </span>`
+          )).join('')}
+          <span class="photo-btn">
+            <input type="file" accept="image/*" capture="environment" id="file_${ln._uid}" multiple>
+            <button class="btn-sm" onclick="byId('file_${ln._uid}').click()">📸 Agregar</button>
+          </span>
+        </div>
       </td>
       <td><button class="btn-sm btn-muted" onclick="removeLine(${idx})">✕</button></td>
     `;
     body.appendChild(tr);
+
+    // Listener para input file (múltiples)
+    const fileInput = byId('file_'+ln._uid);
+    if(fileInput && !fileInput._bound){
+      fileInput._bound = true;
+      fileInput.addEventListener('change', async (ev)=>{
+        const files = Array.from(ev.target.files||[]);
+        await addPhotosToLine(ln._uid, files);
+        ev.target.value = '';
+      });
+    }
   });
+
   updateCounts();
 }
 
-function addLine(){state.lines.push({ubi:'',comp:'',dano:'',resp:'',reparado:false,foto:null});renderLines();}
-function removeLine(i){state.lines.splice(i,1);renderLines();}
-function setLine(i,k,v){state.lines[i][k]=v;}
-function toggleReparado(i,el){state.lines[i].reparado=!state.lines[i].reparado;el.classList.toggle('active');}
-
-async function handlePhoto(ev,idx){
-  const file=ev.target.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    state.lines[idx].foto=e.target.result;
-    renderLines();
-  };
-  reader.readAsDataURL(file);
+/* =========================
+   Mutadores de línea y fotos
+========================= */
+function addLine(line=null){
+  state.lines.push({
+    _uid: uid(),
+    ubi: line?.ubi || '',
+    comp: line?.comp || '',
+    dano: line?.dano || '',
+    mrep: line?.mrep || '',
+    cant: Number.isFinite(line?.cant) ? line.cant : 1,
+    resp: line?.resp || '',
+    reparado: !!line?.reparado,
+    fotos: Array.isArray(line?.fotos) ? line.fotos : []
+  });
+  renderLines();
 }
 
-// Guardar pendiente
-async function savePending(){
-  const payload=buildPayload('pendiente');
-  const res=await fetch(GAS_URL+"?fn=saveinspection",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const json=await res.json();
-  if(json.ok){byId('idLabel').textContent=json.id;byId('status').value='pendiente';alert('Guardado pendiente');}
-  else alert('Error: '+json.error);
+function removeLine(i){
+  state.lines.splice(i,1);
+  renderLines();
 }
 
-// Enviar
-async function submitNow(){
-  const payload=buildPayload('enviado');
-  const res=await fetch(GAS_URL+"?fn=saveinspection",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const json=await res.json();
-  if(json.ok){byId('idLabel').textContent=json.id;byId('status').value='enviado';alert('Enviado con éxito');}
-  else alert('Error: '+json.error);
+function onLineChange(i, key, val){
+  if(key==='cant') val = Number(val||0);
+  state.lines[i][key] = val;
 }
 
+function toggleR(i, el){
+  state.lines[i].reparado = !state.lines[i].reparado;
+  el.classList.toggle('active');
+  el.textContent = state.lines[i].reparado ? 'R' : '';
+}
+
+/* Fotos */
+async function addPhotosToLine(lineUid, files){
+  const ln = state.lines.find(x=>x._uid===lineUid);
+  if(!ln) return;
+  for(const f of files){
+    try{
+      const dataURL = await compressToJPEG(f, 1280, 960, 0.8);
+      ln.fotos.push({ id: uid(), name: f.name, dataURL });
+    }catch(_){}
+  }
+  renderLines();
+}
+
+function removePhoto(lineUid, idx){
+  const ln = state.lines.find(x=>x._uid===lineUid);
+  if(!ln) return;
+  ln.fotos.splice(idx,1);
+  renderLines();
+}
+
+/* =========================
+   Guardar / Enviar
+========================= */
 function buildPayload(status){
   return {
-    id:state.id||crypto.randomUUID(),
-    timestamp:state.fechaISO,
+    id: state.id || uid(),
+    timestamp: state.fechaISO || new Date().toISOString(),
     status,
-    container:byId('container').value.trim(),
-    gate:byId('gate').value,
-    naviera:byId('naviera').value,
-    tipo:byId('tipo').value,
-    inspector:byId('inspector').value.trim(),
-    vendor:byId('vendor').value.trim(),
-    lugar:byId('lugar').value,
-    ptoEmbarque:byId('ptoEmbarque').value,
-    ptoDescarga:byId('ptoDescarga').value,
-    transportista:byId('transportista').value,
-    patenteCamion:byId('patenteCamion').value,
-    cliente:byId('cliente').value,
-    estadoUnidad:byId('estadoUnidad').value,
-    fechaFab:byId('fechaFab').value,
-    classGrado:byId('classGrado').value,
-    mgw:byId('mgw').value,
-    tara:byId('tara').value,
-    payload:byId('payload').value,
-    eir:byId('eir').value,
-    nave:byId('nave').value,
-    viaje:byId('viaje').value,
-    daniosJSON:JSON.stringify(state.lines)
+
+    // Datos Generales
+    container: byId('container').value.trim(),
+    gate: byId('gate').value,
+    naviera: byId('naviera').value,
+    tipo: byId('tipo').value,
+    inspector: byId('inspector').value.trim(),
+    vendor: byId('vendor').value.trim(),
+
+    // Inspección Box
+    lugar: byId('lugar').value.trim(),
+    ptoEmbarque: byId('ptoEmbarque').value.trim(),
+    ptoDescarga: byId('ptoDescarga').value.trim(),
+    transportista: byId('transportista').value.trim(),
+    patenteCamion: byId('patenteCamion').value.trim(),
+    cliente: byId('cliente').value.trim(),
+    estadoUnidad: byId('estadoUnidad').value.trim(),
+    fechaFab: byId('fechaFab').value.trim(),
+    classGrado: byId('classGrado').value.trim(),
+    mgw: byId('mgw').value.trim(),
+    tara: byId('tara').value.trim(),
+    payload: byId('payload').value.trim(),
+    eir: byId('eir').value.trim(),
+    nave: byId('nave').value.trim(),
+    viaje: byId('viaje').value.trim(),
+
+    // Líneas con fotos (ya comprimidas en base64)
+    daniosJSON: JSON.stringify(state.lines)
   };
 }
 
-// Inicializar
-window.addEventListener('DOMContentLoaded',()=>{
-  setTagValues();
-  addLine();
+async function savePending(){
+  const payload = buildPayload('pendiente');
+  try{
+    const res = await fetch(GAS_URL + '?fn=saveinspection', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if(json?.ok){
+      state.id = json.id || payload.id;
+      byId('idLabel').textContent = state.id;
+      byId('status').value = 'pendiente';
+      byId('statusChip').textContent = 'pendiente';
+      alert('Guardado como pendiente.');
+    }else{
+      alert('No se pudo guardar: ' + (json?.error || 'Error'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Error de red al guardar.');
+  }
+}
+
+async function submitNow(){
+  const payload = buildPayload('enviado');
+  try{
+    const res = await fetch(GAS_URL + '?fn=saveinspection', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if(json?.ok){
+      state.id = json.id || payload.id;
+      byId('idLabel').textContent = state.id;
+      byId('status').value = 'enviado';
+      byId('statusChip').textContent = 'enviado';
+      alert('Enviado con éxito.');
+    }else{
+      alert('No se pudo enviar: ' + (json?.error || 'Error'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Error de red al enviar.');
+  }
+}
+
+/* =========================
+   Cargar por ?id=...
+========================= */
+async function loadInspectionIfAny(){
+  const id = new URLSearchParams(location.search).get('id');
+  if(!id){
+    state.id = null;
+    byId('idLabel').textContent = 'nuevo';
+    addLine(); // al menos una línea
+    return;
+  }
+
+  try{
+    const res = await fetch(GAS_URL + '?fn=getinspection&id=' + encodeURIComponent(id));
+    const json = await res.json();
+    if(!json?.ok || !json?.item){
+      addLine();
+      return;
+    }
+
+    const it = json.item;
+    state.id = it.ID || it.id || id;
+    byId('idLabel').textContent = state.id;
+
+    // Datos Generales
+    byId('container').value = it.Container || it.container || '';
+    byId('gate').value      = it.Gate || it.gate || '-';
+    byId('naviera').value   = it.Naviera || it.naviera || 'Maersk';
+    byId('tipo').value      = it.Tipo || it.tipo || '-';
+    byId('inspector').value = it.Inspector || it.inspector || '';
+    byId('vendor').value    = it.Vendor || it.vendor || '';
+
+    // Inspección Box
+    byId('lugar').value         = it['Lugar'] || it.lugar || '';
+    byId('ptoEmbarque').value   = it['Pto Embarque'] || it.ptoEmbarque || '';
+    byId('ptoDescarga').value   = it['Pto Descarga'] || it.ptoDescarga || '';
+    byId('transportista').value = it['Transportista'] || it.transportista || '';
+    byId('patenteCamion').value = it['Patente Camion'] || it.patenteCamion || '';
+    byId('cliente').value       = it['Cliente'] || it.cliente || '';
+    byId('estadoUnidad').value  = it['Estado Unidad'] || it.estadoUnidad || '';
+    byId('fechaFab').value      = it['Fecha Fab'] || it.fechaFab || '';
+    byId('classGrado').value    = it['Class Grado'] || it.classGrado || '';
+    byId('mgw').value           = it['MGW'] || it.mgw || '';
+    byId('tara').value          = it['TARA'] || it.tara || '';
+    byId('payload').value       = it['PAYLOAD'] || it.payload || '';
+    byId('eir').value           = it['EIR'] || it.eir || '';
+    byId('nave').value          = it['Nave'] || it.nave || '';
+    byId('viaje').value         = it['Viaje'] || it.viaje || '';
+
+    const status = it['Status'] || it.status || 'pendiente';
+    byId('status').value = status;
+    byId('statusChip').textContent = status;
+
+    // Líneas
+    let lines = [];
+    try{
+      lines = JSON.parse(it['DaniosJSON'] || it.daniosJSON || '[]');
+    }catch(_){ lines = []; }
+
+    // Normaliza estructura de líneas (añade campos faltantes)
+    state.lines = (Array.isArray(lines) ? lines : []).map(L => ({
+      _uid: L._uid || uid(),
+      ubi: L.ubi || '',
+      comp: L.comp || '',
+      dano: L.dano || '',
+      mrep: L.mrep || '',
+      cant: Number.isFinite(L.cant) ? L.cant : 1,
+      resp: L.resp || '',
+      reparado: !!L.reparado,
+      fotos: Array.isArray(L.fotos) ? L.fotos : []
+    }));
+
+    if(state.lines.length === 0) addLine(); else renderLines();
+    updateCounts();
+  }catch(err){
+    console.error(err);
+    addLine();
+  }
+}
+
+/* =========================
+   Init
+========================= */
+function bindUI(){
+  byId('btnAddLineTop').addEventListener('click', ()=>addLine());
+  byId('btnSavePending').addEventListener('click', savePending);
+  byId('btnSubmit').addEventListener('click', submitNow);
+  ['naviera','container'].forEach(id=>{
+    const el = byId(id);
+    if(el) el.addEventListener('input', updateHeaderChips);
+  });
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  setChipValues();
+  bindUI();
+  loadInspectionIfAny();
 });
+</script>
+<script>
+/* =========================
+   Helpers opcionales / compatibilidad
+========================= */
+// Convierte archivo a base64 (usado por compresión alternativa)
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// Redimensiona canvas (backup si falla compresión principal)
+async function resizeCanvas(dataURL, maxW=1280, maxH=960, quality=0.8){
+  const img = new Image();
+  return new Promise((resolve,reject)=>{
+    img.onload=()=>{
+      let w=img.width, h=img.height;
+      const ratio=Math.min(maxW/w,maxH/h,1);
+      w=Math.round(w*ratio); h=Math.round(h*ratio);
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=reject;
+    img.src=dataURL;
+  });
+}
+
+/* =========================
+   Auto ajuste móvil (opcional)
+========================= */
+// Para evitar zoom al escribir en inputs en iPhone
+document.addEventListener('touchstart', function(){}, {passive:true});
+
+// Scroll automático al agregar línea (para celular)
+function scrollToBottom(){
+  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+}
+const btnAdd = document.getElementById('btnAddLineTop');
+if(btnAdd){
+  btnAdd.addEventListener('click', ()=>setTimeout(scrollToBottom,300));
+}
+
+/* =========================
+   Listo
+========================= */
+console.log("✅ Inspect.html cargado correctamente — versión final Maersk 2025");
 </script>
 </body>
 </html>
