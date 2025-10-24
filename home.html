@@ -46,6 +46,7 @@ th.w-cont{width:160px}
 th.w-gate{width:100px;text-align:center}
 th.w-ship{width:160px}
 th.w-type{width:110px;text-align:center}
+th.w-ship{white-space:nowrap}
 th.w-danos{width:80px;text-align:center}
 th.w-photos{width:80px;text-align:center}
 th.w-status{width:110px;text-align:center}
@@ -187,19 +188,26 @@ const GAS_URL='https://script.google.com/macros/s/AKfycbyXgHEwB2nvhue9o8qfTZVTLv
 const $=q=>document.querySelector(q);
 let tmo; function toast(m){const el=$("#toast");el.textContent=m;el.style.display='block';clearTimeout(tmo);tmo=setTimeout(()=>el.style.display='none',2200);}
 
-/* ================== AUTH GUARD ================== */
+/* ================== AUTH GUARD (tolerante) ================== */
 (function(){
   try{
-    const u=JSON.parse(localStorage.getItem('auth_user')||'null');
-    if(!u){ location.href='login.html'; return; }
+    const u = localStorage.getItem('auth_user');
+    const r = localStorage.getItem('auth_role');
+    if(!(u && r)){ location.href='login.html'; return; }
   }catch(_){ location.href='login.html'; }
 })();
 
-/* Header user badge + nav */
+/* Header user badge + nav (robusto ante JSON/Texto plano) */
 (function(){
-  const user=JSON.parse(localStorage.getItem('auth_user')||'"-"');
-  const role=localStorage.getItem('auth_role')||'-';
-  $("#badge").textContent = `👤 ${user} · ${role.toUpperCase()}`;
+  function readAny(key, fallback='-'){
+    const raw = localStorage.getItem(key);
+    if (raw == null) return fallback;
+    try { return JSON.parse(raw); } catch { return raw || fallback; }
+  }
+  const user = readAny('auth_user','-');
+  const role = readAny('auth_role','-');
+
+  $("#badge").textContent = `👤 ${user} · ${String(role).toUpperCase()}`;
   $("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
   $("#btnNew").onclick=()=> location.href='inspect.html';
   $("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
@@ -399,6 +407,7 @@ async function populateQueueTable(){
   loadData();
 })();
 </script>
+
 <script>
 /* =============== ENVÍO DESDE LA COLA (SELECCIONADOS) =============== */
 const btnSendSel=$("#btnSendSel");
