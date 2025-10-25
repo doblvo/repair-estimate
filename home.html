@@ -4,6 +4,10 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>MAERSK — Principal</title>
+
+<!-- Librería para exportar a Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
 :root{
   --brand:#0b74c7;
@@ -47,7 +51,19 @@ header h1{margin:0;font-size:16px;color:var(--ink)}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .section{padding:10px 12px}
 
-/* tabla */
+/* ====================  filtros  ==================== */
+.filters{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;
+  align-items:center;font-size:13px;
+}
+.filter-btn{
+  border:1px solid #374151;border-radius:999px;padding:4px 10px;
+  background:#0f172a;color:#9ca3af;cursor:pointer;user-select:none;
+}
+.filter-btn.active{background:var(--ok);border-color:var(--ok);color:#fff}
+.filter-btn span{opacity:.8;margin-left:4px;font-weight:600}
+
+/* ====================  tabla  ==================== */
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:separate;border-spacing:0;color:var(--ink)}
 thead th{position:sticky;top:0;background:#0f1a2a;border-bottom:1px solid var(--line);
@@ -57,12 +73,11 @@ tbody tr:hover{background:#0f172a}
 td.t-center{text-align:center}
 
 /* badges y chips */
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;
-  border:1px solid #374151;background:#0f172a;}
-.b-pend{border-color:var(--warn);color:var(--warn)}
-.b-send{border-color:var(--ok);color:var(--ok)}
-.b-fail{border-color:var(--danger);color:var(--danger)}
-.b-prog{border-color:var(--brand);color:var(--brand)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.b-pend{background:#f59e0b33;color:var(--warn);border:1px solid var(--warn)}
+.b-send{background:#10b98133;color:var(--ok);border:1px solid var(--ok)}
+.b-fail{background:#ef444433;color:var(--danger);border:1px solid var(--danger)}
+.b-prog{background:#0b74c733;color:var(--brand);border:1px solid var(--brand)}
 .gate-in{border:1px solid var(--ok);color:var(--ok);background:#052e1b;
   border-radius:999px;padding:2px 10px;font-size:12px}
 .gate-out{border:1px solid var(--danger);color:var(--danger);background:#2a0b0b;
@@ -123,18 +138,19 @@ td.t-center{text-align:center}
         <span id="queueBadge" class="qbadge" title="Ítems en cola">
           <span class="dot"></span> Cola: <strong id="queueCount">0</strong>
         </span>
+        <button id="btnRefresh" class="btn">🔄 Refrescar</button>
         <button id="btnExport" class="btn" style="display:none">📤 Exportar seleccionadas</button>
         <button id="btnNew" class="btn primary">+ Nueva inspección</button>
-        <button id="btnProfile" class="btn">Mi perfil</button>
         <button id="btnLogout" class="btn">Cerrar sesión</button>
       </div>
     </header>
+
     <div class="section">
+      <div id="filters" class="filters"></div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr id="theadRow">
-              <!-- el checkbox general solo lo verá el admin -->
               <th id="thSelect" style="display:none"><input type="checkbox" id="chkAllGlobal"></th>
               <th>Fecha</th>
               <th>Contenedor</th>
@@ -150,7 +166,6 @@ td.t-center{text-align:center}
           <tbody id="tbody"></tbody>
         </table>
       </div>
-
       <div class="pagerbar">
         <div class="pager">
           <button id="prev" class="pagebtn">« Anterior</button>
@@ -209,7 +224,7 @@ td.t-center{text-align:center}
 const GAS_URL="https://script.google.com/macros/s/AKfycbzFILLAVxlmEJDPLh3rftc-jHIs7ygRz21krDTlNIuMnPFPHMnIKcd9rMvzEYIMWuxk4g/exec";
 const $=q=>document.querySelector(q);
 const toast=m=>{const t=$("#toast");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",2200);};
-let all=[],filtered=[],page=1,per=20,userRole="";
+let all=[],filtered=[],page=1,per=20,userRole="",activeStatus="todos";
 
 /* ======== Sesión y roles ======== */
 (function(){
@@ -224,7 +239,6 @@ let all=[],filtered=[],page=1,per=20,userRole="";
   }
 })();
 $("#btnLogout").onclick=()=>{localStorage.clear();location.href="login.html";};
-$("#btnProfile").onclick=()=>toast("Configura técnico/vendor en inspect.html");
 $("#btnNew").onclick=()=>location.href="inspect.html";
 
 /* ======== API ======== */
@@ -260,20 +274,43 @@ function toggleMailState(el){
   localStorage.setItem("mail_"+el.dataset.mailId,next);
 }
 
-/* ======== Cargar inspecciones (solo enviadas) ======== */
+/* ======== Filtros de estado ======== */
+function renderFilters(){
+  const statuses=["todos","enviado","pendiente","fallido"];
+  const counts={todos:all.length};
+  all.forEach(x=>{
+    const s=String(x.status).toLowerCase();
+    counts[s]=(counts[s]||0)+1;
+  });
+  const cont=$("#filters");
+  cont.innerHTML="";
+  statuses.forEach(st=>{
+    const btn=document.createElement("div");
+    btn.className="filter-btn"+(activeStatus===st?" active":"");
+    btn.innerHTML=st.charAt(0).toUpperCase()+st.slice(1)+(counts[st]!=null?` <span>${counts[st]}</span>`:"");
+    btn.onclick=()=>{activeStatus=st;render();renderFilters();};
+    cont.appendChild(btn);
+  });
+}
+
+/* ======== Cargar inspecciones ======== */
 async function loadData(){
-  const btn=$("#btnExport");if(btn)btn.disabled=true;
+  const btn=$("#btnRefresh");btn.disabled=true;btn.textContent="Cargando…";
   try{
     const res=await apiGetInspections();
-    all=(res.items||[]).filter(x=>String(x.status).toLowerCase()==="enviado");
+    all=(res.items||[]).filter(x=>String(x.status).toLowerCase()!=="pendiente");
+    renderFilters();
     render();
   }catch(e){console.error(e);toast("Error al obtener datos");}
-  finally{if(btn)btn.disabled=false;}
+  finally{btn.disabled=false;btn.textContent="🔄 Refrescar";}
 }
 
 /* ======== Render tabla ======== */
 function render(){
-  filtered=all;const tb=$("#tbody");tb.innerHTML="";
+  filtered=all;
+  if(activeStatus!=="todos")
+    filtered=filtered.filter(x=>String(x.status).toLowerCase()===activeStatus);
+  const tb=$("#tbody");tb.innerHTML="";
   const ini=(page-1)*per,fin=Math.min(filtered.length,ini+per);
   for(let i=ini;i<fin;i++){
     const r=filtered[i];const id=r.id;
@@ -295,7 +332,10 @@ function render(){
       </td>`;
     tb.appendChild(tr);
   }
-  if(userRole==="admin")tb.querySelectorAll(".mail-icon").forEach(e=>e.onclick=()=>toggleMailState(e));
+  if(userRole==="admin"){
+    tb.querySelectorAll(".mail-icon").forEach(e=>e.onclick=()=>toggleMailState(e));
+    $("#chkAllGlobal").onchange=()=>tb.querySelectorAll('input[type="checkbox"][data-id]').forEach(c=>c.checked=$("#chkAllGlobal").checked);
+  }
   $("#pageInfo").textContent=`Página ${page}`;
   $("#countInfo").textContent=`Mostrando ${filtered.length} total`;
 }
@@ -420,34 +460,37 @@ btnSend.onclick=async()=>{
 function exportSelected(){
   const rows=[...document.querySelectorAll('input[type="checkbox"][data-id]:checked')];
   if(!rows.length){toast("Selecciona al menos una fila");return;}
-  const headers=["Fecha","Contenedor","Gate","Naviera","Tipo","Daños","Fotos","Inspector","Vendor","Status"];
-  const lines=[headers.join(",")];
+  const data=[];
   for(const r of rows){
     const id=r.dataset.id;
     const item=all.find(x=>x.id===id);
-    if(item){
-      const vals=[item.fecha||"",item.container||"",item.gate||"",item.naviera||"",
-        item.tipo||"",item.linesCount||"",item.photosCount||"",item.inspector||"",
-        item.vendor||"",item.status||""];
-      lines.push(vals.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
-    }
+    if(item) data.push({
+      Fecha:item.fecha||"",
+      Contenedor:item.container||"",
+      Gate:item.gate||"",
+      Naviera:item.naviera||"",
+      Tipo:item.tipo||"",
+      Daños:item.linesCount||0,
+      Fotos:item.photosCount||0,
+      Inspector:item.inspector||"",
+      Vendor:item.vendor||"",
+      Status:item.status||""
+    });
   }
-  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="inspecciones_export.csv";
-  a.click();
-  URL.revokeObjectURL(url);
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Inspecciones");
+  XLSX.writeFile(wb,"inspecciones_maersk.xlsx");
 }
 $("#btnExport").onclick=exportSelected;
 
 /* ==============================
-   PAGINACIÓN Y BUSCADOR
+   REFRESCAR + PAGINACIÓN
 ================================*/
+$("#btnRefresh").onclick=()=>{loadData();refreshQueueBadge();};
 $("#perPage").onchange=()=>{per=Number($("#perPage").value);page=1;render();};
 $("#prev").onclick=()=>{if(page>1){page--;render();}};
 $("#next").onclick=()=>{page++;render();};
-let sT;$("#txtSearch")?.addEventListener("input",()=>{clearTimeout(sT);sT=setTimeout(()=>{page=1;render();},200);});
 
 /* ==============================
    INIT
