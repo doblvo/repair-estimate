@@ -706,6 +706,22 @@ window.viewDetail = async function(item){
 closeDetailBtn.onclick = ()=> modalDetail.style.display="none";
 modalDetail.addEventListener("click",(e)=>{ if(e.target===modalDetail) modalDetail.style.display="none"; });
 
+/* ======== Prefetch en hover para acelerar "Ver" ======== */
+document.addEventListener("mouseover", (ev)=>{
+  const btn = ev.target.closest("button.btn");
+  if(!btn || !btn.textContent.includes("Ver")) return;
+  try{
+    const match = btn.getAttribute("onclick")?.match(/viewDetail\((.*?)\)/);
+    if(!match) return;
+    const parsed = JSON.parse(match[1].replace(/&quot;/g,'"'));
+    if(parsed?.id && !detailCache.has(parsed.id)){
+      // lanza el fetch en segundo plano
+      fetchInspectionFull(parsed.id).catch(()=>{});
+    }
+  }catch(_){}
+});
+
+  
 /* ==============================
    INIT
 ================================*/
