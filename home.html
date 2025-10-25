@@ -491,6 +491,48 @@ $("#btnRefresh").onclick=()=>{loadData();refreshQueueBadge();};
 $("#perPage").onchange=()=>{per=Number($("#perPage").value);page=1;render();};
 $("#prev").onclick=()=>{if(page>1){page--;render();}};
 $("#next").onclick=()=>{page++;render();};
+/* ==============================
+  VER
+/* ==============================
+/* ======== Modal Detalle (Ver) ======== */
+const modalDetail = document.getElementById("modalDetail");
+const detailBody  = document.getElementById("detailBody");
+const closeDetailBtn = document.getElementById("closeDetail");
+
+function gateText(v){
+  v = String(v||"").toUpperCase();
+  if(v.includes("IN")) return "IN";
+  if(v.includes("OUT")) return "OUT";
+  return "—";
+}
+function safe(v){ return (v==null||v==="") ? "—" : v; }
+
+window.viewDetail = function(item){
+  // item llega como objeto literal desde el onclick
+  const html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <p><b>Fecha:</b> ${item.fecha?String(item.fecha).slice(0,10):"—"}</p>
+        <p><b>Contenedor:</b> ${safe(item.container)}</p>
+        <p><b>Gate:</b> ${gateText(item.gate)}</p>
+        <p><b>Naviera:</b> ${safe(item.naviera)}</p>
+        <p><b>Tipo:</b> ${safe(item.tipo)}</p>
+      </div>
+      <div>
+        <p><b>Inspector:</b> ${safe(item.inspector)}</p>
+        <p><b>Vendor:</b> ${safe(item.vendor)}</p>
+        <p><b>Status:</b> ${safe(item.status)}</p>
+        <p><b>Daños:</b> ${item.linesCount||0} · <b>Fotos:</b> ${item.photosCount||0}</p>
+        ${item.folderUrl ? `<p><b>Carpeta:</b> <a href="${item.folderUrl}" target="_blank">Abrir en Drive</a></p>` : ""}
+      </div>
+    </div>
+  `;
+  detailBody.innerHTML = html;
+  modalDetail.style.display = "flex";
+};
+
+closeDetailBtn.onclick = ()=> modalDetail.style.display="none";
+modalDetail.addEventListener("click",(e)=>{ if(e.target===modalDetail) modalDetail.style.display="none"; });
 
 /* ==============================
    INIT
