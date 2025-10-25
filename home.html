@@ -21,6 +21,49 @@
   --warn:#f59e0b;
   --danger:#ef4444;
 }
+/* ===== Detalle estilo "inspección box" ===== */
+.sheet{
+  background:#0b1120; color:#e5e7eb;
+  border:1px solid #1f2937; border-radius:12px; padding:16px;
+}
+.sheet .hdr{
+  display:grid; grid-template-columns:120px 1fr 180px; align-items:center; gap:12px; margin-bottom:10px;
+}
+.sheet .logo{
+  width:110px;height:36px;border-radius:8px;border:1px solid #1f2937;background:#0f172a;
+  display:grid;place-items:center;font-weight:700;color:#8ec7ff;
+}
+.sheet .title{ text-align:center; }
+.sheet .title h2{ margin:0; font-size:18px; letter-spacing:.5px; }
+.sheet .title .sid{ color:#9ca3af; font-size:12px; }
+.sheet .meta{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;
+}
+.sheet .kv{
+  display:grid;grid-template-columns:160px 1fr;gap:4px 10px;
+  background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:10px;
+}
+.sheet .kv .k{color:#9ca3af}
+.sheet .kv .v{color:#e5e7eb;font-weight:600}
+.sheet h3{
+  margin:14px 0 8px; font-size:14px; color:#cbd5e1; letter-spacing:.2px;
+}
+
+/* tabla estimate */
+.est-wrap{ background:#0f172a;border:1px solid #1f2937;border-radius:10px;overflow:auto}
+.est{ width:100%; border-collapse:separate; border-spacing:0; color:#e5e7eb; font-size:13px}
+.est th{
+  position:sticky; top:0; background:#0f1a2a; border-bottom:1px solid #1f2937;
+  padding:6px 8px; white-space:nowrap; text-align:left;
+}
+.est td{ border-bottom:1px dashed #1f2937; padding:6px 8px; vertical-align:top }
+.est .t-center{text-align:center}
+.est tfoot td{ font-weight:700; background:#0b1220 }
+.sheet .foot{
+  display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;color:#9ca3af
+}
+.sheet .foot b{color:#e5e7eb}
+
 *{box-sizing:border-box}
 body{
   margin:0;background:var(--bg);color:var(--ink);
@@ -491,44 +534,173 @@ $("#btnRefresh").onclick=()=>{loadData();refreshQueueBadge();};
 $("#perPage").onchange=()=>{per=Number($("#perPage").value);page=1;render();};
 $("#prev").onclick=()=>{if(page>1){page--;render();}};
 $("#next").onclick=()=>{page++;render();};
-/* ==============================
-  VER
-/* ==============================
-/* ======== Modal Detalle (Ver) ======== */
+
+/* ======== Modal Detalle (Ver) — estilo "inspección box" ======== */
 const modalDetail = document.getElementById("modalDetail");
 const detailBody  = document.getElementById("detailBody");
 const closeDetailBtn = document.getElementById("closeDetail");
 
+function safe(v){ return (v==null||v==="") ? "—" : v; }
 function gateText(v){
   v = String(v||"").toUpperCase();
-  if(v.includes("IN")) return "IN";
-  if(v.includes("OUT")) return "OUT";
+  if(v.includes("IN")) return "Gate In";
+  if(v.includes("OUT")) return "Gate Out";
   return "—";
 }
-function safe(v){ return (v==null||v==="") ? "—" : v; }
 
-window.viewDetail = function(item){
-  // item llega como objeto literal desde el onclick
-  const html = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div>
-        <p><b>Fecha:</b> ${item.fecha?String(item.fecha).slice(0,10):"—"}</p>
-        <p><b>Contenedor:</b> ${safe(item.container)}</p>
-        <p><b>Gate:</b> ${gateText(item.gate)}</p>
-        <p><b>Naviera:</b> ${safe(item.naviera)}</p>
-        <p><b>Tipo:</b> ${safe(item.tipo)}</p>
-      </div>
-      <div>
-        <p><b>Inspector:</b> ${safe(item.inspector)}</p>
-        <p><b>Vendor:</b> ${safe(item.vendor)}</p>
-        <p><b>Status:</b> ${safe(item.status)}</p>
-        <p><b>Daños:</b> ${item.linesCount||0} · <b>Fotos:</b> ${item.photosCount||0}</p>
-        ${item.folderUrl ? `<p><b>Carpeta:</b> <a href="${item.folderUrl}" target="_blank">Abrir en Drive</a></p>` : ""}
-      </div>
-    </div>
+async function fetchInspectionFull(id){
+  const res = await fetch(GAS_URL, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify({ fn:"getinspection", id })
+  });
+  const j = await res.json();
+  if(!j?.ok) throw new Error(j?.error || "No encontrado");
+  return j.item || {};
+}
+
+function buildEstimateTable(lines){
+  // Mapea tus campos a columnas similares al PDF
+  // (si no existen en tu data, mostramos "—" o 0)
+  let idx=1, totalQty=0, totalMan=0, totalLab=0, totalMat=0, totalIva=0, totalMas=0;
+  const rows = (lines||[]).map(l=>{
+    const qty = Number(l.qty||l.cantidad||0) || 0;
+    const man = Number(l.manHours||0) || 0;
+    const lab = Number(l.labourTotal||0) || 0;
+    const mat = Number(l.materialCostTotal||0) || 0;
+    const iva = Number(l.iva||0) || 0;
+    const tmas= Number(l.totalMasIva||0) || (lab+mat+iva);
+
+    totalQty += qty; totalMan += man; totalLab += lab; totalMat += mat; totalIva += iva; totalMas += tmas;
+
+    const row = `
+      <tr>
+        <td class="t-center">${String(idx).padStart(2,'0')}</td>
+        <td>${safe(l.loc||'XXX')}</td>
+        <td>${safe(l.damageCode||l.dano||l.typeOfDamage||'—')}</td>
+        <td>${safe(l.component||'—')}<br><span style="color:#9ca3af">${safe(l.actionCode||l.repairMethod||'—')}</span></td>
+        <td>${safe(l.sizeOfRepair||'—')}</td>
+        <td class="t-center">${qty || '0'}</td>
+        <td class="t-center">${man.toFixed(2)}</td>
+        <td class="t-center">${safe(l.pthh||'—')}</td>
+        <td class="t-center">${lab.toFixed(2)}</td>
+        <td class="t-center">${mat.toFixed(2)}</td>
+        <td class="t-center">${iva.toFixed(2)}</td>
+        <td class="t-center">${tmas.toFixed(2)}</td>
+        <td class="t-center">${safe(l.r||'')}</td>
+        <td class="t-center">${safe(l.sa||'')}</td>
+        <td>${safe(l.remark||l.observacion||'')}</td>
+      </tr>`;
+    idx++;
+    return row;
+  }).join("");
+
+  const tfoot = `
+    <tfoot><tr>
+      <td colspan="5" style="text-align:right"><b>TOTAL</b></td>
+      <td class="t-center">${totalQty}</td>
+      <td class="t-center">${totalMan.toFixed(2)}</td>
+      <td class="t-center">—</td>
+      <td class="t-center">${totalLab.toFixed(2)}</td>
+      <td class="t-center">${totalMat.toFixed(2)}</td>
+      <td class="t-center">${totalIva.toFixed(2)}</td>
+      <td class="t-center">${totalMas.toFixed(2)}</td>
+      <td colspan="3"></td>
+    </tr></tfoot>
   `;
-  detailBody.innerHTML = html;
-  modalDetail.style.display = "flex";
+
+  return `
+  <div class="est-wrap">
+    <table class="est">
+      <thead>
+        <tr>
+          <th>ITEM</th><th>LOC.</th><th>TYPE OF DAMAGE</th><th>COMPONENT AND REPAIR METHOD</th>
+          <th>SIZE OF REPAIR</th><th>QTY</th><th>MAN HOURS</th><th>P.T HH</th>
+          <th>LABOUR TOTAL</th><th>MATERIAL COST TOTAL</th><th>IVA</th><th>TOT. MAS IVA</th>
+          <th>R</th><th>S.A</th><th>OBSERVACIÓN</th>
+        </tr>
+      </thead>
+      <tbody>${rows || ''}</tbody>
+      ${tfoot}
+    </table>
+  </div>`;
+}
+
+window.viewDetail = async function(item){
+  try{
+    // Traemos el registro completo (incluye DaniosJSON y otros campos)
+    const full = await fetchInspectionFull(item.id);
+
+    const lines = JSON.parse(full.DaniosJSON || "[]");
+    const photos = JSON.parse(full.FotosJSON || "[]");
+
+    // Cabecera (datos principales)
+    const headHTML = `
+      <div class="sheet">
+        <div class="hdr">
+          <div class="logo">MAERSK</div>
+          <div class="title">
+            <h2>INSPECCIÓN BOX</h2>
+            <div class="sid">${safe(full.ID)}</div>
+          </div>
+          <div style="text-align:right;color:#9ca3af">
+            <div>Estado: <b style="color:#22c55e">${safe(full.Status||item.status)}</b></div>
+            <div>Fotos: <b>${photos.length||0}</b></div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <div class="kv">
+            <div class="k">CONTAINER Nº</div><div class="v">${safe(full.Container)}</div>
+            <div class="k">TAMAÑO/TIPO</div><div class="v">${safe(full.Tipo||'-')}</div>
+            <div class="k">GATE</div><div class="v">${gateText(full.Gate)}</div>
+            <div class="k">FECHA</div><div class="v">${full.Timestamp? String(full.Timestamp).slice(0,10) : '—'}</div>
+            <div class="k">OWNER</div><div class="v">${safe(full.Naviera || '—')}</div>
+            <div class="k">EIR</div><div class="v">${safe(full.EIR)}</div>
+            <div class="k">NAVE</div><div class="v">${safe(full.Nave)}</div>
+            <div class="k">VIAJE</div><div class="v">${safe(full.Viaje)}</div>
+          </div>
+          <div class="kv">
+            <div class="k">LUGAR</div><div class="v">${safe(full.Lugar)}</div>
+            <div class="k">PTO. EMBARQUE</div><div class="v">${safe(full['Pto Embarque'])}</div>
+            <div class="k">PTO. DESCARGA</div><div class="v">${safe(full['Pto Descarga'])}</div>
+            <div class="k">TRANSPORTISTA</div><div class="v">${safe(full.Transportista)}</div>
+            <div class="k">PATENTE CAMIÓN</div><div class="v">${safe(full['Patente Camion'])}</div>
+            <div class="k">CLIENTE</div><div class="v">${safe(full.Cliente)}</div>
+            <div class="k">ESTADO UNIDAD</div><div class="v">${safe(full['Estado Unidad'])}</div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <div class="kv">
+            <div class="k">MGW</div><div class="v">${safe(full.MGW)}</div>
+            <div class="k">TARA</div><div class="v">${safe(full.TARA)}</div>
+            <div class="k">PAYLOAD</div><div class="v">${safe(full.PAYLOAD)}</div>
+          </div>
+          <div class="kv">
+            <div class="k">FECHA FAB.</div><div class="v">${safe(full['Fecha Fab'])}</div>
+            <div class="k">CLASS</div><div class="v">${safe(full['Class Grado'])}</div>
+          </div>
+        </div>
+
+        <h3>REPAIR ESTIMATE</h3>
+        ${buildEstimateTable(lines)}
+
+        <div class="foot">
+          <div><b>NOMBRE INSPECTOR:</b> ${safe(full.Inspector)}</div>
+          <div><b>FECHA INSPECCIÓN:</b> ${full.Timestamp? String(full.Timestamp).slice(0,10) : '—'}</div>
+          <div><b>PATIO:</b> ${safe(full.Lugar)}</div>
+        </div>
+      </div>
+    `;
+
+    detailBody.innerHTML = headHTML;
+    modalDetail.style.display = "flex";
+  }catch(err){
+    console.error(err);
+    detailBody.innerHTML = `<div class="sheet"><p>Error al cargar el detalle: ${safe(err.message)}</p></div>`;
+    modalDetail.style.display = "flex";
+  }
 };
 
 closeDetailBtn.onclick = ()=> modalDetail.style.display="none";
