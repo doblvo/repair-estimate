@@ -6,37 +6,117 @@
 <title>MAERSK — Principal</title>
 <style>
 :root{
-  --brand:#0b74c7; --bg:#f6f8fb; --ink:#0f172a; --muted:#6b7280;
-  --card:#fff; --line:#e5e7eb; --radius:12px;
+  --brand:#0b74c7;
+  --bg:#0b1120;
+  --card:#111827;
+  --ink:#f9fafb;
+  --muted:#9ca3af;
+  --line:#1f2937;
+  --radius:12px;
+  --ok:#10b981;
+  --warn:#f59e0b;
+  --danger:#ef4444;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+}
 .wrap{max-width:1200px;margin:0 auto;padding:16px}
-.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 18px rgba(0,0,0,.05)}
-header{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-header h1{margin:0;font-size:16px}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+header{
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+header h1{margin:0;font-size:16px;color:var(--ink)}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
 .right{margin-left:auto}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
-.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border:1px solid var(--line);
+  border-radius:999px;background:#0f172a;font-size:12px;color:var(--muted)
+}
+.btn{
+  border:1px solid var(--line);
+  background:#0f172a;
+  color:var(--ink);
+  border-radius:10px;
+  padding:8px 12px;
+  cursor:pointer;
+}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn:hover{opacity:.9}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .section{padding:10px 12px}
 
-/* banda última enviada (opcional) */
-.band{margin:10px 12px 0;background:#ecfdf5;border:1px solid #10b981;color:#065f46;border-radius:10px;padding:8px 10px;font-size:13px;display:none}
-.band.warn{background:#fffbeb;border-color:#f59e0b;color:#92400e}
+/* banda última enviada */
+.band{
+  margin:10px 12px 0;
+  background:#052e1b;
+  border:1px solid #14532d;
+  color:#c8f3d6;
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:13px;
+  display:none;
+}
+.band.warn{
+  background:#2a0b0b;
+  border-color:#7f1d1d;
+  color:#fecaca;
+}
 
 /* filtros / buscador */
-.controls{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.search input{border:1px solid #dbe2ea;border-radius:10px;padding:8px 10px;font:inherit;background:#fff;min-width:240px}
-
+.controls{
+  display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+}
+.search input{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px 10px;
+  font:inherit;
+  background:#0f172a;
+  color:var(--ink);
+  min-width:240px;
+}
+.search input:focus{outline:1px solid var(--brand)}
 /* tabla */
 .table-wrap{overflow:auto}
-table{width:100%;border-collapse:separate;border-spacing:0}
-thead th{position:sticky;top:0;background:#f9fbfe;border-bottom:1px solid var(--line);font-weight:600;padding:8px 8px;z-index:1;text-align:left;white-space:nowrap}
-tbody td{border-bottom:1px dashed #eef2f7;padding:7px 8px;vertical-align:middle}
-tbody tr:hover{background:#fafcff}
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  color:var(--ink);
+}
+thead th{
+  position:sticky;
+  top:0;
+  background:#0f1a2a;
+  border-bottom:1px solid var(--line);
+  font-weight:600;
+  padding:8px 8px;
+  z-index:1;
+  text-align:left;
+  white-space:nowrap;
+}
+tbody td{
+  border-bottom:1px dashed #1f2937;
+  padding:7px 8px;
+  vertical-align:middle;
+}
+tbody tr:hover{background:#0f172a}
 th.w-date{width:120px}
 th.w-cont{width:160px}
 th.w-gate{width:100px;text-align:center}
@@ -49,61 +129,127 @@ th.w-actions{width:180px;text-align:center}
 td.t-center{text-align:center}
 
 /* chips */
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #cbd5e1;background:#fff}
-.b-pend{border-color:#f59e0b;color:#92400e;background:#fffbeb}
-.b-send{border-color:#10b981;color:#065f46;background:#ecfdf5}
-.b-fail{border-color:#ef4444;color:#7f1d1d;background:#fef2f2}
-.b-prog{border-color:#3b82f6;color:#1e3a8a;background:#eff6ff}
-.gate-in{border:1px solid #10b981;color:#065f46;background:#ecfdf5;border-radius:999px;padding:2px 10px;font-size:12px}
-.gate-out{border:1px solid #ef4444;color:#7f1d1d;background:#fef2f2;border-radius:999px;padding:2px 10px;font-size:12px}
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid #374151;
+  background:#0f172a;
+}
+.b-pend{border-color:var(--warn);color:var(--warn)}
+.b-send{border-color:var(--ok);color:var(--ok)}
+.b-fail{border-color:var(--danger);color:var(--danger)}
+.b-prog{border-color:var(--brand);color:var(--brand)}
+.gate-in{
+  border:1px solid var(--ok);
+  color:var(--ok);
+  background:#052e1b;
+  border-radius:999px;
+  padding:2px 10px;
+  font-size:12px
+}
+.gate-out{
+  border:1px solid var(--danger);
+  color:var(--danger);
+  background:#2a0b0b;
+  border-radius:999px;
+  padding:2px 10px;
+  font-size:12px
+}
 
 /* paginación */
-.pagerbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+.pagerbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:10px 12px;border-top:1px solid var(--line)
+}
 .pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.pagebtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+.pagebtn{
+  border:1px solid var(--line);
+  background:#0f172a;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+  color:var(--ink)
+}
 .pagebtn[disabled]{opacity:.6;cursor:not-allowed}
 .pp-wrap{display:flex;align-items:center;gap:8px}
-.pp-wrap select{border:1px solid #dbe2ea;border-radius:8px;padding:6px 24px 6px 10px;background:#fff}
+.pp-wrap select{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:6px 24px 6px 10px;
+  background:#0f172a;
+  color:var(--ink)
+}
 .info{color:var(--muted);font-size:12px}
 
 /* toast */
-.toast{position:fixed;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #dbe2ea;border-radius:10px;background:#ffffffcc;backdrop-filter:blur(8px);display:none;z-index:9999}
+.toast{
+  position:fixed;
+  left:12px;right:12px;bottom:12px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#0f172a;
+  color:var(--ink);
+  backdrop-filter:blur(8px);
+  display:none;
+  z-index:9999;
+}
 
 /* badge cola */
-.qbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;cursor:pointer}
-.qbadge .dot{width:8px;height:8px;border-radius:999px;background:#22c55e}
+.qbadge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border:1px solid var(--line);
+  border-radius:999px;background:#0f172a;
+  font-size:12px;cursor:pointer;color:var(--muted)
+}
+.qbadge .dot{
+  width:8px;height:8px;border-radius:999px;background:#22c55e;
+}
 .qbadge.warn .dot{background:#f59e0b}
 
-/* modal genérico */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:9998}
-.modal .box{background:#fff;border-radius:12px;border:1px solid var(--line);padding:14px;max-width:900px;width:96%;max-height:90vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+/* modal */
+.modal{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(3px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9998;
+}
+.modal .box{
+  background:#111827;
+  border-radius:12px;
+  border:1px solid var(--line);
+  padding:14px;
+  max-width:900px;
+  width:96%;
+  max-height:90vh;
+  overflow:auto;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  color:var(--ink)
+}
 .modal header{border:none;justify-content:space-between;padding:0 0 10px;display:flex;align-items:center}
 .modal h2{margin:0;font-size:16px}
-
-/* modal cola */
 .modal table{width:100%;border-collapse:collapse;margin-top:8px}
-.modal th,.modal td{border-bottom:1px solid #eee;padding:6px 8px;font-size:13px}
-.modal th{text-align:left;background:#f9fafb;position:sticky;top:0}
+.modal th,.modal td{border-bottom:1px solid #1f2937;padding:6px 8px;font-size:13px}
+.modal th{text-align:left;background:#0f1a2a;position:sticky;top:0}
 .modal .actions{margin-top:10px;display:flex;gap:8px;justify-content:flex-end}
 .modal .actions .btn{padding:6px 12px;font-size:13px}
 
 /* sobres */
 .mail-icon{
   width:18px;height:18px;display:inline-block;margin:0 3px;cursor:pointer;
-  border-radius:3px;border:1px solid #d1d5db;transition:all .15s;vertical-align:middle;
+  border-radius:3px;border:1px solid #3f3f46;
+  transition:all .15s;vertical-align:middle;
 }
-.mail-gray{background:#e5e7eb;}
+.mail-gray{background:#3f3f46;}
 .mail-blue{background:#3b82f6;}
 .mail-green{background:#10b981;}
 .mail-red{background:#ef4444;}
 .mail-icon:hover{transform:scale(1.1)}
-
-/* modal detalle (ficha) */
-.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 12px;font-size:13px;margin-top:10px}
-.detail-grid div span{display:block;color:var(--muted);font-size:12px}
-.detail-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-.detail-table th,.detail-table td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left}
-.detail-table th{background:#f9fafb}
 </style>
 </head>
 <body>
@@ -113,7 +259,9 @@ td.t-center{text-align:center}
       <h1>MAERSK — Principal</h1>
       <div class="toolbar right">
         <span id="badge" class="pill">—</span>
-        <span id="queueBadge" class="qbadge" title="Ítems sin enviar"><span class="dot"></span> Cola: <strong id="queueCount">0</strong></span>
+        <span id="queueBadge" class="qbadge" title="Ítems sin enviar">
+          <span class="dot"></span> Cola: <strong id="queueCount">0</strong>
+        </span>
         <button id="btnNew" class="btn primary">+ Nueva inspección</button>
         <button id="btnProfile" class="btn">Mi perfil</button>
         <button id="btnLogout" class="btn">Cerrar sesión</button>
@@ -125,7 +273,7 @@ td.t-center{text-align:center}
     <div class="section">
       <div class="controls">
         <div>
-          <button class="pill" data-st="all">All</button>
+          <button class="pill" data-st="all">Todos</button>
           <button class="pill" data-st="pendiente">Pendientes</button>
           <button class="pill" data-st="enviado">Enviados</button>
           <button class="pill" data-st="fallido">Fallidas</button>
@@ -152,7 +300,6 @@ td.t-center{text-align:center}
           <tbody id="tbody"></tbody>
         </table>
       </div>
-
       <div class="pagerbar">
         <div class="pager">
           <button id="prev" class="pagebtn">« Anterior</button>
@@ -160,10 +307,12 @@ td.t-center{text-align:center}
           <button id="next" class="pagebtn">Siguiente »</button>
         </div>
         <div class="pp-wrap">
-          <span class="info">Per page</span>
+          <span class="info">Por página</span>
           <select id="perPage">
-            <option value="10">10</option><option value="20" selected>20</option>
-            <option value="50">50</option><option value="100">100</option>
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
           </select>
           <span id="countInfo" class="info">—</span>
         </div>
@@ -203,379 +352,139 @@ td.t-center{text-align:center}
     <div id="detailBody"></div>
   </div>
 </div>
+
 <script>
-/* ================== CONFIG / CONST ================== */
 const GAS_URL='https://script.google.com/macros/s/AKfycbzFILLAVxlmEJDPLh3rftc-jHIs7ygRz21krDTlNIuMnPFPHMnIKcd9rMvzEYIMWuxk4g/exec';
 const $=q=>document.querySelector(q);
-let tmo; function toast(m){const el=$("#toast");el.textContent=m;el.style.display='block';clearTimeout(tmo);tmo=setTimeout(()=>el.style.display='none',2200);}
+let tmo;function toast(m){const el=$("#toast");el.textContent=m;el.style.display='block';clearTimeout(tmo);tmo=setTimeout(()=>el.style.display='none',2200);}
 
-/* ================== AUTH GUARD (robusto) ================== */
+/* ========= Auth ======== */
 (function(){
-  function readAny(k, fb=null){
-    const raw=localStorage.getItem(k);
-    if(raw==null) return fb;
-    try{ return JSON.parse(raw); }catch{ return raw||fb; }
-  }
-  const u=readAny('auth_user'); const r=readAny('auth_role');
-  if(!(u&&r)){ location.href='login.html'; return; }
-  $("#badge").textContent=`👤 ${u} · ${String(r).toUpperCase()}`;
+  const u=localStorage.getItem('auth_user');
+  const r=localStorage.getItem('auth_role');
+  if(!u||!r){location.href='login.html';return;}
+  $("#badge").textContent=`👤 ${JSON.parse(u)} · ${r.toUpperCase()}`;
 })();
+$("#btnLogout").onclick=()=>{localStorage.clear();location.href='login.html';};
+$("#btnNew").onclick=()=>location.href='inspect.html';
+$("#btnProfile").onclick=()=>toast("Configura técnico/vendor en la página de inspección.");
 
-/* ================== NAV ================== */
-$("#btnLogout").onclick=()=>{localStorage.removeItem('auth_user');localStorage.removeItem('auth_role');location.href='login.html';};
-$("#btnNew").onclick=()=> location.href='inspect.html';
-$("#btnProfile").onclick=()=> toast("Configura técnico/vendor en la página de inspección.");
-$("#btnRefresh").onclick=()=> loadData();
-
-/* ================== STATE ================== */
-let all=[], filtered=[], page=1, per=Number(localStorage.getItem('home_per')||20), status=localStorage.getItem('home_status')||'all';
-$("#perPage").value=String(per);
-
-/* ================== FILTROS ================== */
+/* ========= Estado/UI ======== */
+let all=[],filtered=[],page=1,per=20,status='all';
+$("#perPage").onchange=()=>{per=Number($("#perPage").value);page=1;render();};
 document.querySelectorAll('[data-st]').forEach(b=>{
-  if(b.dataset.st===status) b.classList.add('btn');
-  b.onclick=()=>{ status=b.dataset.st; localStorage.setItem('home_status',status); document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('btn')); b.classList.add('btn'); page=1; render(); };
+  b.onclick=()=>{status=b.dataset.st;document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('btn'));
+  b.classList.add('btn');page=1;render();};
 });
 
-/* ================== API ================== */
+/* ========= API ======== */
 async function apiGetInspections(){
-  const u=new URL(GAS_URL); u.searchParams.set('fn','getinspections');
-  const r=await fetch(u.toString()); return r.json();
+  const u=new URL(GAS_URL);u.searchParams.set('fn','getinspections');
+  const r=await fetch(u);return r.json();
 }
 
-/* ================== HELPERS UI ================== */
-function gateChip(val){
-  const v = String(val || '').trim().toUpperCase();
-  if (v.includes('IN'))  return '<span class="gate-in">GATE IN</span>';
-  if (v.includes('OUT')) return '<span class="gate-out">GATE OUT</span>';
-  return '<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
-}
-function statusBadge(v){
-  const s=String(v||'').toLowerCase();
-  const cls = s==='pendiente'?'b-pend' : s==='enviando'?'b-prog' : s==='enviado'?'b-send' : 'b-fail';
-  return `<span class="badge ${cls}">${s||''}</span>`;
-}
-
-/* Banda “última enviada” (opcional, si viene de inspect) */
-function showLastSent(){
-  const id = localStorage.getItem('last_sent_id');
-  const unit = localStorage.getItem('last_sent_unit');
-  const band = $("#bandLast");
-  if(unit){
-    band.textContent = `✅ Última enviada: ${unit} (ID ${id||'-'})`;
-    band.style.display='block';
-    setTimeout(()=>{ band.style.display='none'; localStorage.removeItem('last_sent_id'); localStorage.removeItem('last_sent_unit'); }, 5000);
-  }else{
-    band.style.display='none';
-  }
-}
-
-/* ================== SOBRES (persistencia + autosync) ================== */
-function getMailState(id){return localStorage.getItem('mail_'+id)||null;}
-function setMailState(id,state){localStorage.setItem('mail_'+id,state);}
-function initialMailStateFromStatus(status){
-  const s=String(status||'').toLowerCase();
-  if(s==='enviado') return 'green';
-  if(s==='fallido') return 'red';
-  if(s==='enviando') return 'blue';
-  return 'gray'; // pendiente / sin info
-}
-function mailIconHTML(id,state){
-  const colorClass = {gray:'mail-gray',blue:'mail-blue',green:'mail-green',red:'mail-red'}[state]||'mail-gray';
-  const titleMap = {gray:'Pendiente / digitado',blue:'En cola (no enviado)',green:'Enviado',red:'Error al enviar'};
-  return `<span class="mail-icon ${colorClass}" title="${titleMap[state]||'—'}" data-mail-id="${id}" data-mail-state="${state}"></span>`;
-}
-function toggleMailState(el){
-  const id = el.dataset.mailId;
-  const current = el.dataset.mailState;
-  const order = ['gray','blue','green','red'];
-  const next = order[(order.indexOf(current)+1)%order.length];
-  el.dataset.mailState = next;
-  el.className = 'mail-icon '+({gray:'mail-gray',blue:'mail-blue',green:'mail-green',red:'mail-red'}[next]);
-  setMailState(id,next);
-  el.title = {gray:'Pendiente / digitado',blue:'En cola (no enviado)',green:'Enviado',red:'Error al enviar'}[next];
-}
-
-/* ================== LOAD + RENDER ================== */
-async function loadData(){
-  const btn=$("#btnRefresh"), txt=btn.textContent; btn.disabled=true; btn.textContent='Cargando…';
+/* ========= Refrescar ======== */
+$("#btnRefresh").onclick=async()=>{
+  const btn=$("#btnRefresh");btn.disabled=true;btn.textContent='Cargando…';
   try{
     const res=await apiGetInspections();
-    if(!res?.ok){ toast("No se pudo cargar desde la hoja"); return; }
-    all = res.items||[];
+    if(!res?.ok){toast("No se pudo cargar desde la hoja");return;}
+    all=res.items||[];
     render();
-  }catch(err){
-    console.error(err); toast("Error al obtener datos");
-  }finally{
-    btn.disabled=false; btn.textContent=txt;
-  }
+    // 🔢 Contar pendientes
+    const pendientes=all.filter(x=>String(x.status).toLowerCase()==='pendiente').length;
+    $("#queueCount").textContent=pendientes;
+    const badge=$("#queueBadge");
+    badge.classList.toggle('warn',pendientes>0);
+    badge.querySelector('.dot').style.background=pendientes>0?'#22c55e':'#3f3f46';
+    badge.title=pendientes>0?`Tienes ${pendientes} pendiente(s)`:'Sin pendientes';
+  }catch(e){console.error(e);toast("Error al obtener datos");}
+  finally{btn.disabled=false;btn.textContent='Refrescar';}
+};
+
+/* ========= Helpers ======== */
+function gateChip(v){
+  v=String(v||'').toUpperCase();
+  if(v.includes('IN'))return'<span class="gate-in">GATE IN</span>';
+  if(v.includes('OUT'))return'<span class="gate-out">GATE OUT</span>';
+  return'<span class="pill" style="font-size:12px;padding:2px 8px">—</span>';
+}
+function statusBadge(v){
+  v=String(v||'').toLowerCase();
+  const cls=v==='pendiente'?'b-pend':v==='enviado'?'b-send':v==='fallido'?'b-fail':'b-prog';
+  return `<span class="badge ${cls}">${v}</span>`;
 }
 
+/* ========= Render Tabla ======== */
 function render(){
-  const q=($("#txtSearch").value||'').trim().toLowerCase();
-  filtered = (all||[]).filter(x=> (x.container||x.naviera||x.inspector||x.vendor));
-  if(status!=='all') filtered=filtered.filter(x=> (String(x.status||'').toLowerCase()===status));
-  if(q) filtered=filtered.filter(it=>
-    (it.container||'').toLowerCase().includes(q) ||
-    (it.naviera||'').toLowerCase().includes(q) ||
-    (it.inspector||'').toLowerCase().includes(q) ||
-    (it.vendor||'').toLowerCase().includes(q) ||
-    (it.tipo||'').toLowerCase().includes(q)
-  );
-  filtered.sort((a,b)=> (String(a.fecha)<String(b.fecha)?1:-1));
-
-  const tb=$("#tbody"); tb.innerHTML='';
-  const total=filtered.length; const pages=Math.max(1,Math.ceil(total/per)); if(page>pages) page=pages;
-  const ini=(page-1)*per, fin=Math.min(total,ini+per);
-
+  const q=($("#txtSearch").value||'').toLowerCase();
+  filtered=(all||[]).filter(x=>x.container||x.naviera||x.inspector);
+  if(status!=='all')filtered=filtered.filter(x=>String(x.status||'').toLowerCase()===status);
+  if(q)filtered=filtered.filter(it=>(it.container||'').toLowerCase().includes(q)||
+    (it.naviera||'').toLowerCase().includes(q)||(it.inspector||'').toLowerCase().includes(q));
+  filtered.sort((a,b)=>String(a.fecha)<String(b.fecha)?1:-1);
+  const tb=$("#tbody");tb.innerHTML='';
+  const total=filtered.length,pages=Math.max(1,Math.ceil(total/per));
+  if(page>pages)page=pages;const ini=(page-1)*per,fin=Math.min(total,ini+per);
   for(let i=ini;i<fin;i++){
     const r=filtered[i];
-    // sobres: si no hay valor guardado, se inicializa según status
-    let ms = getMailState(r.id);
-    if(!ms){ ms = initialMailStateFromStatus(r.status); setMailState(r.id, ms); }
     const tr=document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.fecha? String(r.fecha).slice(0,10) : ''}</td>
+    tr.innerHTML=`
+      <td>${r.fecha?String(r.fecha).slice(0,10):''}</td>
       <td><b>${r.container||''}</b></td>
       <td class="t-center">${gateChip(r.gate)}</td>
       <td>${r.naviera||''}</td>
       <td class="t-center">${r.tipo||''}</td>
-      <td class="t-center">${(r.linesCount ?? r.danosCount ?? 0)}</td>
-      <td class="t-center">${(r.photosCount ?? r.fotosCount ?? 0)}</td>
+      <td class="t-center">${r.linesCount||0}</td>
+      <td class="t-center">${r.photosCount||0}</td>
       <td class="t-center">${statusBadge(r.status)}</td>
       <td class="t-center">
-        ${ String(r.status||'').toLowerCase()==='pendiente'
-            ? `<button class="btn" onclick="location.href='inspect.html?id=${encodeURIComponent(r.id)}'">Editar</button>`
-            : `` }
+        ${String(r.status).toLowerCase()==='pendiente'
+          ?`<button class="btn" onclick="location.href='inspect.html?id=${encodeURIComponent(r.id)}'">Editar</button>`:''
+        }
         <button class="btn" onclick='viewDetail(${JSON.stringify(r).replace(/"/g,'&quot;')})'>Ver</button>
-        <span class="mail-wrapper">${mailIconHTML(r.id,ms)}</span>
       </td>`;
     tb.appendChild(tr);
   }
-  // click sobres
-  tb.querySelectorAll('.mail-icon').forEach(el=>{ el.onclick=()=>toggleMailState(el); });
-
   $("#pageInfo").textContent=`Página ${page}/${pages}`;
   $("#countInfo").textContent=`Mostrando ${Math.min(fin-ini,per)} de ${total}`;
 }
 
-/* ================== PAGINACIÓN / SEARCH ================== */
-$("#perPage").onchange=()=>{ per=Number($("#perPage").value||20); localStorage.setItem('home_per',String(per)); page=1; render(); }
-$("#prev").onclick=()=>{ if(page>1){ page--; render(); } }
-$("#next").onclick=()=>{ const pages=Math.max(1,Math.ceil(filtered.length/per)); if(page<pages){ page++; render(); } }
-let sT; $("#txtSearch").addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(()=>{ page=1; render(); },200); });
-
-/* ================== MODAL DETALLE ================== */
+/* ========= Detalle Modal ======== */
 const modalDetail=$("#modalDetail");
 $("#closeDetail").onclick=()=>modalDetail.style.display='none';
-modalDetail.addEventListener('click',e=>{ if(e.target===modalDetail) modalDetail.style.display='none'; });
-
+modalDetail.addEventListener('click',e=>{if(e.target===modalDetail)modalDetail.style.display='none';});
 function viewDetail(item){
   const el=$("#detailBody");
-  const {container,gate,naviera,tipo,inspector,vendor,fecha,linesCount,photosCount,status}=item;
   el.innerHTML=`
-    <div class="detail-grid">
-      <div><span>Contenedor</span>${container||'-'}</div>
-      <div><span>Gate</span>${gate||'-'}</div>
-      <div><span>Naviera</span>${naviera||'-'}</div>
-      <div><span>Tipo</span>${tipo||'-'}</div>
-      <div><span>Inspector</span>${inspector||'-'}</div>
-      <div><span>Vendor</span>${vendor||'-'}</div>
-      <div><span>Fecha</span>${fecha?String(fecha).slice(0,10):'-'}</div>
-      <div><span>Status</span>${status}</div>
-    </div>
-    <table class="detail-table">
-      <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
-      <tbody>
-        <tr><td>Daños</td><td>${linesCount||0}</td></tr>
-        <tr><td>Fotos</td><td>${photosCount||0}</td></tr>
-        <!-- Por política: NO mostramos carpeta Drive -->
-      </tbody>
-    </table>`;
+    <div>
+      <p><b>Contenedor:</b> ${item.container||'-'}<br>
+      <b>Gate:</b> ${item.gate||'-'}<br>
+      <b>Naviera:</b> ${item.naviera||'-'}<br>
+      <b>Tipo:</b> ${item.tipo||'-'}<br>
+      <b>Inspector:</b> ${item.inspector||'-'}<br>
+      <b>Vendor:</b> ${item.vendor||'-'}<br>
+      <b>Fecha:</b> ${item.fecha?String(item.fecha).slice(0,10):'-'}<br>
+      <b>Status:</b> ${item.status||'-'}</p>
+      <p><b>Daños:</b> ${item.linesCount||0} · <b>Fotos:</b> ${item.photosCount||0}</p>
+    </div>`;
   modalDetail.style.display='flex';
 }
 
-/* ================== IndexedDB Cola ================== */
-const DB='reefer_inspections_db', VER=1, STORE='queue';
-function idbOpen(){
-  return new Promise((res,rej)=>{
-    const r=indexedDB.open(DB,VER);
-    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(STORE)){ db.createObjectStore(STORE,{keyPath:'id'});} };
-    r.onsuccess=()=>res(r.result);
-    r.onerror=()=>rej(r.error);
-  });
-}
-async function queueCount(){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAllKeys();
-  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result.length||0); }; });
-}
-async function queueAll(){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const store=tx.objectStore(STORE); const req=store.getAll();
-  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result||[]); }; });
-}
-async function queueGet(id){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id);
-  return new Promise((res)=>{ req.onsuccess=()=>{ db.close(); res(req.result); }; });
-}
-async function queueDelete(id){
-  const db=await idbOpen(); const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id);
-  return new Promise((res)=>{ tx.oncomplete=()=>{ db.close(); res(); }; });
-}
-async function refreshQueueBadge(){
-  const n = await queueCount();
-  const el=$("#queueCount"); if(el) el.textContent=String(n);
-  const badge=$("#queueBadge");
-  if(badge){
-    badge.classList.toggle('warn', n>0);
-    badge.title = n>0 ? `Tienes ${n} ítem(s) pendiente(s) por enviar` : 'Sin pendientes';
-  }
-}
+/* ========= Modal Cola ======== */
+const modalQueue=$("#modalQueue"),tblBody=document.querySelector("#tblQueue tbody"),chkAll=$("#chkAll");
+$("#queueBadge").onclick=()=>modalQueue.style.display='flex';
+$("#btnCloseModal").onclick=()=>modalQueue.style.display='none';
+modalQueue.addEventListener('click',e=>{if(e.target===modalQueue)modalQueue.style.display='none';});
+chkAll.onchange=()=>{tblBody.querySelectorAll('input[type="checkbox"]').forEach(x=>x.checked=chkAll.checked);};
 
-/* ================== Modal Cola: abrir/cerrar ================== */
-const modalQueue=$("#modalQueue");
-$("#queueBadge").onclick=async()=>{ await populateQueueTable(); modalQueue.style.display='flex'; };
-$("#btnCloseModal").onclick=()=>{ modalQueue.style.display='none'; };
-modalQueue.addEventListener('click',e=>{ if(e.target===modalQueue) modalQueue.style.display='none'; });
+/* ========= Pag nav ======== */
+$("#prev").onclick=()=>{if(page>1){page--;render();}};
+$("#next").onclick=()=>{const pgs=Math.max(1,Math.ceil(filtered.length/per));if(page<pgs){page++;render();}};
+let sT;$("#txtSearch").addEventListener('input',()=>{clearTimeout(sT);sT=setTimeout(()=>{page=1;render();},200);});
 
-/* ================== Modal Cola: render tabla ================== */
-const tblBody = document.querySelector("#tblQueue tbody");
-const chkAll = $("#chkAll");
-chkAll.onchange=()=>{ tblBody.querySelectorAll('input[type="checkbox"][data-id]').forEach(x=>x.checked=chkAll.checked); };
-
-function sumPhotos(item){
-  try{
-    const ph=item.photos||[];
-    return ph.reduce((a,row)=> a + (Array.isArray(row)? row.length : 0), 0);
-  }catch{ return 0; }
-}
-
-async function populateQueueTable(){
-  const items = await queueAll();
-  tblBody.innerHTML='';
-  for(const it of items){
-    const q=it.questionnaire||{};
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td><input type="checkbox" data-id="${it.id}"></td>
-      <td><b>${q.container||'-'}</b></td>
-      <td>${q.fecha||'-'}</td>
-      <td>${(it.lines||[]).length}</td>
-      <td>${sumPhotos(it)}</td>
-      <td><span class="badge b-pend">${it.status||'pendiente'}</span></td>
-    `;
-    tblBody.appendChild(tr);
-  }
-  chkAll.checked=false;
-}
-
-/* ================== ENVÍO DESDE HOME (seleccionados) ================== */
-function blobToBase64(blob){
-  return new Promise((res,rej)=>{
-    const fr=new FileReader();
-    fr.onload=()=>{ const s=String(fr.result); res(s.substring(s.indexOf(',')+1)); };
-    fr.onerror=rej; fr.readAsDataURL(blob);
-  });
-}
-
-async function sendOneItem(it){
-  // Construye payload (compatible code.gs actual)
-  const linesPayload=[], photosPayload=[];
-  for(let i=0;i<(it.lines||[]).length;i++){
-    const L=it.lines[i];
-    linesPayload.push({
-      line:L.n||L.num||i+1,
-      marker:L.marker||L.code||'',
-      reparado:L.reparado||false,
-      location:L.loc||L.location||'',
-      damage:L.dano||L.damage||'',
-      component:L.comp||L.component||'',
-      method:L.mrep||L.method||'',
-      size:L.size||'',
-      qty:L.qty||1,
-      resp:L.resp||''
-    });
-    const files=((it.photos||[])[i]||[]);
-    for(const pf of files){
-      const b64=await blobToBase64(pf.blob||pf.file||pf);
-      photosPayload.push({ name:pf.name||('foto_'+Date.now()), mimeType:pf.type||'image/jpeg', dataBase64:b64, line:(L.n||i+1) });
-    }
-  }
-  const q=it.questionnaire||{};
-  const payload={
-    meta:{ naviera:q.naviera, fecha:(q.fecha||new Date().toISOString().slice(0,10)), unidad:q.container },
-    form:{
-      container:q.container, gate:q.gate, tipo:q.tipo, naviera:q.naviera,
-      inspector:it.tecnico||q.inspector, vendor:it.vendor||q.vendor
-    },
-    lines:linesPayload, photos:photosPayload
-  };
-
-  const res=await fetch(GAS_URL,{
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify(payload)
-  });
-  const j=await res.json();
-  if(!res.ok||!j?.ok) throw new Error(j?.error||('HTTP '+res.status));
-  return j;
-}
-
-/* === Botones del modal: Enviar y Eliminar === */
-const btnSendSel=$("#btnSendSel");
-const btnDeleteSel=$("#btnDeleteSel");
-async function withBusyButtons(fn){ btnSendSel.disabled=true; btnDeleteSel.disabled=true; try{ await fn(); } finally{ btnSendSel.disabled=false; btnDeleteSel.disabled=false; } }
-
-btnSendSel.onclick=()=>withBusyButtons(async()=>{
-  const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
-  if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
-
-  let ok=0, fail=0;
-  for(const id of ids){
-    try{
-      const it=await queueGet(id);
-      if(!it){ fail++; continue; }
-      const rowChk = tblBody.querySelector(`input[data-id="${id}"]`);
-      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-prog">enviando…</span>'; }
-      await sendOneItem(it);
-      await queueDelete(id);
-      ok++;
-      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-send">enviado</span>'; }
-      await new Promise(r=>setTimeout(r,150));
-    }catch(err){
-      console.error(err); fail++;
-      const rowChk = tblBody.querySelector(`input[data-id="${id}"]`);
-      if(rowChk){ rowChk.closest('tr').querySelector('td:last-child').innerHTML='<span class="badge b-fail">fallido</span>'; }
-    }
-  }
-  await refreshQueueBadge();
-  await populateQueueTable();
-  toast(`Envío terminado: ${ok} ok, ${fail} error(es).`);
-  loadData();
-});
-
-btnDeleteSel.onclick=()=>withBusyButtons(async()=>{
-  const ids=[...tblBody.querySelectorAll('input[type="checkbox"][data-id]:checked')].map(x=>x.dataset.id);
-  if(ids.length===0){ toast('Selecciona al menos 1 ítem'); return; }
-  for(const id of ids){ await queueDelete(id); }
-  await refreshQueueBadge();
-  await populateQueueTable();
-  toast(`Se eliminaron ${ids.length} ítem(s) de la cola local.`);
-});
-
-/* ================== Accesibilidad / extras ================== */
-window.addEventListener('keydown',e=>{
-  if(e.key==='Escape' && $("#modalQueue").style.display==='flex'){ $("#modalQueue").style.display='none'; }
-  if(e.key==='Escape' && $("#modalDetail").style.display==='flex'){ $("#modalDetail").style.display='none'; }
-});
-$("#toast").addEventListener('click',()=>$("#toast").style.display='none');
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) showLastSent(); });
-
-/* ================== INIT ================== */
-(async function init(){
-  showLastSent();
-  await refreshQueueBadge();
-  await loadData();
-})();
+/* ========= Init ======== */
+(async()=>{await $("#btnRefresh").click();})();
 </script>
 </body>
 </html>
