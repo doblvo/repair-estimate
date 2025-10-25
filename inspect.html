@@ -8,7 +8,7 @@
 :root{
   --brand:#0b74c7; --bg:#0b1120; --card:#111827; --ink:#f9fafb;
   --muted:#9ca3af; --line:#1f2937; --radius:12px;
-  --danger:#ef4444; --ok:#10b981;
+  --danger:#ef4444; --ok:#10b981; --warn:#f59e0b;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -29,6 +29,9 @@ input,select,textarea{
   background:#0f172a;border:1px solid var(--line);
 }
 input:focus,select:focus,textarea:focus{outline:1px solid var(--brand);border-color:var(--brand)}
+input.invalid, select.invalid, textarea.invalid{border-color:var(--danger) !important; outline:1px solid var(--danger) !important}
+.field-hint{font-size:12px;color:#fca5a5;display:none;margin-top:4px}
+.field-hint.show{display:block}
 .flex{display:flex;gap:12px}
 .flex>div{flex:1}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
@@ -41,7 +44,7 @@ input:focus,select:focus,textarea:focus{outline:1px solid var(--brand);border-co
 }
 .btn:hover{opacity:.92}
 .btn-muted{background:#374151}
-.btn-warn{background:#f59e0b;color:#111}
+.btn-warn{background:var(--warn);color:#111}
 .btn-sm{padding:6px 10px;border-radius:8px;font-weight:600}
 .btn-ghost{background:#0f172a;border:1px dashed var(--line);color:var(--muted)}
 .actions-top, .actions-bottom{
@@ -89,18 +92,35 @@ tbody tr:nth-child(even){background:#0f172a}
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:640px){ .summary-grid{grid-template-columns:1fr} }
 
-/* Pie pegado en móvil: acciones abajo siempre visibles (opcional) */
+/* Pie pegado en móvil: acciones abajo siempre visibles */
 .sticky-footer{
   position:sticky;bottom:0;z-index:20;margin-top:16px;
   background:linear-gradient(180deg, transparent, rgba(11,17,32,.85) 25%, rgba(11,17,32,.95) 100%);
   backdrop-filter: blur(4px);padding-top:8px
 }
 
-/* Ajustes finos móviles */
-@media (max-width:480px){
-  .btn{width:100%}
-  .actions-top{justify-content:flex-start}
+/* Overlay de carga */
+.loading-overlay{
+  position:fixed;inset:0;background:rgba(2,6,23,.72);
+  display:none;align-items:center;justify-content:center;z-index:9999;
+  backdrop-filter: blur(2px);
 }
+.spinner{
+  width:56px;height:56px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.15);border-top-color:#fff;
+  animation:spin 1s linear infinite
+}
+@keyframes spin{ to{ transform:rotate(360deg) } }
+
+/* Toast suave */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:#0f172a;color:#e5e7eb;border:1px solid #1f2937;border-radius:12px;
+  padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:10000;
+  display:none;font-weight:600
+}
+.toast.ok{border-color:#14532d;background:#052e1b;color:#c8f3d6}
+.toast.err{border-color:#7f1d1d;background:#2a0b0b;color:#fecaca}
 </style>
 </head>
 <body>
@@ -131,7 +151,8 @@ tbody tr:nth-child(even){background:#0f172a}
     <div class="row">
       <div>
         <label>Container</label>
-        <input id="container" placeholder="Ej: MNBU1234567">
+        <input id="container" placeholder="Ej: MNBU1234567" maxlength="11">
+        <div class="field-hint" id="hint_container">Debe tener 11 caracteres: 4 letras + 7 números (ej: MNBU1234567)</div>
       </div>
       <div>
         <label>Gate</label>
@@ -140,34 +161,40 @@ tbody tr:nth-child(even){background:#0f172a}
           <option>Gate In</option>
           <option>Gate Out</option>
         </select>
+        <div class="field-hint" id="hint_gate">Selecciona un Gate válido.</div>
       </div>
       <div>
         <label>Naviera</label>
         <select id="naviera">
+          <option value="">-</option>
           <option>Maersk</option>
           <option>Hapag</option>
           <option>OOCL</option>
           <option>COSCO</option>
           <option>Transmares</option>
         </select>
+        <div class="field-hint" id="hint_naviera">Selecciona una naviera.</div>
       </div>
     </div>
     <div class="row" style="margin-top:12px">
       <div>
         <label>Tipo</label>
         <select id="tipo">
-          <option>-</option>
+          <option value="">-</option>
           <option>Inspección</option>
           <option>Reparación</option>
         </select>
+        <div class="field-hint" id="hint_tipo">Selecciona un tipo.</div>
       </div>
       <div>
         <label>Inspector</label>
         <input id="inspector" placeholder="Nombre técnico">
+        <div class="field-hint" id="hint_inspector">Ingresa el nombre del inspector.</div>
       </div>
       <div>
         <label>Vendor</label>
         <input id="vendor" placeholder="Proveedor / Taller">
+        <div class="field-hint" id="hint_vendor">Ingresa el vendor.</div>
       </div>
     </div>
   </div>
@@ -221,14 +248,12 @@ tbody tr:nth-child(even){background:#0f172a}
             <th style="width:70px"></th>
           </tr>
         </thead>
-        <tbody id="linesBody">
-          <!-- Filas dinámicas insertadas por JS -->
-        </tbody>
+        <tbody id="linesBody"></tbody>
       </table>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-sm btn-ghost" id="btnAddLineTop">+ Agregar línea</button>
-      <small style="color:var(--muted)">En móvil, las columnas se desplazan horizontalmente. Cada línea puede tener <b>múltiples fotos</b>.</small>
+      <small style="color:var(--muted)">Cada línea es obligatoria y debe tener <b>al menos una foto</b>.</small>
     </div>
   </div>
 
@@ -259,25 +284,59 @@ tbody tr:nth-child(even){background:#0f172a}
 
 </div> <!-- /.wrap -->
 
+<!-- Overlay de carga -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
 <script>
 /* =========================
    Config
 ========================= */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzFILLAVxlmEJDPLh3rftc-jHIs7ygRz21krDTlNIuMnPFPHMnIKcd9rMvzEYIMWuxk4g/exec";
 
+/* =========================
+   IndexedDB (cola local)
+========================= */
+const DB_NAME = 'maersk_inspections_db';
+const DB_VERSION = 1;
+const STORE = 'inspections';
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e=>{
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE)){
+        const st = db.createObjectStore(STORE, { keyPath:'id' });
+        st.createIndex('by_date','timestamp');
+      }
+    };
+    req.onsuccess = e=> resolve(e.target.result);
+    req.onerror = e=> reject(e.target.error);
+  });
+}
+async function idbPut(obj){
+  const db = await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(obj);
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = e=> rej(e.target.error);
+  });
+}
+
+/* =========================
+   Estado y utilidades
+========================= */
 const state = {
   id: null,
   fechaISO: null,
-  lines: [] // [{ubi, comp, dano, mrep, cant, resp, reparado, fotos:[{id,name,dataURL}], _uid}]
+  lines: []
 };
-
 const $ = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
 const byId = id => document.getElementById(id);
 
-/* =========================
-   Utilidades
-========================= */
 function uid(){ return (crypto?.randomUUID?.() || ('id_'+Math.random().toString(36).slice(2))); }
 function escapeHTML(s=''){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function setChipValues(){
@@ -293,6 +352,20 @@ function updateHeaderChips(){
 }
 function goBack(){ if(history.length>1) history.back(); else location.href='home.html'; }
 function updateCounts(){ byId('resLineas').value = state.lines.length; updateHeaderChips(); }
+
+/* =========================
+   Toast + Loading
+========================= */
+const overlay = byId('loadingOverlay');
+const toastEl = byId('toast');
+function showOverlay(){ overlay.style.display='flex'; }
+function hideOverlay(){ overlay.style.display='none'; }
+function showToast(msg, type='ok'){
+  toastEl.textContent = msg;
+  toastEl.className = 'toast ' + (type==='ok'?'ok':'err');
+  toastEl.style.display = 'block';
+  setTimeout(()=>{ toastEl.style.display='none'; }, 2200);
+}
 
 /* =========================
    Compresión de imagen
@@ -340,7 +413,7 @@ function renderLines(){
       <td><input value="${escapeHTML(ln.comp||'')}" oninput="onLineChange(${idx},'comp',this.value)" placeholder="Ej: Bisagra / Panel"></td>
       <td><input value="${escapeHTML(ln.dano||'')}" oninput="onLineChange(${idx},'dano',this.value)" placeholder="Ej: Abolladura / Corte"></td>
       <td><input value="${escapeHTML(ln.mrep||'')}" oninput="onLineChange(${idx},'mrep',this.value)" placeholder="Motivo de reparación"></td>
-      <td><input type="number" min="0" value="${Number(ln.cant ?? 1)}" oninput="onLineChange(${idx},'cant',this.value)" style="max-width:100px"></td>
+      <td><input type="number" min="1" step="1" inputmode="numeric" pattern="\\d*" value="${Number(ln.cant ?? 1)}" oninput="onLineChange(${idx},'cant',this.value)" style="max-width:100px"></td>
       <td><input value="${escapeHTML(ln.resp||'')}" oninput="onLineChange(${idx},'resp',this.value)" placeholder="Responsable"></td>
       <td style="text-align:center">
         <div class="r-circle ${ln.reparado?'active':''}" onclick="toggleR(${idx}, this)">${ln.reparado?'R':''}</div>
@@ -401,7 +474,7 @@ function removeLine(i){
 }
 
 function onLineChange(i, key, val){
-  if(key==='cant') val = Number(val||0);
+  if(key==='cant') val = Math.max(1, parseInt(val || 1, 10) || 1);
   state.lines[i][key] = val;
 }
 
@@ -432,7 +505,66 @@ function removePhoto(lineUid, idx){
 }
 
 /* =========================
-   Guardar / Enviar (POST JSON)
+   Validaciones
+========================= */
+const reContainer = /^[A-Z]{4}\d{7}$/;
+function markInvalid(el, hintId){
+  if(!el) return;
+  el.classList.add('invalid');
+  if(hintId) { const h = byId(hintId); if(h) h.classList.add('show'); }
+}
+function clearInvalid(...els){
+  els.forEach(el=> el && el.classList.remove('invalid'));
+  $$('.field-hint.show').forEach(h=> h.classList.remove('show'));
+}
+
+function validateGeneral(){
+  clearInvalid();
+  const container = byId('container');
+  const gate = byId('gate');
+  const naviera = byId('naviera');
+  const tipo = byId('tipo');
+  const inspector = byId('inspector');
+  const vendor = byId('vendor');
+
+  let ok = true;
+
+  const valC = (container.value || '').toUpperCase().trim();
+  container.value = valC;
+  if(!(valC.length===11 && reContainer.test(valC))){
+    markInvalid(container, 'hint_container'); ok=false;
+  }
+  if(!gate.value || gate.value==='-'){ markInvalid(gate,'hint_gate'); ok=false; }
+  if(!naviera.value){ markInvalid(naviera,'hint_naviera'); ok=false; }
+  if(!tipo.value){ markInvalid(tipo,'hint_tipo'); ok=false; }
+  if(!inspector.value.trim()){ markInvalid(inspector,'hint_inspector'); ok=false; }
+  if(!vendor.value.trim()){ markInvalid(vendor,'hint_vendor'); ok=false; }
+
+  return ok;
+}
+
+function validateLinesStrict(){
+  // Debe existir al menos 1 línea y TODAS completas + al menos 1 foto por línea
+  if(!state.lines.length) return {ok:false, msg:'Agrega al menos una línea de daño.'};
+  for(let i=0;i<state.lines.length;i++){
+    const L = state.lines[i];
+    const ok =
+      (L.ubi||'').trim() &&
+      (L.comp||'').trim() &&
+      (L.dano||'').trim() &&
+      (L.mrep||'').trim() &&
+      Number(L.cant||0) >= 1 &&
+      (L.resp||'').trim() &&
+      Array.isArray(L.fotos) && L.fotos.length >= 1;
+    if(!ok){
+      return {ok:false, msg:`Línea ${i+1}: completa todos los campos y añade al menos una foto.`};
+    }
+  }
+  return {ok:true};
+}
+
+/* =========================
+   Guardar / Enviar
 ========================= */
 function buildPayload(status){
   return {
@@ -465,71 +597,72 @@ function buildPayload(status){
     nave: byId('nave').value.trim(),
     viaje: byId('viaje').value.trim(),
 
-    // Líneas (con fotos base64 en cada línea)
     daniosJSON: JSON.stringify(state.lines)
   };
 }
 
-// Convierte todas las fotos por línea a un arreglo plano (para Drive)
 function flattenPhotos(){
   return state.lines.flatMap((ln, i) =>
     (ln.fotos||[]).map((f, k) => ({
       name: f.name || `foto_${i+1}_${k+1}.jpg`,
       mimeType: 'image/jpeg',
-      dataURL: f.dataURL,           // data:image/jpeg;base64,....
+      dataURL: f.dataURL,
       linea: i+1
     }))
   );
 }
 
-async function savePending(){
-  const payload = buildPayload('pendiente');
-  try{
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ fn:'saveinspection', ...payload })
-    });
-    const txt = await res.text();
-    const json = (()=>{ try{return JSON.parse(txt);}catch{ return {ok:false,error:txt}; }})();
-    if(json?.ok){
-      state.id = json.id || payload.id;
-      byId('idLabel').textContent = state.id;
-      byId('status').value = 'pendiente';
-      byId('statusChip').textContent = 'pendiente';
-      alert('Guardado como pendiente.');
-    }else{
-      alert('No se pudo guardar: ' + (json?.error || 'Error'));
-    }
-  }catch(err){
-    console.error(err);
-    alert('Error de red al guardar.');
+/* Guardar pendiente -> SOLO valida Datos Generales */
+async function savePendingLocal(){
+  if(!validateGeneral()){
+    showToast('Completa los campos obligatorios de Datos generales.', 'err');
+    return;
   }
+  const payload = buildPayload('pendiente');
+  const record = { id: payload.id, timestamp: payload.timestamp, payload };
+  await idbPut(record);
+  showToast('💾 Guardado en cola local', 'ok');
+  setTimeout(()=>{ location.href = 'home.html'; }, 600);
 }
 
+/* Enviar -> valida TODO (generales + líneas con fotos) */
 async function submitNow(){
+  if(!validateGeneral()){
+    showToast('Completa Datos generales obligatorios.', 'err');
+    return;
+  }
+  const L = validateLinesStrict();
+  if(!L.ok){
+    showToast(L.msg, 'err');
+    return;
+  }
   const payload = buildPayload('enviado');
-  const fotos = flattenPhotos(); // importante para Drive al "enviado"
+  const fotos = flattenPhotos();
   try{
+    showOverlay();
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ fn:'saveinspection', fotosJSON: JSON.stringify(fotos), ...payload })
     });
     const txt = await res.text();
-    const json = (()=>{ try{return JSON.parse(txt);}catch{ return {ok:false,error:txt}; }})();
+    let json;
+    try{ json = JSON.parse(txt); }catch{ json = {ok:false,error:txt}; }
     if(json?.ok){
       state.id = json.id || payload.id;
       byId('idLabel').textContent = state.id;
       byId('status').value = 'enviado';
       byId('statusChip').textContent = 'enviado';
-      alert('Enviado con éxito.');
+      showToast('✅ Enviado correctamente', 'ok');
+      setTimeout(()=>{ location.href='home.html'; }, 600);
     }else{
-      alert('No se pudo enviar: ' + (json?.error || 'Error'));
+      showToast('⚠️ Error al enviar: ' + (json?.error || 'desconocido'), 'err');
     }
   }catch(err){
     console.error(err);
-    alert('Error de red al enviar.');
+    showToast('⚠️ Error de red al enviar', 'err');
+  }finally{
+    hideOverlay();
   }
 }
 
@@ -541,7 +674,7 @@ async function loadInspectionIfAny(){
   if(!id){
     state.id = null;
     byId('idLabel').textContent = 'nuevo';
-    addLine(); // al menos una línea
+    addLine(); // una línea por defecto
     return;
   }
 
@@ -560,8 +693,8 @@ async function loadInspectionIfAny(){
     // Datos Generales
     byId('container').value = it.Container || it.container || '';
     byId('gate').value      = it.Gate || it.gate || '-';
-    byId('naviera').value   = it.Naviera || it.naviera || 'Maersk';
-    byId('tipo').value      = it.Tipo || it.tipo || '-';
+    byId('naviera').value   = it.Naviera || it.naviera || '';
+    byId('tipo').value      = it.Tipo || it.tipo || '';
     byId('inspector').value = it.Inspector || it.inspector || '';
     byId('vendor').value    = it.Vendor || it.vendor || '';
 
@@ -597,7 +730,7 @@ async function loadInspectionIfAny(){
       comp: L.comp || '',
       dano: L.dano || '',
       mrep: L.mrep || '',
-      cant: Number.isFinite(L.cant) ? L.cant : 1,
+      cant: Number.isFinite(L.cant) ? Math.max(1, parseInt(L.cant,10)||1) : 1,
       resp: L.resp || '',
       reparado: !!L.reparado,
       fotos: Array.isArray(L.fotos) ? L.fotos : []
@@ -616,11 +749,16 @@ async function loadInspectionIfAny(){
 ========================= */
 function bindUI(){
   byId('btnAddLineTop').addEventListener('click', ()=>addLine());
-  byId('btnSavePending').addEventListener('click', savePending);
+  byId('btnSavePending').addEventListener('click', savePendingLocal);
   byId('btnSubmit').addEventListener('click', submitNow);
   ['naviera','container'].forEach(id=>{
     const el = byId(id);
     if(el) el.addEventListener('input', updateHeaderChips);
+  });
+  // Limpia marca de error al escribir
+  $$('#container, #gate, #naviera, #tipo, #inspector, #vendor').forEach(el=>{
+    el.addEventListener('input', ()=> el.classList.remove('invalid'));
+    el.addEventListener('change', ()=> el.classList.remove('invalid'));
   });
 }
 
@@ -635,39 +773,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
 /* =========================
    Helpers opcionales
 ========================= */
-function fileToDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const r = new FileReader();
-    r.onload = e => resolve(e.target.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-async function resizeCanvas(dataURL, maxW=1280, maxH=960, quality=0.8){
-  const img = new Image();
-  return new Promise((resolve,reject)=>{
-    img.onload=()=>{
-      let w=img.width, h=img.height;
-      const ratio=Math.min(maxW/w,maxH/h,1);
-      w=Math.round(w*ratio); h=Math.round(h*ratio);
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/jpeg',quality));
-    };
-    img.onerror=reject;
-    img.src=dataURL;
-  });
-}
-
-/* Ajustes móviles */
 document.addEventListener('touchstart', function(){}, {passive:true});
 function scrollToBottom(){ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }
 const btnAdd = document.getElementById('btnAddLineTop');
 if(btnAdd){ btnAdd.addEventListener('click', ()=>setTimeout(scrollToBottom,300)); }
 
-console.log("✅ Inspect.html cargado correctamente — versión final Maersk 2025");
+console.log("✅ Inspect.html — validaciones: Generales obligatorios (cola/envío) + líneas con fotos para envío.");
 </script>
 </body>
 </html>
