@@ -33,6 +33,74 @@
   #containers input[name$="_container"]{
     font-size:16px; min-height:40px; padding:6px 8px; letter-spacing:.06ch;
   }
+
+/* === Ajuste tamaño y disposición de contenedores === */
+#containers .g3 {
+  grid-template-columns: 1.1fr 1fr 1fr; /* Ajusta la proporción de las columnas */
+  column-gap: 6px;
+  row-gap: 4px;
+}
+
+/* Etiquetas más pequeñas y ajustadas */
+#containers .g3 .row > label {
+  font-size: 11px; /* Reduce tamaño de texto */
+  font-weight: 600; /* Acentúa la etiqueta */
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+/* Campos de entrada y selección con fuentes más pequeñas */
+#containers .g3 .row input,
+#containers .g3 .row select {
+  min-height: 30px;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+
+/* Ajuste específico para el N° CONTENEDOR */
+#containers input[name$="_container"] {
+  font-size: 13px;
+  min-height: 30px;
+  letter-spacing: 0.04ch; /* Para 11 caracteres */
+}
+
+/* Ajuste para N° BOOKING y Naviera */
+#containers input[name$="_booking"],
+#containers select[name$="_naviera_sel"] {
+  font-size: 13px;
+  min-height: 30px;
+}
+
+/* Campo "Otro" que aparece cuando seleccionas "Otra" en Naviera */
+#containers input[name$="_naviera_otra"] {
+  font-size: 13px;
+  min-height: 30px;
+  padding: 4px 6px;
+}
+
+/* Ajuste de placeholders (texto de ejemplo) */
+#containers input::placeholder {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Flexbox para Naviera + Otro (alineación en una fila) */
+#containers .row > div[style*="display:flex"] {
+  gap: 4px;
+  align-items: center;
+}
+
+/* Estilo para dispositivos móviles (≤600px) */
+@media (max-width: 600px) {
+  #containers .g3 {
+    grid-template-columns: 1fr; /* Apilar todo en una columna */
+  }
+
+  #containers [name$="_naviera_otra"] {
+    width: 100%; /* Ocupa todo el ancho disponible */
+  }
+}
+
   /* ================================================ */
 
   .row{display:grid;grid-template-columns:120px 1fr;gap:2px;align-items:center}
@@ -117,7 +185,7 @@
 <div class="wrap">
   <header>
     <h1>REPORTE TRATAMIENTO DE FRÍO — COT (Digital)</h1>
-    <div class="meta">2 controles obligatorios con hora en encabezado • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
+    <div class="meta">Controles obligatorios • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
   </header>
 
   <form id="cotForm" novalidate>
