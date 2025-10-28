@@ -29,6 +29,10 @@
   #containers .row{grid-template-columns:96px 1fr; gap:2px}
   #containers label{font-size:12px;margin-bottom:0}
   #containers .row > div[style*="display:flex"]{gap:4px}
+  /* Input N° CONTENEDOR más grande y legible */
+  #containers input[name$="_container"]{
+    font-size:16px; min-height:40px; padding:6px 8px; letter-spacing:.06ch;
+  }
   /* ================================================ */
 
   .row{display:grid;grid-template-columns:120px 1fr;gap:2px;align-items:center}
@@ -53,10 +57,9 @@
   /* Etiquetas izquierda más delgadas */
   .table-wrap tbody th{font-weight:400 !important;text-align:left;padding:1px 8px;font-size:12px;line-height:1.15}
 
-  /* Cabecera: más aire para +/× e input hora */
-  .colhdr{position:relative;padding-top:1px;padding-bottom:0;padding-right:72px} /* <- ampliado */
-  td input{width:100%;min-height:22px}
-  .hdr-time{display:block;margin-top:0;font-size:12px;min-height:28px}
+  /* Cabecera: input de hora más grande (fijo a 2 controles) */
+  .colhdr{position:relative;padding-top:2px;padding-bottom:2px}
+  .hdr-time{display:block;margin-top:2px;font-size:14px;min-height:36px}
 
   .line{height:1px;background:var(--line);margin:6px 0}
   .footer{font-size:12px;color:var(--muted);margin-top:6px}
@@ -70,10 +73,6 @@
   .thumb .meta{padding:5px 6px;font-size:11px;color:var(--muted)}
   .thumb .x{position:absolute;top:5px;right:5px;background:transparent;border:1px solid var(--danger);color:var(--danger);
     width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
-  .col-x{position:absolute;top:3px;right:6px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
-  .col-x.dis{opacity:.35;pointer-events:none}
-  .col-plus{position:absolute;top:3px;right:32px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
-  .col-plus.dis{opacity:.35;pointer-events:none}
 
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:9998}
   .overlay.show{display:block}
@@ -83,7 +82,7 @@
 
   .rowlbl{font-weight:400}
 
-  /* Primera columna semántica (sin inline width) */
+  /* Primera columna semántica */
   .firstcol{
     width:32%;
     text-align:left;
@@ -91,58 +90,34 @@
     white-space:nowrap;
   }
 
-/* === Mejoras específicas para móvil (≤600px) === */
-@media (max-width: 600px){
-  /* Scroll horizontal seguro para la tabla de controles */
-  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .table-wrap table{ min-width: 720px; } /* evita que se aplaste con 4 controles */
+  /* === Mejoras específicas para móvil (≤600px) === */
+  @media (max-width: 600px){
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-wrap table{ min-width: 560px; } /* 2 controles sin aplaste */
 
-  /* Primera columna más angosta y legible */
-  .firstcol{ width:26%; font-size:12px; }
-  .table-wrap tbody th{ font-size:11px; padding:2px 6px; white-space:nowrap; }
+    .firstcol{ width:28%; font-size:12px; }
+    .table-wrap tbody th{ font-size:11px; padding:2px 6px; white-space:nowrap; }
 
-  /* Inputs más altos para dedo dentro de la tabla */
-  .table-wrap td input{ min-height:36px; }
+    .table-wrap td input{ min-height:40px; font-size:16px; }
+    .hdr-time{ font-size:16px; min-height:40px; }
 
-  /* Tap targets de + y × más cómodos */
-  .col-plus,.col-x{
-    width:28px; height:28px; line-height:28px; text-align:center;
-    top:4px; border-radius:8px;
-  }
+    input, select, textarea{ font-size:16px; } /* evita zoom iOS */
+    .row{ grid-template-columns:1fr; }
+    .g3, .g2{ grid-template-columns:1fr; }
 
-  /* Inputs generales un poco más altos y legibles */
-  input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
-  .row{ grid-template-columns:1fr; }  /* columnas a una sola */
-  .g3{ grid-template-columns:1fr; }
-  .g2{ grid-template-columns:1fr; }
-
-  /* === Contenedores: forzar 1 columna en móvil === */
-  #containers .row{
-    grid-template-columns: 1fr !important;
-    gap: 4px;
+    #containers .row{ grid-template-columns: 1fr !important; gap: 4px; }
+    #containers label{ font-size: 12px; margin-bottom: 2px; }
+    #containers .row > div[style*="display:flex"]{ flex-wrap: wrap; }
+    #containers [name$="_naviera_otra"]{ width: 100%; margin-top: 4px; }
   }
-  #containers label{
-    font-size: 12px;
-    margin-bottom: 2px;
-  }
-  /* El combo Naviera + 'Otra' pasa a 2 filas limpias */
-  #containers .row > div[style*="display:flex"]{
-    flex-wrap: wrap;
-  }
-  #containers [name$="_naviera_otra"]{
-    width: 100%;
-    margin-top: 4px;
-  }
-}
-/* === FIN móvil === */
-  
+  /* === FIN móvil === */
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>REPORTE TRATAMIENTO DE FRÍO — COT (Digital)</h1>
-    <div class="meta">Controles (máx. 4) con hora en encabezado • Fotos/Datalog por unidad</div>
+    <div class="meta">2 controles obligatorios con hora en encabezado • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
   </header>
 
   <form id="cotForm" novalidate>
@@ -180,7 +155,8 @@
       <div class="sectitle">Documentos de Planta (Hoja firmada) — General</div>
       <div class="uploader">
         <div class="actions">
-          <input id="pickDocPlanta" type="file" accept="image/*" multiple style="display:none">
+          <!-- Cámara o galería -->
+          <input id="pickDocPlanta" type="file" accept="image/*" capture="environment" multiple style="display:none">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
           <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
@@ -246,8 +222,8 @@ function mobileConfirm(message, onOK){
   ovl.onclick = close;
 }
 
-function buildTable(id, cols){
-  const colsHdr = ['1° control','2° control','3° control','4° control'].slice(0, cols);
+function buildTableFixed2(id){
+  const colsHdr = ['1° control','2° control']; // fijos y obligatorios
   const filas = [
     ['USDA 1 (°C)','usda1'],
     ['USDA 2 (°C)','usda2'],
@@ -258,17 +234,11 @@ function buildTable(id, cols){
   ];
   const dataW = Math.max(12, Math.floor(60/colsHdr.length));
   let html = '<table><thead><tr>';
-  /* Primera columna ahora usa clase (no inline width) */
   html += '<th class="firstcol">Hora control temperatura</th>';
   colsHdr.forEach((h,i)=>{
-    const isLast = (i===colsHdr.length-1);
-    const plus = isLast ? `<span class="col-plus" data-plus="1" role="button" title="Añadir control">+</span>` : '';
-    const xCls = (i===0)?'col-x dis':'col-x';
     html += `<th class="colhdr" style="width:${dataW}%">
               ${h}
-              <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" placeholder="--:--">
-              ${plus}
-              <span class="${xCls}" data-colx="${i}" role="button" title="Eliminar control">×</span>
+              <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" required>
             </th>`;
   });
   html += '</tr></thead><tbody>';
@@ -284,19 +254,19 @@ function buildTable(id, cols){
   return html;
 }
 
-function readHeaderTimes(card, cols){
+function readHeaderTimes(card){
   const arr=[];
-  for(let i=0;i<cols;i++){
+  for(let i=0;i<2;i++){
     const inp = card.querySelector(`input[name="c${card.dataset.uid}_ht_${i}"]`);
     arr[i] = inp ? inp.value : '';
   }
   return arr;
 }
-function readTableValues(card, cols){
+function readTableValues(card){
   const keys=['usda1','usda2','usda3','sp','sup','ret'];
   const vals={}; keys.forEach(k=> vals[k]=[]);
   const id = card.dataset.uid;
-  for(let c=0;c<cols;c++){
+  for(let c=0;c<2;c++){
     keys.forEach(key=>{
       const name=`c${id}_${key}_${c}`;
       const inp=card.querySelector(`input[name="${name}"]`);
@@ -325,7 +295,16 @@ function enforceFirstNotDeletable(){
   });
 }
 
+function updateAddButtonState(){
+  const btn = $('#addContainerBtn');
+  const count = $$('#containers .container-card').length;
+  if(count >= 3){ btn.disabled = true; btn.textContent = 'Máx. 3 contenedores'; }
+  else { btn.disabled = false; btn.textContent = '+ Añadir contenedor'; }
+}
+
 function addContainer(){
+  if($$('#containers .container-card').length >= 3){ updateAddButtonState(); return; }
+
   uid++;
   const id = uid;
   photoStores.set(id, []); datalogStore.set(id, null);
@@ -333,7 +312,6 @@ function addContainer(){
   const card = document.createElement('div');
   card.className='container-card';
   card.dataset.uid = id;
-  card.dataset.cols = 4;
 
   card.innerHTML = `
     <div class="container-head">
@@ -344,11 +322,11 @@ function addContainer(){
     </div>
 
     <div class="grid g3">
-      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="Ej: TBUU1234567"></div>
+      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="Ej: TBUU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
       <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
       <div class="row"><label>Naviera</label>
         <div style="display:flex;gap:4px">
-          <select name="c${id}_naviera_sel">
+          <select name="c${id}_naviera_sel" required>
             <option value="">Selecciona…</option>
             <option>Maersk Line</option>
             <option>Hapag-Lloyd</option>
@@ -363,12 +341,13 @@ function addContainer(){
 
     <div class="line"></div>
 
-    <div class="table-wrap">${buildTable(id, 4)}</div>
+    <div class="table-wrap">${buildTableFixed2(id)}</div>
 
     <div class="uploader">
       <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
       <div class="actions">
-        <input id="pickFotos_${id}" type="file" accept="image/*" multiple style="display:none">
+        <!-- Cámara o galería -->
+        <input id="pickFotos_${id}" type="file" accept="image/*" capture="environment" multiple style="display:none">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
         <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
@@ -387,7 +366,7 @@ function addContainer(){
     </div>
   `;
 
-  // DELEGACIÓN: todos los clicks del card
+  // DELEGACIÓN: clicks del card
   card.addEventListener('click', (ev)=>{
     const t = ev.target;
 
@@ -396,14 +375,12 @@ function addContainer(){
         mobileConfirm('¿Eliminar este contenedor?', ()=>{
           const id = Number(card.dataset.uid);
           photoStores.delete(id); datalogStore.delete(id);
-          card.remove(); reindexTitles(); enforceFirstNotDeletable();
+          card.remove(); reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
         });
       }
     }
 
-    if(t.matches('[data-pickfotos]')){
-      card.querySelector('#pickFotos_'+id).click();
-    }
+    if(t.matches('[data-pickfotos]')){ card.querySelector('#pickFotos_'+id).click(); }
     if(t.matches('[data-cleanfotos]')){
       const store = photoStores.get(id)||[];
       if(!store.length) return;
@@ -411,38 +388,13 @@ function addContainer(){
         store.length=0; renderThumbs(id, card.querySelector('#thumbs_'+id));
       });
     }
-    if(t.matches('[data-pickdatalog]')){
-      card.querySelector('#pickDatalog_'+id).click();
-    }
+    if(t.matches('[data-pickdatalog]')){ card.querySelector('#pickDatalog_'+id).click(); }
     if(t.matches('[data-cleandatalog]')){
       if(!datalogStore.get(id)) return;
       mobileConfirm('¿Eliminar archivo datalog?', ()=>{
         datalogStore.set(id,null);
         card.querySelector('#datalogInfo_'+id).textContent='Sin archivo.';
       });
-    }
-
-    // Añadir/quitar columnas (cabecera)
-    if(t.matches('[data-plus]')){
-      let cols = parseInt(card.dataset.cols,10);
-      if(cols>=4) return;
-      const vals = readTableValues(card, cols);
-      const hrs = readHeaderTimes(card, cols);
-      cols++; card.dataset.cols = cols;
-      card.querySelector('.table-wrap').innerHTML = buildTable(card.dataset.uid, cols);
-      restoreValues(card, vals, hrs);
-    }
-    if(t.matches('[data-colx]')){
-      const col = parseInt(t.getAttribute('data-colx'),10);
-      if(col===0) return;
-      let cols = parseInt(card.dataset.cols,10);
-      const vals = readTableValues(card, cols);
-      const hrs = readHeaderTimes(card, cols);
-      Object.keys(vals).forEach(k=> vals[k].splice(col,1));
-      hrs.splice(col,1);
-      cols--; card.dataset.cols = cols;
-      card.querySelector('.table-wrap').innerHTML = buildTable(card.dataset.uid, cols);
-      restoreValues(card, vals, hrs);
     }
   });
 
@@ -462,7 +414,10 @@ function addContainer(){
     const files = Array.from(e.target.files||[]);
     if(!files.length) return;
     const store = photoStores.get(id)||[];
-    for(const f of files){ const c = await compressImage(f); store.push({name:safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size}); }
+    for(const f of files){
+      const c = await compressImage(f);
+      store.push({name:safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size});
+    }
     photoStores.set(id, store); renderThumbs(id, card.querySelector('#thumbs_'+id)); e.target.value='';
   });
   card.querySelector('#pickDatalog_'+id).addEventListener('change', (e)=>{
@@ -471,7 +426,7 @@ function addContainer(){
   });
 
   $('#containers').appendChild(card);
-  reindexTitles(); enforceFirstNotDeletable();
+  reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
 }
 
 function reindexTitles(){ $$('#containers .container-card').forEach((c,idx)=>{ c.querySelector('[data-title]').textContent = `Contenedor #${idx+1}`; }); }
@@ -554,6 +509,11 @@ function validForm(){
       if(!navSel.value) return {ok:false,msg:'Seleccione la naviera.'};
       if(navSel.value==='Otra' && !navOtra.value.trim()) return {ok:false,msg:'Indique la naviera (Otra).'};
     }
+    // horas obligatorias para 2 controles
+    for(let i=0;i<2;i++){
+      const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
+      if(!t || !t.value) return {ok:false,msg:'Indique las horas de ambos controles.'};
+    }
   }
   if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
   return {ok:true};
@@ -603,8 +563,6 @@ async function buildPayload(){
   const cards = $$('#containers .container-card');
   for(const card of cards){
     const id = card.dataset.uid;
-    const cols = parseInt(card.dataset.cols,10);
-    const colsHdr = ['c1','c2','c3','c4'].slice(0, cols);
     const cont = {
       container: $(`[name="c${id}_container"]`).value.trim().toUpperCase(),
       booking: $(`[name="c${id}_booking"]`).value.trim(),
@@ -618,13 +576,14 @@ async function buildPayload(){
       fotos:[],
       datalog:null
     };
-    colsHdr.forEach((_,i)=>{
+    // Horas y valores para 2 controles
+    for(let i=0;i<2;i++){
       const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
       cont.horas['h'+(i+1)] = t ? t.value : '';
-    });
+    }
     const keys=['usda1','usda2','usda3','sp','sup','ret'];
     keys.forEach(k=> cont.controles[k] = {});
-    colsHdr.forEach((col,cindex)=>{
+    ['c1','c2'].forEach((col,cindex)=>{
       keys.forEach(key=>{
         const name=`c${id}_${key}_${cindex}`;
         const inp=card.querySelector(`input[name="${name}"]`);
@@ -647,6 +606,9 @@ async function buildPayload(){
   }
   return meta;
 }
+
+// Estado inicial
+updateAddButtonState();
 </script>
 </body>
 </html>
