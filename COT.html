@@ -67,26 +67,25 @@
 }
 /* === Ajuste tabla 1° Control === */
 .tabla-control-1 {
-  width: 50%; /* Ajustar 60% si la ves grande */
+  width: 50%; /* Ajusta el 50% para hacerlo más pequeño */
   margin: auto;
 }
 
 .tabla-control-1 input {
-  width: 40%; /* Ajusta el tamaño de los inputs */
-  font-size: 12px; /* Ajustar el tamaño de texto para que se vea más pequeño */
+  width: 80%; /* Ajusta el tamaño de los inputs */
+  font-size: 12px; /* Ajusta el tamaño del texto */
 }
 
 /* === Ajuste tabla 2° Control === */
 .tabla-control-2 {
-  width: 50%; /* Ajustar 60% si la ves grande */
+  width: 50%; /* Ajusta el 50% para hacerlo más pequeño */
   margin: auto;
 }
 
 .tabla-control-2 input {
-  width: 40%; /* Ajusta el tamaño de los inputs */
-  font-size: 12px; /* Ajustar el tamaño de texto para que se vea más pequeño */
+  width: 80%; /* Ajusta el tamaño de los inputs */
+  font-size: 12px; /* Ajusta el tamaño del texto */
 }
-  
 
   /* ================================================ */
 
@@ -287,15 +286,19 @@ function buildTableFixed2(id){
     ['Temperatura Suministro (°C)','sup'],
     ['Temperatura Retorno (°C)','ret']
   ];
+  
   const dataW = Math.max(12, Math.floor(60/colsHdr.length));
-  let html = '<table><thead><tr>';
+  let html = '<table class="tabla-control-1">';  // Cambié aquí, agregando la clase tabla-control-1
+  html += '<thead><tr>';
   html += '<th class="firstcol">Hora control temperatura</th>';
+  
   colsHdr.forEach((h,i)=>{
     html += `<th class="colhdr" style="width:${dataW}%">
               ${h}
               <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" required>
             </th>`;
   });
+
   html += '</tr></thead><tbody>';
   filas.forEach(([label,key])=>{
     html += '<tr><th style="text-align:left;padding-left:10px;font-weight:700">'+label+'</th>';
@@ -306,6 +309,7 @@ function buildTableFixed2(id){
     html += '</tr>';
   });
   html += '</tbody></table>';
+  
   return html;
 }
 function readHeaderTimes(card){
