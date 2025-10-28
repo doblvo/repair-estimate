@@ -146,8 +146,8 @@
         <div class="row"><label>Nombre del técnico</label><input name="tecnico" required></div>
         <div class="row"><label>Planta / Dirección</label><input name="planta" required></div>
         <div class="row"><label>Responsable Packing</label><input name="responsable_packing" required></div>
-        <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder="Ej: 234N"></div>
-        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder="Observaciones, novedades, etc."></textarea></div>
+        <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder=" "></div>
+        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder=" "></textarea></div>
       </div>
     </div>
 
@@ -159,7 +159,7 @@
           <input id="pickDocPlanta" type="file" accept="image/*" capture="environment" multiple style="display:none">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
-          <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
+          <span class="muted">Obligatorio.</span>
         </div>
         <div class="thumbs" id="thumbsDocPlanta"></div>
       </div>
@@ -323,16 +323,16 @@ function addContainer(){
     </div>
 
     <div class="grid g3">
-      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="Ej: TBUU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
+      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
       <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
       <div class="row"><label>Naviera</label>
         <div style="display:flex;gap:4px">
           <select name="c${id}_naviera_sel" required>
             <option value="">Selecciona…</option>
             <option>Maersk Line</option>
-            <option>Hapag-Lloyd</option>
-            <option>COSCO Shipping</option>
-            <option>PIL</option>
+            <option>Hapag Lloyd</option>
+            <option>Cosco Shipping</option>
+            <option>Pil</option>
             <option>Otra</option>
           </select>
           <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
@@ -348,10 +348,10 @@ function addContainer(){
       <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
       <div class="actions">
         <!-- Cámara o galería -->
-        <input id="pickFotos_${id}" type="file" accept="image/*" capture="environment" multiple style="display:none">
+        <input id="pickFotos_${id}" type="file" style="display:none">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
-        <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
+        <span class="muted">Obligatorio.</span>
       </div>
       <div class="thumbs" id="thumbs_${id}"></div>
     </div>
