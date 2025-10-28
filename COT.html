@@ -381,36 +381,21 @@ function addContainer(){
       </div>
     </div>
 
-
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th class="firstcol">Hora control temperatura</th>
-        <th>1° control</th>
-        <th>Último control</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Aquí van las filas con los controles de temperatura -->
-    </tbody>
-  </table>
-</div>
-
-<!-- Usamos flex o row para los campos individuales -->
-<div class="row">
-  <label>N° CONTENEDOR</label>
-  <input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)">
-</div>
-
-<div class="row">
-  <label>N° BOOKING</label>
-  <input name="c${id}_booking" required>
-</div>
-
-<div class="row">
-  <label>Naviera</label>
-  <div style="display:flex;gap:4px">
+  <div class="grid g3">
+    <div class="row">
+      <label>N° CONTENEDOR</label>
+      <input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)">
+    </div>
+  
+    <div class="row">
+      <label>N° BOOKING</label>
+      <input name="c${id}_booking" required>
+    </div>
+  </div>
+  
+  <div class="row">
+    <label>Naviera</label>
+    <div style="display: flex; gap: 4px;">
     <select name="c${id}_naviera_sel" required style="width: 100%; font-size: 13px;">
       <option value="">Selecciona…</option>
       <option>Maersk Line</option>
@@ -421,8 +406,6 @@ function addContainer(){
     </select>
     <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…" style="font-size: 13px; width: auto;">
   </div>
-</div>
-
   
     <div class="line"></div>
 
