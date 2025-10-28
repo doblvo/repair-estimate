@@ -381,23 +381,33 @@ function addContainer(){
       </div>
     </div>
 
-    <div class="grid g3">
-      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
-      <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
-      <div class="row"><label>Naviera</label>
-        <div style="display:flex;gap:4px">
-          <select name="c${id}_naviera_sel" required>
-            <option value="">Selecciona…</option>
-            <option>Maersk Line</option>
-            <option>Hapag Lloyd</option>
-            <option>Cosco Shipping</option>
-            <option>Pil</option>
-            <option>Otra</option>
-          </select>
-          <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…">
-        </div>
-      </div>
+  <div class="grid g3">
+    <div class="row">
+      <label>N° CONTENEDOR</label>
+      <input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)">
     </div>
+  
+    <div class="row">
+      <label>N° BOOKING</label>
+      <input name="c${id}_booking" required>
+    </div>
+
+    <div class="row">
+      <label>Naviera</label>
+      <div style="display:flex;gap:4px">
+        <select name="c${id}_naviera_sel" required>
+          <option value="">Selecciona…</option>
+          <option>Maersk Line</option>
+          <option>Hapag Lloyd</option>
+          <option>Cosco Shipping</option>
+          <option>Pil</option>
+          <option>Otra</option>
+        </select>
+        <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…">
+      </div>
+    </div> <!-- Cierre correcto de esta fila -->
+  </div> <!-- Cierre del grid g3 -->
+
 
     <div class="line"></div>
 
