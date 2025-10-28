@@ -395,6 +395,7 @@ function addContainer(){
   
   <div class="row">
     <label>Naviera</label>
+    <div style="display: flex; gap: 4px;">
     <select name="c${id}_naviera_sel" required style="width: 100%; font-size: 13px;">
       <option value="">Selecciona…</option>
       <option>Maersk Line</option>
@@ -403,7 +404,7 @@ function addContainer(){
       <option>Pil</option>
       <option>Otra</option>
     </select>
-    <select name="c${id}_naviera_sel" required style="width: 100%; font-size: 12px;">
+    <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…" style="font-size: 13px; width: auto;">
   </div>
   
     <div class="line"></div>
