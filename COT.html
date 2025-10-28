@@ -91,31 +91,51 @@
     white-space:nowrap;
   }
 
-  /* === Mejoras específicas para móvil (≤600px) === */
-  @media (max-width: 600px){
-    /* Scroll horizontal seguro para la tabla de controles */
-    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .table-wrap table{ min-width: 720px; } /* evita que se aplaste con 4 controles */
+/* === Mejoras específicas para móvil (≤600px) === */
+@media (max-width: 600px){
+  /* Scroll horizontal seguro para la tabla de controles */
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-wrap table{ min-width: 720px; } /* evita que se aplaste con 4 controles */
 
-    /* Primera columna más angosta y legible */
-    .firstcol{ width:26%; font-size:12px; }
-    .table-wrap tbody th{ font-size:11px; padding:2px 6px; white-space:nowrap; }
+  /* Primera columna más angosta y legible */
+  .firstcol{ width:26%; font-size:12px; }
+  .table-wrap tbody th{ font-size:11px; padding:2px 6px; white-space:nowrap; }
 
-    /* Inputs más altos para dedo dentro de la tabla */
-    .table-wrap td input{ min-height:36px; }
+  /* Inputs más altos para dedo dentro de la tabla */
+  .table-wrap td input{ min-height:36px; }
 
-    /* Tap targets de + y × más cómodos */
-    .col-plus,.col-x{
-      width:28px;height:28px;line-height:28px;text-align:center;
-      top:4px;border-radius:8px;
-    }
-
-    /* Inputs generales un poco más altos y legibles */
-    input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
-    .row{ grid-template-columns:1fr; } /* columnas a una sola */
-    .g3{ grid-template-columns:1fr; }
-    .g2{ grid-template-columns:1fr; }
+  /* Tap targets de + y × más cómodos */
+  .col-plus,.col-x{
+    width:28px; height:28px; line-height:28px; text-align:center;
+    top:4px; border-radius:8px;
   }
+
+  /* Inputs generales un poco más altos y legibles */
+  input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
+  .row{ grid-template-columns:1fr; }  /* columnas a una sola */
+  .g3{ grid-template-columns:1fr; }
+  .g2{ grid-template-columns:1fr; }
+
+  /* === Contenedores: forzar 1 columna en móvil === */
+  #containers .row{
+    grid-template-columns: 1fr !important;
+    gap: 4px;
+  }
+  #containers label{
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  /* El combo Naviera + 'Otra' pasa a 2 filas limpias */
+  #containers .row > div[style*="display:flex"]{
+    flex-wrap: wrap;
+  }
+  #containers [name$="_naviera_otra"]{
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+/* === FIN móvil === */
+  
 </style>
 </head>
 <body>
