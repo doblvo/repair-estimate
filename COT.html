@@ -29,10 +29,16 @@
   #containers .row{grid-template-columns:96px 1fr; gap:2px}
   #containers label{font-size:12px;margin-bottom:0}
   #containers .row > div[style*="display:flex"]{gap:4px}
-  /* Input N° CONTENEDOR más grande y legible */
-  #containers input[name$="_container"]{
-    font-size:16px; min-height:40px; padding:6px 8px; letter-spacing:.06ch;
-  }
+/* Input N° CONTENEDOR más grande y legible */
+#containers input[name$="_container"] {
+  font-size: 18px;              /* Texto más grande y cómodo */
+  min-height: 44px;             /* Campo un poco más alto */
+  padding: 8px 10px;            /* Más espacio interno */
+  letter-spacing: 2px;          /* Separa ligeramente los caracteres */
+  width: 100%;                  /* Ocupa todo el ancho disponible */
+  box-sizing: border-box;       /* Evita que el padding rompa el ancho */
+  text-transform: uppercase;    /* Convierte automáticamente a mayúsculas */
+}
   /* ================================================ */
 
   .row{display:grid;grid-template-columns:120px 1fr;gap:2px;align-items:center}
