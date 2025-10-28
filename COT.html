@@ -36,6 +36,27 @@
   min-height:30px;
   padding:6px 8px;
 }
+/* Estilo especial para N° BOOKING */
+#containers input[name$="_booking"] {
+  font-size: 13px;     /* ✅ Texto un poquito más pequeño */
+  width: 90%;          /* ✅ Más ancho pero sin botar a Naviera */
+  min-height: 30px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+.input-naviera-otra {
+    width: 80%;        /* Ajusta si necesitas 70% o 75% */
+    font-size: 12px;   /* Letra un poco más pequeña */
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-top: 4px;
+}
+.hidden {
+    display: none;
+}
+
+
   /* ================================================ */
 
   .row{display:grid;grid-template-columns:120px 1fr;gap:2px;align-items:center}
@@ -333,12 +354,12 @@ function addContainer(){
           <select name="c${id}_naviera_sel" required>
             <option value="">Selecciona…</option>
             <option>Maersk Line</option>
-            <option>Hapag-Lloyd</option>
-            <option>COSCO Shipping</option>
-            <option>PIL</option>
+            <option>Hapag Lloyd</option>
+            <option>Cosco Shipping</option>
+            <option>Pil</option>
             <option>Otra</option>
           </select>
-          <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
+          <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…">
         </div>
       </div>
     </div>
