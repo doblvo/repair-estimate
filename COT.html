@@ -172,7 +172,7 @@
 <div class="wrap">
   <header>
     <h1>REPORTE TRATAMIENTO DE FRÍO — COT (Digital)</h1>
-    <div class="meta">2 controles obligatorios con hora en encabezado • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
+    <div class="meta">Controles obligatorios • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
   </header>
 
   <form id="cotForm" novalidate>
@@ -202,7 +202,7 @@
         <div class="row"><label>Planta / Dirección</label><input name="planta" required></div>
         <div class="row"><label>Responsable Packing</label><input name="responsable_packing" required></div>
         <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder="Ej: 234N"></div>
-        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder="Observaciones, novedades, etc."></textarea></div>
+        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder=" "></textarea></div>
       </div>
     </div>
 
@@ -214,7 +214,7 @@
           <input id="pickDocPlanta" type="file" style="display:none">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
-          <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
+          <span class="muted">Obligatorio.</span>
         </div>
         <div class="thumbs" id="thumbsDocPlanta"></div>
       </div>
@@ -406,7 +406,7 @@ function addContainer(){
         <input id="pickFotos_${id}" type="file" multiple style="display:none">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
-        <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
+        <span class="muted">Obligatorio.</span>
       </div>
       <div class="thumbs" id="thumbs_${id}"></div>
     </div>
