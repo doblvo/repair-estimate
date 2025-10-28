@@ -80,6 +80,34 @@
   .sheet .row-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 
   .rowlbl{font-weight:400}
+
+/* === Mejoras específicas para móvil === */
+@media (max-width: 600px){
+  /* Scroll horizontal seguro para la tabla de controles */
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-wrap table{ min-width: 640px; } /* evita que se aplaste */
+
+  /* Primera columna pegajosa para mantener las etiquetas visibles (opcional) */
+  .table-wrap tbody th{
+    position: sticky; left: 0; z-index: 1; background:#f8fbff;
+  }
+
+  /* Inputs más altos para dedo dentro de la tabla */
+  .table-wrap td input{ min-height: 36px; }
+
+  /* Tap targets de + y × más cómodos */
+  .col-plus,.col-x{
+    width:28px;height:28px;line-height:28px;text-align:center;
+    top:4px;border-radius:8px;
+  }
+
+  /* Inputs generales un poco más altos y legibles */
+  input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
+  .row{ grid-template-columns:1fr; } /* columnas a una sola */
+  .g3{ grid-template-columns:1fr; }
+  .g2{ grid-template-columns:1fr; }
+}
+
 </style>
 </head>
 <body>
