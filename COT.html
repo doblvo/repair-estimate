@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>COT — Reporte Digital (v6)</title>
+<title>COT — Reporte Digital (v6-móvil)</title>
 <meta name="color-scheme" content="light">
 <style>
   :root{
@@ -49,11 +49,15 @@
   table{width:100%;border-collapse:collapse;table-layout:fixed}
   th,td{border:1px solid var(--line);padding:1px 3px;text-align:center}
   th{background:#f3f6fb}
+
   /* Etiquetas izquierda más delgadas */
   .table-wrap tbody th{font-weight:400 !important;text-align:left;padding:1px 8px;font-size:12px;line-height:1.15}
-  /* Más aire para +/× en cabeceras */
-  .colhdr{position:relative;padding-top:1px;padding-bottom:0;padding-right:44px}
+
+  /* Cabecera: más aire para +/× e input hora */
+  .colhdr{position:relative;padding-top:1px;padding-bottom:0;padding-right:72px} /* <- ampliado */
   td input{width:100%;min-height:22px}
+  .hdr-time{display:block;margin-top:0;font-size:12px;min-height:28px}
+
   .line{height:1px;background:var(--line);margin:6px 0}
   .footer{font-size:12px;color:var(--muted);margin-top:6px}
   .container-card{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;background:var(--surface)}
@@ -66,12 +70,10 @@
   .thumb .meta{padding:5px 6px;font-size:11px;color:var(--muted)}
   .thumb .x{position:absolute;top:5px;right:5px;background:transparent;border:1px solid var(--danger);color:var(--danger);
     width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
-  .colhdr{position:relative;padding-top:1px;padding-bottom:0}
   .col-x{position:absolute;top:3px;right:6px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
   .col-x.dis{opacity:.35;pointer-events:none}
   .col-plus{position:absolute;top:3px;right:32px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
   .col-plus.dis{opacity:.35;pointer-events:none}
-  .hdr-time{display:block;margin-top:0;font-size:12px;min-height:28px}
 
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:9998}
   .overlay.show{display:block}
@@ -81,33 +83,39 @@
 
   .rowlbl{font-weight:400}
 
-/* === Mejoras específicas para móvil === */
-@media (max-width: 600px){
-  /* Scroll horizontal seguro para la tabla de controles */
-  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .table-wrap table{ min-width: 640px; } /* evita que se aplaste */
-
-  /* Primera columna pegajosa para mantener las etiquetas visibles (opcional) */
-  .table-wrap tbody th{
-    position: sticky; left: 0; z-index: 1; background:#f8fbff;
+  /* Primera columna semántica (sin inline width) */
+  .firstcol{
+    width:32%;
+    text-align:left;
+    padding-left:10px;
+    white-space:nowrap;
   }
 
-  /* Inputs más altos para dedo dentro de la tabla */
-  .table-wrap td input{ min-height: 36px; }
+  /* === Mejoras específicas para móvil (≤600px) === */
+  @media (max-width: 600px){
+    /* Scroll horizontal seguro para la tabla de controles */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-wrap table{ min-width: 720px; } /* evita que se aplaste con 4 controles */
 
-  /* Tap targets de + y × más cómodos */
-  .col-plus,.col-x{
-    width:28px;height:28px;line-height:28px;text-align:center;
-    top:4px;border-radius:8px;
+    /* Primera columna más angosta y legible */
+    .firstcol{ width:26%; font-size:12px; }
+    .table-wrap tbody th{ font-size:11px; padding:2px 6px; white-space:nowrap; }
+
+    /* Inputs más altos para dedo dentro de la tabla */
+    .table-wrap td input{ min-height:36px; }
+
+    /* Tap targets de + y × más cómodos */
+    .col-plus,.col-x{
+      width:28px;height:28px;line-height:28px;text-align:center;
+      top:4px;border-radius:8px;
+    }
+
+    /* Inputs generales un poco más altos y legibles */
+    input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
+    .row{ grid-template-columns:1fr; } /* columnas a una sola */
+    .g3{ grid-template-columns:1fr; }
+    .g2{ grid-template-columns:1fr; }
   }
-
-  /* Inputs generales un poco más altos y legibles */
-  input, select, textarea{ font-size:16px; } /* evita zoom en iOS */
-  .row{ grid-template-columns:1fr; } /* columnas a una sola */
-  .g3{ grid-template-columns:1fr; }
-  .g2{ grid-template-columns:1fr; }
-}
-
 </style>
 </head>
 <body>
@@ -230,7 +238,8 @@ function buildTable(id, cols){
   ];
   const dataW = Math.max(12, Math.floor(60/colsHdr.length));
   let html = '<table><thead><tr>';
-  html += '<th style="width:32%;text-align:left;padding-left:10px">Hora control temperatura</th>';
+  /* Primera columna ahora usa clase (no inline width) */
+  html += '<th class="firstcol">Hora control temperatura</th>';
   colsHdr.forEach((h,i)=>{
     const isLast = (i===colsHdr.length-1);
     const plus = isLast ? `<span class="col-plus" data-plus="1" role="button" title="Añadir control">+</span>` : '';
