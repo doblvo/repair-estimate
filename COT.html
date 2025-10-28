@@ -239,6 +239,7 @@
         <button type="submit" class="btn primary">Enviar reporte</button>
       </div>
       <div class="footer" id="msg">Listo para enviar.</div>
+      <div id="loadingIcon" style="display:none;">Cargando...</div> <!-- Icono de carga -->
     </div>
   </form>
 </div>
@@ -560,6 +561,67 @@ function renderPlantaDocs(){
     });
   });
 }
+
+
+async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
+  if(!file.type.startsWith('image/')) return file;
+  const bitmap = await createImageBitmap(file);
+  let W=bitmap.width,H=bitmap.height;
+  const ratio=Math.min(w/W, h/H, 1); W=Math.round(W*ratio); H=Math.round(H*ratio);
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d'); ctx.drawImage(bitmap,0,0,W,H);
+  let q=0.9; let blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q));
+  while(blob && blob.size>max && q>0.6){ q-=0.05; blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q)); }
+  if(!blob) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
+}
+
+// FUNCIONES NUEVAS: 
+// Muestra el ícono de carga y desactiva los botones
+function showLoading() {
+  document.getElementById('loadingIcon').style.display = 'inline';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('testBtn').disabled = true;
+  document.getElementById('msg').textContent = 'Enviando...';
+}
+
+// Oculta el ícono de carga y muestra el mensaje de éxito
+function showSuccess() {
+  document.getElementById('loadingIcon').style.display = 'none';
+  document.getElementById('msg').textContent = '¡Enviado con éxito! <a href="#" onclick="resetForm()">Volver a realizar reporte</a>';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('testBtn').disabled = false;
+}
+
+// Función para reiniciar el formulario
+function resetForm() {
+  document.getElementById('cotForm').reset();
+  document.getElementById('msg').textContent = 'Listo para enviar.';
+}
+
+// FUNCIÓN QUE MANEJA EL ENVÍO DEL FORMULARIO
+$('#cotForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!$('#cotForm').reportValidity()) {
+    $('#msg').textContent = 'Revisa campos marcados.';
+    return;
+  }
+  const v = validForm();
+  if (!v.ok) {
+    $('#msg').textContent = v.msg;
+    return;
+  }
+
+  showLoading();  // Mostrar el ícono de carga
+
+  // Aquí iría tu lógica de envío de formulario...
+  const payload = await buildPayload();
+  console.log('Payload COT:', payload);
+
+  showSuccess();  // Mostrar el mensaje de éxito
+});
+
+
 
 // Validaciones y envío
 function validForm(){
