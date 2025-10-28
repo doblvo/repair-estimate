@@ -156,7 +156,7 @@
       <div class="uploader">
         <div class="actions">
           <!-- Cámara o galería -->
-          <input id="pickDocPlanta" type="file" accept="image/*" capture="environment" multiple style="display:none">
+          <input id="pickDocPlanta" type="file" style="display:none">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
           <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
@@ -348,7 +348,7 @@ function addContainer(){
       <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
       <div class="actions">
         <!-- Cámara o galería -->
-        <input id="pickFotos_${id}" type="file" accept="image/*" capture="environment" multiple style="display:none">
+        <input id="pickFotos_${id}" type="file" multiple style="display:none">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
         <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
@@ -465,13 +465,14 @@ $('#btnDocPlantaClear').addEventListener('click', ()=>{
   mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
 });
 pickDocPlanta.addEventListener('change', async ()=> {
-  const files = Array.from(pickDocPlanta.files||[]);
-  if(!files.length) return;
-  for(const f of files){
+  const f = (pickDocPlanta.files || [])[0];
+  if(!f) return;
+
     const c = await compressImage(f, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
+    plantaDocs.length = 0;
     plantaDocs.push({ name: safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size });
-  }
-  renderPlantaDocs(); pickDocPlanta.value='';
+    renderPlantaDocs();
+    pickDocPlanta.value = '';
 });
 
 function renderPlantaDocs(){
