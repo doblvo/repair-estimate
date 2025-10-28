@@ -391,24 +391,21 @@ function addContainer(){
       <label>N° BOOKING</label>
       <input name="c${id}_booking" required>
     </div>
-
-    <div class="row">
-      <label>Naviera</label>
-      <div style="display:grid;gap:4px">
-        <select name="c${id}_naviera_sel" required>
-          <option value="">Selecciona…</option>
-          <option>Maersk Line</option>
-          <option>Hapag Lloyd</option>
-          <option>Cosco Shipping</option>
-          <option>Pil</option>
-          <option>Otra</option>
-        </select>
-        <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…">
-      </div>
-    </div> <!-- Cierre correcto de esta fila -->
-  </div> <!-- Cierre del grid g3 -->
-
-
+  </div>
+  
+  <div class="row">
+    <label>Naviera</label>
+    <select name="c${id}_naviera_sel" required>
+      <option value="">Selecciona…</option>
+      <option>Maersk Line</option>
+      <option>Hapag Lloyd</option>
+      <option>Cosco Shipping</option>
+      <option>Pil</option>
+      <option>Otra</option>
+    </select>
+    <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…">
+  </div>
+  
     <div class="line"></div>
 
     <div class="table-wrap">${buildTableFixed2(id)}</div>
