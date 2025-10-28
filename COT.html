@@ -253,7 +253,6 @@ function buildTableFixed2(id){
   html += '</tbody></table>';
   return html;
 }
-
 function readHeaderTimes(card){
   const arr=[];
   for(let i=0;i<2;i++){
@@ -262,6 +261,7 @@ function readHeaderTimes(card){
   }
   return arr;
 }
+
 function readTableValues(card){
   const keys=['usda1','usda2','usda3','sp','sup','ret'];
   const vals={}; keys.forEach(k=> vals[k]=[]);
@@ -275,6 +275,7 @@ function readTableValues(card){
   }
   return vals;
 }
+
 function restoreValues(card, vals, hrs){
   const id = card.dataset.uid;
   hrs.forEach((v,i)=>{ const inp = card.querySelector(`input[name="c${id}_ht_${i}"]`); if(inp) inp.value = v || ''; });
@@ -463,7 +464,7 @@ $('#btnDocPlantaClear').addEventListener('click', ()=>{
   if(!plantaDocs.length) return;
   mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
 });
-pickDocPlanta.addEventListener('change', async ()=>{
+pickDocPlanta.addEventListener('change', async ()=> {
   const files = Array.from(pickDocPlanta.files||[]);
   if(!files.length) return;
   for(const f of files){
@@ -472,6 +473,7 @@ pickDocPlanta.addEventListener('change', async ()=>{
   }
   renderPlantaDocs(); pickDocPlanta.value='';
 });
+
 function renderPlantaDocs(){
   thumbsDocPlanta.innerHTML='';
   if(!plantaDocs.length){ thumbsDocPlanta.innerHTML='<div class="muted">Sin archivos.</div>'; return; }
@@ -518,6 +520,7 @@ function validForm(){
   if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
   return {ok:true};
 }
+
 $('#testBtn').addEventListener('click', ()=>{
   if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
   const v = validForm(); $('#msg').textContent = v.ok ? 'Validaciones OK.' : v.msg;
@@ -531,84 +534,6 @@ $('#cotForm').addEventListener('submit', async (e)=>{
   console.log('Payload COT:', payload);
   $('#msg').textContent = 'OK. Payload listo (ver consola).';
 });
-
-async function fileToBase64(file){
-  return new Promise((res,rej)=>{
-    const r = new FileReader();
-    r.onload = ()=> res(String(r.result).split(',')[1]);
-    r.onerror = ()=> rej(r.error);
-    r.readAsDataURL(file);
-  });
-}
-async function buildPayload(){
-  const meta = {
-    encabezado:{
-      folio: $('[name="folio"]').value,
-      fecha_servicio: $('[name="fecha_servicio"]').value,
-      hora_llegada: $('[name="hora_llegada"]').value,
-      hora_inicio_cal: $('[name="hora_inicio_cal"]').value,
-      hora_termino: $('[name="hora_termino"]').value,
-    },
-    datos_finales:{
-      tecnico: $('[name="tecnico"]').value,
-      planta: $('[name="planta"]').value,
-      responsable_packing: $('[name="responsable_packing"]').value,
-      viaje: $('[name="viaje"]').value,
-      comentarios: $('[name="comentarios"]').value
-    },
-    contenedores:[],
-    documentos_planta:[]
-  };
-
-  const cards = $$('#containers .container-card');
-  for(const card of cards){
-    const id = card.dataset.uid;
-    const cont = {
-      container: $(`[name="c${id}_container"]`).value.trim().toUpperCase(),
-      booking: $(`[name="c${id}_booking"]`).value.trim(),
-      naviera: (()=>{
-        const ns = $(`[name="c${id}_naviera_sel"]`);
-        if(ns) return ns.value==='Otra' ? $(`[name="c${id}_naviera_otra"]`).value.trim() : ns.value;
-        return '';
-      })(),
-      horas:{},
-      controles:{},
-      fotos:[],
-      datalog:null
-    };
-    // Horas y valores para 2 controles
-    for(let i=0;i<2;i++){
-      const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
-      cont.horas['h'+(i+1)] = t ? t.value : '';
-    }
-    const keys=['usda1','usda2','usda3','sp','sup','ret'];
-    keys.forEach(k=> cont.controles[k] = {});
-    ['c1','c2'].forEach((col,cindex)=>{
-      keys.forEach(key=>{
-        const name=`c${id}_${key}_${cindex}`;
-        const inp=card.querySelector(`input[name="${name}"]`);
-        cont.controles[key][col] = inp ? inp.value : '';
-      });
-    });
-    const store = photoStores.get(Number(id)) || [];
-    for(const p of store){
-      cont.fotos.push({ name: p.name, size: p.size, type: p.file.type, data: await fileToBase64(p.file) });
-    }
-    const d = datalogStore.get(Number(id));
-    if(d){
-      cont.datalog = { name: d.name, size: d.size, type: d.type || 'application/octet-stream', data: await fileToBase64(d) };
-    }
-    meta.contenedores.push(cont);
-  }
-
-  for(const p of plantaDocs){
-    meta.documentos_planta.push({ name: p.name, size: p.size, type: p.file.type, data: await fileToBase64(p.file) });
-  }
-  return meta;
-}
-
-// Estado inicial
-updateAddButtonState();
 </script>
 </body>
 </html>
