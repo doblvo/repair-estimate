@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>COT — Reporte Digital (v6)</title>
+<meta name="color-scheme" content="light">
+<style>
+  :root{
+    --bg:#f6f8fb; --surface:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
+    --brand:#0b74c7; --danger:#b91c1c;
+    --radius:10px; --pad:12px; --gap:6px; --thin:1px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1100px;margin:0 auto;padding:12px}
+  header h1{margin:0 0 6px;font-size:18px;font-weight:700}
+  header .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+  .card{background:var(--surface);border:var(--thin) solid var(--line);border-radius:var(--radius);padding:var(--pad);margin-bottom:10px}
+  .sectitle{font-weight:700;margin:0 0 6px;color:var(--ink);font-size:14px}
+  .grid{display:grid;gap:var(--gap)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .row{display:grid;grid-template-columns:140px 1fr;gap:4px;align-items:center}
+  @media (max-width:900px){ .g3{grid-template-columns:1fr} }
+  @media (max-width:760px){ .row{grid-template-columns:1fr} .row>label{margin-bottom:1px} .g2{grid-template-columns:1fr} }
+  label{font-weight:600;color:var(--ink);font-size:13px;margin-bottom:1px}
+  input,select,textarea{ width:100%;padding:4px 6px;border:var(--thin) solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px }
+  input[type=file]{padding:6px}
+  .muted{color:var(--muted);font-size:12px}
+  .actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .btn{ appearance:none;border-radius:8px;padding:6px 9px;font-weight:600;cursor:pointer;background:var(--surface);border:var(--thin) solid var(--line);color:var(--ink);font-size:13px }
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.link{border:none;background:transparent;color:var(--brand);padding:0}
+  .btn.danger{border-color:var(--danger);color:var(--danger);background:transparent}
+  .btn.sm{padding:3px 7px;font-size:12px}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  th,td{border:1px solid var(--line);padding:3px 4px;text-align:center}
+  th{background:#f3f6fb}
+  td input{width:100%}
+  .line{height:1px;background:var(--line);margin:6px 0}
+  .footer{font-size:12px;color:var(--muted);margin-top:6px}
+  .container-card{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;background:var(--surface)}
+  .container-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+  .container-head h3{margin:0;font-size:14px;font-weight:600}
+  .uploader{border:1px dashed var(--line);background:#fbfdff;border-radius:8px;padding:8px;margin-top:8px}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px}
+  .thumb{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;position:relative}
+  .thumb img{display:block;width:100%;height:72px;object-fit:cover}
+  .thumb .meta{padding:5px 6px;font-size:11px;color:var(--muted)}
+  .thumb .x{position:absolute;top:5px;right:5px;background:transparent;border:1px solid var(--danger);color:var(--danger);
+    width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
+  .colhdr{position:relative;padding-top:4px;padding-bottom:0}
+  .col-x{position:absolute;top:5px;right:6px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
+  .col-x.dis{opacity:.35;pointer-events:none}
+  .col-plus{position:absolute;top:5px;right:32px;font-weight:700;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:16px}
+  .col-plus.dis{opacity:.35;pointer-events:none}
+  .hdr-time{display:block;margin-top:2px;font-size:12px}
+
+  /* --- Mobile confirm bottom sheet --- */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:9998}
+  .overlay.show{display:block}
+  .sheet{position:fixed;left:0;right:0;bottom:-100%;background:#fff;border-top-left-radius:14px;border-top-right-radius:14px;box-shadow:0 -12px 30px rgba(0,0,0,.25);padding:16px;transition:bottom .25s;z-index:9999}
+  .sheet.show{bottom:0}
+  .sheet .row-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>REPORTE TRATAMIENTO DE FRÍO — COT (Digital)</h1>
+    <div class="meta">Tema corporativo claro • Controles (máx. 4) con hora en encabezado • Fotos/Datalog por unidad</div>
+  </header>
+
+  <!-- Encabezado -->
+  <form id="cotForm" novalidate>
+    <div class="card">
+      <div class="sectitle">Encabezado</div>
+      <div class="grid g3">
+        <div class="row"><label>FOLIO</label><input name="folio" required placeholder="Ej: 000123"></div>
+        <div class="row"><label>Fecha servicio</label><input type="date" name="fecha_servicio" required></div>
+        <div class="row"><label>Hora de llegada Planta</label><input type="time" step="60" name="hora_llegada" required></div>
+        <div class="row"><label>Hora inicio primera calibración</label><input type="time" step="60" name="hora_inicio_cal" required></div>
+        <div class="row"><label>Hora término servicio</label><input type="time" step="60" name="hora_termino" required></div>
+      </div>
+    </div>
+
+    <!-- Contenedores dinámicos -->
+    <div class="card">
+      <div class="sectitle">Contenedores</div>
+      <div id="containers"></div>
+      <div class="actions">
+        <button type="button" class="btn link" id="addContainerBtn">+ Añadir contenedor</button>
+      </div>
+    </div>
+
+    <!-- Datos generales finales -->
+    <div class="card">
+      <div class="sectitle">Datos generales finales</div>
+      <div class="grid g2">
+        <div class="row"><label>Nombre del técnico</label><input name="tecnico" required></div>
+        <div class="row"><label>Planta / Dirección</label><input name="planta" required></div>
+        <div class="row"><label>Responsable Packing</label><input name="responsable_packing" required></div>
+        <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder="Ej: 234N"></div>
+        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder="Observaciones, novedades, etc."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Documentos de Planta (general, alta calidad) -->
+    <div class="card">
+      <div class="sectitle">Documentos de Planta (Hoja firmada) — General</div>
+      <div class="uploader">
+        <div class="actions">
+          <input id="pickDocPlanta" type="file" accept="image/*" multiple style="display:none">
+          <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
+          <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
+          <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
+        </div>
+        <div class="thumbs" id="thumbsDocPlanta"></div>
+      </div>
+    </div>
+
+    <!-- Envío -->
+    <div class="card">
+      <div class="actions">
+        <button type="button" class="btn" id="testBtn">Probar validaciones</button>
+        <button type="submit" class="btn primary">Enviar reporte</button>
+      </div>
+      <div class="footer" id="msg">Listo para enviar.</div>
+    </div>
+  </form>
+</div>
+
+<!-- Bottom sheet confirm -->
+<div id="overlay" class="overlay"></div>
+<div id="mSheet" class="sheet"></div>
+
+<script>
+const $ = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+
+// ====== Estado ======
+let uid = 0; // id interno único por contenedor
+const photoStores = new Map(); // uid -> [{name,file,size}]
+const datalogStore = new Map(); // uid -> File
+let plantaDocs = []; // [{name,file,size}]
+
+// ====== Helpers ======
+function truncate(s,n){ return s.length>n ? s.slice(0,n-1)+'…' : s; }
+function safeName(s){ return (s||'FILE').replace(/[^\w\.\-]+/g,'_'); }
+const MAX_W=760, MAX_H=600, MAX_SIZE=150*1024; // per-container
+const MAX_W_DOC=1200, MAX_H_DOC=900, MAX_SIZE_DOC=400*1024; // planta
+
+async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}){
+  if(!file.type.startsWith('image/')) return file;
+  const bitmap = await createImageBitmap(file);
+  let W=bitmap.width,H=bitmap.height;
+  const ratio=Math.min(w/W, h/H, 1); W=Math.round(W*ratio); H=Math.round(H*ratio);
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d'); ctx.drawImage(bitmap,0,0,W,H);
+  let q=0.9; let blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q));
+  while(blob && blob.size>max && q>0.6){ q-=0.05; blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q)); }
+  if(!blob) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
+}
+
+// ====== Mobile confirm bottom sheet ======
+function mobileConfirm(message, onOK){
+  const ovl = document.getElementById('overlay');
+  const sh  = document.getElementById('mSheet');
+  sh.innerHTML = `
+    <div style="font-weight:700;margin-bottom:8px">Confirmar</div>
+    <div class="muted" style="margin-bottom:10px">${message}</div>
+    <div class="row-actions">
+      <button type="button" class="btn" id="mCancel">Cancelar</button>
+      <button type="button" class="btn danger" id="mOk">Aceptar</button>
+    </div>`;
+  ovl.classList.add('show'); sh.classList.add('show');
+  const close = ()=>{ ovl.classList.remove('show'); sh.classList.remove('show'); };
+  document.getElementById('mCancel').onclick = close;
+  document.getElementById('mOk').onclick = ()=>{ close(); onOK && onOK(); };
+  ovl.onclick = close;
+}
+
+// ====== Contenedores ======
+function addContainer(){
+  uid++;
+  const id = uid;
+  photoStores.set(id, []); datalogStore.set(id, null);
+
+  const card = document.createElement('div');
+  card.className='container-card';
+  card.dataset.uid = id;
+  card.dataset.cols = 4; // arranca con 4 controles
+
+  card.innerHTML = `
+    <div class="container-head">
+      <h3 data-title>Contenedor</h3>
+      <div class="actions">
+        <button type="button" class="btn danger sm" data-del style="display:none">Eliminar contenedor</button>
+      </div>
+    </div>
+
+    <div class="grid g3">
+      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="Ej: TBUU1234567"></div>
+      <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
+      <div class="row"><label>Naviera</label>
+        <div style="display:flex;gap:6px">
+          <select name="c${id}_naviera_sel">
+            <option value="">Selecciona…</option>
+            <option>Maersk Line</option>
+            <option>Hapag-Lloyd</option>
+            <option>COSCO Shipping</option>
+            <option>PIL</option>
+            <option>Otra</option>
+          </select>
+          <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
+        </div>
+      </div>
+    </div>
+
+    <div class="line"></div>
+
+    <div class="table-wrap">${buildTable(id, 4)}</div>
+
+    <div class="uploader">
+      <div class="sectitle" style="margin:8px 0 4px">Fotos de esta unidad</div>
+      <div class="actions">
+        <input id="pickFotos_${id}" type="file" accept="image/*" multiple style="display:none">
+        <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
+        <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
+        <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
+      </div>
+      <div class="thumbs" id="thumbs_${id}"></div>
+    </div>
+
+    <div class="uploader">
+      <div class="sectitle" style="margin:8px 0 4px">Data logger (esta unidad)</div>
+      <div class="actions">
+        <input id="pickDatalog_${id}" type="file" style="display:none"><!-- acepta TODOS los archivos -->
+        <button type="button" class="btn sm" data-pickdatalog>Subir/Reemplazar</button>
+        <button type="button" class="btn danger sm" data-cleandatalog>Eliminar</button>
+        <span class="muted" id="datalogInfo_${id}">Sin archivo.</span>
+      </div>
+    </div>
+  `;
+
+  // eliminar contenedor (no en el primero) — sin alert()
+  card.querySelector('[data-del]').addEventListener('click', ()=>{
+    mobileConfirm('¿Eliminar este contenedor?', ()=>{
+      photoStores.delete(id); datalogStore.delete(id);
+      card.remove(); reindexTitles(); enforceFirstNotDeletable();
+    });
+  });
+
+  // toggle "Otra" naviera
+  {
+    const sel = card.querySelector(`[name="c${id}_naviera_sel"]`);
+    const otra = card.querySelector(`[name="c${id}_naviera_otra"]`);
+    sel.addEventListener('change', ()=>{
+      const show = sel.value==='Otra';
+      otra.style.display = show? 'block':'none';
+      if(show) otra.focus();
+    });
+  }
+
+  // fotos
+  const pickFotos = card.querySelector('#pickFotos_'+id);
+  const thumbsHost = card.querySelector('#thumbs_'+id);
+  card.querySelector('[data-pickfotos]').addEventListener('click', ()=> pickFotos.click());
+  card.querySelector('[data-cleanfotos]').addEventListener('click', ()=>{
+    const store = photoStores.get(id)||[];
+    if(!store.length) return;
+    mobileConfirm('¿Borrar todas las fotos de esta unidad?', ()=>{
+      store.length=0; renderThumbs(id, thumbsHost);
+    });
+  });
+  pickFotos.addEventListener('change', async ()=>{
+    const files = Array.from(pickFotos.files||[]);
+    if(!files.length) return;
+    const store = photoStores.get(id)||[];
+    for(const f of files){ const c = await compressImage(f); store.push({name:safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size}); }
+    photoStores.set(id, store); renderThumbs(id, thumbsHost); pickFotos.value='';
+  });
+
+  // datalog
+  const pickDatalog = card.querySelector('#pickDatalog_'+id);
+  const info = card.querySelector('#datalogInfo_'+id);
+  card.querySelector('[data-pickdatalog]').addEventListener('click', ()=> pickDatalog.click());
+  card.querySelector('[data-cleandatalog]').addEventListener('click', ()=>{
+    if(!datalogStore.get(id)) return;
+    mobileConfirm('¿Eliminar archivo datalog?', ()=>{ datalogStore.set(id,null); info.textContent='Sin archivo.'; });
+  });
+  pickDatalog.addEventListener('change', ()=>{
+    const f=(pickDatalog.files||[])[0]; if(!f) return;
+    datalogStore.set(id,f); info.textContent=`${f.name} · ${(f.size/1024).toFixed(0)} KB`; pickDatalog.value='';
+  });
+
+  $('#containers').appendChild(card);
+  reindexTitles(); enforceFirstNotDeletable(); bindHeaderControls(card);
+}
+function reindexTitles(){ $$('#containers .container-card').forEach((c,idx)=>{ c.querySelector('[data-title]').textContent = `Contenedor #${idx+1}`; }); }
+function enforceFirstNotDeletable(){
+  const cards = $$('#containers .container-card');
+  cards.forEach((c,i)=>{ const del = c.querySelector('[data-del]'); if(del) del.style.display = (i===0 ? 'none' : ''); });
+}
+
+function buildTable(id, cols){
+  const colsHdr = ['1° control','2° control','3° control','4° control'].slice(0, cols);
+  const filas = [
+    ['USDA 1 (°C)','usda1'],
+    ['USDA 2 (°C)','usda2'],
+    ['USDA 3 (°C)','usda3'],
+    ['Set Point (°C)','sp'],
+    ['Temperatura Suministro (°C)','sup'],
+    ['Temperatura Retorno (°C)','ret']
+  ];
+  const dataW = Math.max(12, Math.floor(60/colsHdr.length)); // columnas angostas
+  let html = '<table><thead><tr>';
+  html += '<th style="width:40%;text-align:left;padding-left:10px">Hora control temperatura</th>';
+  colsHdr.forEach((h,i)=>{
+    const isLast = (i===colsHdr.length-1);
+    const plus = isLast ? `<span class="col-plus" data-plus title="Añadir control">+</span>` : '';
+    const xCls = (i===0)?'col-x dis':'col-x'; // no eliminar 1°
+    html += `<th class="colhdr" style="width:${dataW}%">
+              ${h}
+              <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" placeholder="--:--">
+              ${plus}
+              <span class="${xCls}" data-colx="${i}" title="Eliminar control">×</span>
+            </th>`;
+  });
+  html += '</tr></thead><tbody>';
+  filas.forEach(([label,key])=>{
+    html += '<tr><th style="text-align:left;padding-left:10px;font-weight:600">'+label+'</th>';
+    for(let c=0;c<colsHdr.length;c++){
+      const name = `c${id}_${key}_${c}`;
+      html += `<td><input type="text" name="${name}"></td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+function bindHeaderControls(card){
+  const plusBtn = card.querySelector('[data-plus]');
+  if(plusBtn){
+    plusBtn.addEventListener('click', ()=>{
+      let cols = parseInt(card.dataset.cols,10);
+      if(cols>=4) return;
+      const vals = readTableValues(card, cols);
+      const hrs = readHeaderTimes(card, cols);
+      cols++; card.dataset.cols = cols;
+      card.querySelector('.table-wrap').innerHTML = buildTable(card.dataset.uid, cols);
+      restoreValues(card, vals, hrs);
+      bindHeaderControls(card);
+    });
+    if(parseInt(card.dataset.cols,10)>=4) plusBtn.classList.add('dis');
+  }
+  card.querySelectorAll('[data-colx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const col = parseInt(btn.getAttribute('data-colx'),10);
+      if(col===0) return; // no quitar 1° control
+      let cols = parseInt(card.dataset.cols,10);
+      const vals = readTableValues(card, cols);
+      const hrs = readHeaderTimes(card, cols);
+      Object.keys(vals).forEach(k=> vals[k].splice(col,1));
+      hrs.splice(col,1);
+      cols--; card.dataset.cols = cols;
+      card.querySelector('.table-wrap').innerHTML = buildTable(card.dataset.uid, cols);
+      restoreValues(card, vals, hrs);
+      bindHeaderControls(card);
+    });
+  });
+}
+function readHeaderTimes(card, cols){
+  const arr=[];
+  for(let i=0;i<cols;i++){
+    const inp = card.querySelector(`input[name="c${card.dataset.uid}_ht_${i}"]`);
+    arr[i] = inp ? inp.value : '';
+  }
+  return arr;
+}
+function readTableValues(card, cols){
+  const keys=['usda1','usda2','usda3','sp','sup','ret'];
+  const vals={}; keys.forEach(k=> vals[k]=[]);
+  const id = card.dataset.uid;
+  for(let c=0;c<cols;c++){
+    keys.forEach(key=>{
+      const name=`c${id}_${key}_${c}`;
+      const inp=card.querySelector(`input[name="${name}"]`);
+      vals[key][c]= inp? inp.value : '';
+    });
+  }
+  return vals;
+}
+function restoreValues(card, vals, hrs){
+  const id = card.dataset.uid;
+  hrs.forEach((v,i)=>{ const inp = card.querySelector(`input[name="c${id}_ht_${i}"]`); if(inp) inp.value = v || ''; });
+  Object.keys(vals).forEach(key=>{
+    vals[key].forEach((v,i)=>{
+      const name = `c${id}_${key}_${i}`;
+      const inp = card.querySelector(`input[name="${name}"]`);
+      if(inp) inp.value = v || '';
+    });
+  });
+}
+function renderThumbs(id, host){
+  const store = photoStores.get(Number(id)) || [];
+  host.innerHTML='';
+  if(!store.length){ host.innerHTML='<div class="muted">Sin fotos.</div>'; return; }
+  store.forEach((p,i)=>{
+    const url = URL.createObjectURL(p.file);
+    const card = document.createElement('div');
+    card.className='thumb';
+    card.innerHTML = `
+      <img src="${url}" alt="foto ${i+1}">
+      <div class="x" title="Eliminar" data-x="${i}">×</div>
+      <div class="meta">${truncate(p.name,22)} · ${(p.size/1024).toFixed(0)} KB</div>`;
+    host.appendChild(card);
+    card.querySelector('.x').addEventListener('click', ()=>{
+      URL.revokeObjectURL(url);
+      store.splice(i,1); renderThumbs(id, host);
+    });
+  });
+}
+
+// init
+addContainer();
+document.getElementById('addContainerBtn').addEventListener('click', addContainer);
+
+// ====== Documentos de Planta (general) ======
+const pickDocPlanta = $('#pickDocPlanta');
+const thumbsDocPlanta = $('#thumbsDocPlanta');
+$('#btnDocPlanta').addEventListener('click', ()=> pickDocPlanta.click());
+$('#btnDocPlantaClear').addEventListener('click', ()=>{
+  if(!plantaDocs.length) return;
+  mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
+});
+pickDocPlanta.addEventListener('change', async ()=>{
+  const files = Array.from(pickDocPlanta.files||[]);
+  if(!files.length) return;
+  for(const f of files){
+    const c = await compressImage(f, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
+    plantaDocs.push({ name: safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size });
+  }
+  renderPlantaDocs(); pickDocPlanta.value='';
+});
+function renderPlantaDocs(){
+  thumbsDocPlanta.innerHTML='';
+  if(!plantaDocs.length){ thumbsDocPlanta.innerHTML='<div class="muted">Sin archivos.</div>'; return; }
+  plantaDocs.forEach((p,i)=>{
+    const url = URL.createObjectURL(p.file);
+    const card = document.createElement('div');
+    card.className='thumb';
+    card.innerHTML = `
+      <img src="${url}" alt="doc ${i+1}">
+      <div class="x" title="Eliminar" data-x="${i}">×</div>
+      <div class="meta">${truncate(p.name,22)} · ${(p.size/1024).toFixed(0)} KB</div>`;
+    thumbsDocPlanta.appendChild(card);
+    card.querySelector('.x').addEventListener('click', ()=>{
+      URL.revokeObjectURL(url);
+      plantaDocs.splice(i,1); renderPlantaDocs();
+    });
+  });
+}
+
+// ====== Validaciones y envío ======
+function validForm(){
+  const need = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing'];
+  for(const n of need){ if(!$(`[name="${n}"]`).value) return {ok:false,msg:'Completa los datos generales obligatorios.'}; }
+  const cards = $$('#containers .container-card');
+  if(!cards.length) return {ok:false,msg:'Agrega al menos un contenedor.'};
+  for(const card of cards){
+    const id = card.dataset.uid;
+    const cont = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
+    const book = $(`[name="c${id}_booking"]`).value.trim();
+    if(!/^[A-Z]{4}\d{7}$/.test(cont)) return {ok:false,msg:'N° Contenedor inválido (ABCD1234567).'};
+    if(!book) return {ok:false,msg:'Falta N° Booking.'};
+
+    // Naviera (select + otra)
+    const navSel  = $(`[name="c${id}_naviera_sel"]`);
+    const navOtra = $(`[name="c${id}_naviera_otra"]`);
+    if(navSel){
+      if(!navSel.value) return {ok:false,msg:'Seleccione la naviera.'};
+      if(navSel.value==='Otra' && !navOtra.value.trim()) return {ok:false,msg:'Indique la naviera (Otra).'};
+    }
+  }
+
+  // Documento de planta obligatorio
+  if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
+
+  return {ok:true};
+}
+$('#testBtn').addEventListener('click', ()=>{
+  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
+  const v = validForm(); $('#msg').textContent = v.ok ? 'Validaciones OK.' : v.msg;
+});
+
+$('#cotForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
+  const v = validForm(); if(!v.ok){ $('#msg').textContent=v.msg; return; }
+
+  const payload = await buildPayload();
+  console.log('Payload COT:', payload);
+  $('#msg').textContent = 'OK. Payload listo (ver consola).';
+});
+
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=> res(String(r.result).split(',')[1]);
+    r.onerror = ()=> rej(r.error);
+    r.readAsDataURL(file);
+  });
+}
+async function buildPayload(){
+  const meta = {
+    encabezado:{
+      folio: $('[name="folio"]').value,
+      fecha_servicio: $('[name="fecha_servicio"]').value,
+      hora_llegada: $('[name="hora_llegada"]').value,
+      hora_inicio_cal: $('[name="hora_inicio_cal"]').value,
+      hora_termino: $('[name="hora_termino"]').value,
+    },
+    datos_finales:{
+      tecnico: $('[name="tecnico"]').value,
+      planta: $('[name="planta"]').value,
+      responsable_packing: $('[name="responsable_packing"]').value,
+      viaje: $('[name="viaje"]').value,
+      comentarios: $('[name="comentarios"]').value
+    },
+    contenedores:[],
+    documentos_planta:[]
+  };
+
+  const cards = $$('#containers .container-card');
+  for(const card of cards){
+    const id = card.dataset.uid;
+    const cols = parseInt(card.dataset.cols,10);
+    const colsHdr = ['c1','c2','c3','c4'].slice(0, cols);
+    const cont = {
+      container: $(`[name="c${id}_container"]`).value.trim().toUpperCase(),
+      booking: $(`[name="c${id}_booking"]`).value.trim(),
+      naviera: (()=>{
+        const ns = $(`[name="c${id}_naviera_sel"]`);
+        if(ns) return ns.value==='Otra' ? $(`[name="c${id}_naviera_otra"]`).value.trim() : ns.value;
+        return '';
+      })(),
+      horas:{},
+      controles:{},
+      fotos:[],
+      datalog:null
+    };
+    colsHdr.forEach((_,i)=>{
+      const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
+      cont.horas['h'+(i+1)] = t ? t.value : ''; // h1..h4
+    });
+    const keys=['usda1','usda2','usda3','sp','sup','ret'];
+    keys.forEach(k=> cont.controles[k] = {});
+    colsHdr.forEach((col,cindex)=>{
+      keys.forEach(key=>{
+        const name=`c${id}_${key}_${cindex}`;
+        const inp=card.querySelector(`input[name="${name}"]`);
+        cont.controles[key][col] = inp ? inp.value : '';
+      });
+    });
+    const store = photoStores.get(Number(id)) || [];
+    for(const p of store){
+      cont.fotos.push({ name: p.name, size: p.size, type: p.file.type, data: await fileToBase64(p.file) });
+    }
+    const d = datalogStore.get(Number(id));
+    if(d){
+      cont.datalog = { name: d.name, size: d.size, type: d.type || 'application/octet-stream', data: await fileToBase64(d) };
+    }
+    meta.contenedores.push(cont);
+  }
+
+  for(const p of plantaDocs){
+    meta.documentos_planta.push({ name: p.name, size: p.size, type: p.file.type, data: await fileToBase64(p.file) });
+  }
+  return meta;
+}
+</script>
+</body>
+</html>
