@@ -29,64 +29,10 @@
   #containers .row{grid-template-columns:96px 1fr; gap:2px}
   #containers label{font-size:12px;margin-bottom:0}
   #containers .row > div[style*="display:flex"]{gap:4px}
-/* Input N° CONTENEDOR más grande y legible */
-#containers input[name$="_container"]{
-  font-size:13px;       /* ✅ texto un poco más pequeño */
-  width:102%;           /* ✅ recuadro más ancho */
-  min-height:30px;
-  padding:6px 8px;
-}
-/* Estilo especial para N° BOOKING */
-#containers input[name$="_booking"] {
-  font-size: 13px;     /* ✅ Texto un poquito más pequeño */
-  width: 100%;          /* ✅ Más ancho pero sin botar a Naviera */
-  min-height: 30px;
-  padding: 6px 8px;
-  box-sizing: border-box;
-}
-.input-naviera-otra {
-    width: 80%;        /* Ajusta si necesitas 70% o 75% */
-    font-size: 12px;   /* Letra un poco más pequeña */
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    margin-top: 4px;
-}
-.hidden {
-    display: none;
-}
-/* === Ajuste tabla Control Temperatura === */
-.tabla-temp {
-  width: 60%; /* Ajustar 60% si la ves grande */
-  margin: auto;
-}
-
-.tabla-temp input {
-  width: 95%;
-  font-size: 14px;
-}
-/* === Ajuste tabla 1° Control === */
-.tabla-control-1 {
-  width: 50%; /* Ajusta el 50% para hacerlo más pequeño */
-  margin: auto;
-}
-
-.tabla-control-1 input {
-  width: 80%; /* Ajusta el tamaño de los inputs */
-  font-size: 12px; /* Ajusta el tamaño del texto */
-}
-
-/* === Ajuste tabla 2° Control === */
-.tabla-control-2 {
-  width: 50%; /* Ajusta el 50% para hacerlo más pequeño */
-  margin: auto;
-}
-
-.tabla-control-2 input {
-  width: 80%; /* Ajusta el tamaño de los inputs */
-  font-size: 12px; /* Ajusta el tamaño del texto */
-}
-
+  /* Input N° CONTENEDOR más grande y legible */
+  #containers input[name$="_container"]{
+    font-size:16px; min-height:40px; padding:6px 8px; letter-spacing:.06ch;
+  }
   /* ================================================ */
 
   .row{display:grid;grid-template-columns:120px 1fr;gap:2px;align-items:center}
@@ -171,7 +117,7 @@
 <div class="wrap">
   <header>
     <h1>REPORTE TRATAMIENTO DE FRÍO — COT (Digital)</h1>
-    <div class="meta">Controles obligatorios • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
+    <div class="meta">2 controles obligatorios con hora en encabezado • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
   </header>
 
   <form id="cotForm" novalidate>
@@ -200,8 +146,8 @@
         <div class="row"><label>Nombre del técnico</label><input name="tecnico" required></div>
         <div class="row"><label>Planta / Dirección</label><input name="planta" required></div>
         <div class="row"><label>Responsable Packing</label><input name="responsable_packing" required></div>
-        <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder=" "></div>
-        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder=" "></textarea></div>
+        <div class="row"><label>Viaje / Embarque</label><input name="viaje" placeholder="Ej: 234N"></div>
+        <div class="row" style="grid-column:1/-1"><label>Comentarios</label><textarea name="comentarios" rows="3" placeholder="Observaciones, novedades, etc."></textarea></div>
       </div>
     </div>
 
@@ -210,10 +156,10 @@
       <div class="uploader">
         <div class="actions">
           <!-- Cámara o galería -->
-          <input id="pickDocPlanta" type="file" style="display:none">
+          <input id="pickDocPlanta" type="file" accept="image/*" capture="environment" multiple style="display:none">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
-          <span class="muted">Obligatorio.</span>
+          <span class="muted">Obligatorio. Se comprimen a 1200×900 ≤400 KB c/u.</span>
         </div>
         <div class="thumbs" id="thumbsDocPlanta"></div>
       </div>
@@ -277,7 +223,7 @@ function mobileConfirm(message, onOK){
 }
 
 function buildTableFixed2(id){
-  const colsHdr = ['1° control','Último control']; // fijos y obligatorios
+  const colsHdr = ['1° control','2° control']; // fijos y obligatorios
   const filas = [
     ['USDA 1 (°C)','usda1'],
     ['USDA 2 (°C)','usda2'],
@@ -286,19 +232,15 @@ function buildTableFixed2(id){
     ['Temperatura Suministro (°C)','sup'],
     ['Temperatura Retorno (°C)','ret']
   ];
-  
   const dataW = Math.max(12, Math.floor(60/colsHdr.length));
-  let html = '<table class="tabla-control-1">';  // Cambié aquí, agregando la clase tabla-control-1
-  html += '<thead><tr>';
+  let html = '<table><thead><tr>';
   html += '<th class="firstcol">Hora control temperatura</th>';
-  
   colsHdr.forEach((h,i)=>{
     html += `<th class="colhdr" style="width:${dataW}%">
               ${h}
               <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" required>
             </th>`;
   });
-
   html += '</tr></thead><tbody>';
   filas.forEach(([label,key])=>{
     html += '<tr><th style="text-align:left;padding-left:10px;font-weight:700">'+label+'</th>';
@@ -309,7 +251,6 @@ function buildTableFixed2(id){
     html += '</tr>';
   });
   html += '</tbody></table>';
-  
   return html;
 }
 function readHeaderTimes(card){
@@ -381,32 +322,24 @@ function addContainer(){
       </div>
     </div>
 
-  <div class="grid g3">
-    <div class="row">
-      <label>N° CONTENEDOR</label>
-      <input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)">
+    <div class="grid g3">
+      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="Ej: TBUU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
+      <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
+      <div class="row"><label>Naviera</label>
+        <div style="display:flex;gap:4px">
+          <select name="c${id}_naviera_sel" required>
+            <option value="">Selecciona…</option>
+            <option>Maersk Line</option>
+            <option>Hapag-Lloyd</option>
+            <option>COSCO Shipping</option>
+            <option>PIL</option>
+            <option>Otra</option>
+          </select>
+          <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
+        </div>
+      </div>
     </div>
-  
-    <div class="row">
-      <label>N° BOOKING</label>
-      <input name="c${id}_booking" required>
-    </div>
-  </div>
-  
-  <div class="row">
-    <label>Naviera</label>
-    <div style="display: flex; gap: 4px;">
-    <select name="c${id}_naviera_sel" required style="width: 100%; font-size: 13px;">
-      <option value="">Selecciona…</option>
-      <option>Maersk Line</option>
-      <option>Hapag Lloyd</option>
-      <option>Cosco Shipping</option>
-      <option>Pil</option>
-      <option>Otra</option>
-    </select>
-    <input name="c${id}_naviera_otra" class="input-naviera-otra hidden" placeholder="Especifique…" style="font-size: 13px; width: auto;">
-  </div>
-  
+
     <div class="line"></div>
 
     <div class="table-wrap">${buildTableFixed2(id)}</div>
@@ -415,10 +348,10 @@ function addContainer(){
       <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
       <div class="actions">
         <!-- Cámara o galería -->
-        <input id="pickFotos_${id}" type="file" multiple style="display:none">
+        <input id="pickFotos_${id}" type="file" accept="image/*" capture="environment" multiple style="display:none">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
-        <span class="muted">Obligatorio.</span>
+        <span class="muted">Se comprimen a 760×600 ≤150 KB c/u.</span>
       </div>
       <div class="thumbs" id="thumbs_${id}"></div>
     </div>
@@ -532,14 +465,13 @@ $('#btnDocPlantaClear').addEventListener('click', ()=>{
   mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
 });
 pickDocPlanta.addEventListener('change', async ()=> {
-  const f = (pickDocPlanta.files || [])[0];
-  if(!f) return;
-
+  const files = Array.from(pickDocPlanta.files||[]);
+  if(!files.length) return;
+  for(const f of files){
     const c = await compressImage(f, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
-    plantaDocs.length = 0;
     plantaDocs.push({ name: safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size });
-    renderPlantaDocs();
-    pickDocPlanta.value = '';
+  }
+  renderPlantaDocs(); pickDocPlanta.value='';
 });
 
 function renderPlantaDocs(){
