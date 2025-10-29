@@ -34,72 +34,72 @@
     font-size:16px; min-height:40px; padding:6px 8px; letter-spacing:.06ch;
   }
 
-/* === Ajuste tamaño y disposición de contenedores === */
-#containers .g3 {
-  grid-template-columns: 1.1fr 1fr 1fr; /* Ajusta la proporción de las columnas */
-  column-gap: 6px;
-  row-gap: 4px;
-}
-
-/* Etiquetas más pequeñas y ajustadas */
-#containers .g3 .row > label {
-  font-size: 11px; /* Reduce tamaño de texto */
-  font-weight: 600; /* Acentúa la etiqueta */
-  line-height: 1.1;
-  margin-bottom: 0;
-}
-
-/* Campos de entrada y selección con fuentes más pequeñas */
-#containers .g3 .row input,
-#containers .g3 .row select {
-  min-height: 30px;
-  font-size: 13px;
-  padding: 4px 6px;
-}
-
-/* Ajuste específico para el N° CONTENEDOR */
-#containers input[name$="_container"] {
-  font-size: 13px;
-  min-height: 30px;
-  letter-spacing: 0.04ch; /* Para 11 caracteres */
-}
-
-/* Ajuste para N° BOOKING y Naviera */
-#containers input[name$="_booking"],
-#containers select[name$="_naviera_sel"] {
-  font-size: 13px;
-  min-height: 30px;
-}
-
-/* Campo "Otro" que aparece cuando seleccionas "Otra" en Naviera */
-#containers input[name$="_naviera_otra"] {
-  font-size: 13px;
-  min-height: 30px;
-  padding: 4px 6px;
-}
-
-/* Ajuste de placeholders (texto de ejemplo) */
-#containers input::placeholder {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* Flexbox para Naviera + Otro (alineación en una fila) */
-#containers .row > div[style*="display:flex"] {
-  gap: 4px;
-  align-items: center;
-}
-
-/* Estilo para dispositivos móviles (≤600px) */
-@media (max-width: 600px) {
+  /* === Ajuste tamaño y disposición de contenedores === */
   #containers .g3 {
-    grid-template-columns: 1fr; /* Apilar todo en una columna */
+    grid-template-columns: 1.1fr 1fr 1fr; /* Ajusta la proporción de las columnas */
+    column-gap: 6px;
+    row-gap: 4px;
   }
 
-  #containers [name$="_naviera_otra"] {
-    width: 100%; /* Ocupa todo el ancho disponible */
+  /* Etiquetas más pequeñas y ajustadas */
+  #containers .g3 .row > label {
+    font-size: 11px; /* Reduce tamaño de texto */
+    font-weight: 600; /* Acentúa la etiqueta */
+    line-height: 1.1;
+    margin-bottom: 0;
   }
-}
+
+  /* Campos de entrada y selección con fuentes más pequeñas */
+  #containers .g3 .row input,
+  #containers .g3 .row select {
+    min-height: 30px;
+    font-size: 13px;
+    padding: 4px 6px;
+  }
+
+  /* Ajuste específico para el N° CONTENEDOR */
+  #containers input[name$="_container"] {
+    font-size: 13px;
+    min-height: 30px;
+    letter-spacing: 0.04ch; /* Para 11 caracteres */
+  }
+
+  /* Ajuste para N° BOOKING y Naviera */
+  #containers input[name$="_booking"],
+  #containers select[name$="_naviera_sel"] {
+    font-size: 13px;
+    min-height: 30px;
+  }
+
+  /* Campo "Otro" que aparece cuando seleccionas "Otra" en Naviera */
+  #containers input[name$="_naviera_otra"] {
+    font-size: 13px;
+    min-height: 30px;
+    padding: 4px 6px;
+  }
+
+  /* Ajuste de placeholders (texto de ejemplo) */
+  #containers input::placeholder {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Flexbox para Naviera + Otro (alineación en una fila) */
+  #containers .row > div[style*="display:flex"] {
+    gap: 4px;
+    align-items: center;
+  }
+
+  /* Estilo para dispositivos móviles (≤600px) */
+  @media (max-width: 600px) {
+    #containers .g3 {
+      grid-template-columns: 1fr; /* Apilar todo en una columna */
+    }
+
+    #containers [name$="_naviera_otra"] {
+      width: 100%; /* Ocupa todo el ancho disponible */
+    }
+  }
 
   /* ================================================ */
 
@@ -224,7 +224,7 @@
       <div class="uploader">
         <div class="actions">
           <!-- Cámara o galería -->
-          <input id="pickDocPlanta" type="file" style="display:none">
+          <input id="pickDocPlanta" type="file" style="display:none" multiple accept="image/*">
           <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
           <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
           <span class="muted">Obligatorio.</span>
@@ -236,7 +236,8 @@
     <div class="card">
       <div class="actions">
         <button type="button" class="btn" id="testBtn">Probar validaciones</button>
-        <button type="submit" class="btn primary">Enviar reporte</button>
+        <!-- agrego id submitBtn para control desde JS -->
+        <button type="submit" id="submitBtn" class="btn primary">Enviar reporte</button>
       </div>
       <div class="footer" id="msg">Listo para enviar.</div>
       <div id="loadingIcon" style="display:none;">Cargando...</div> <!-- Icono de carga -->
@@ -261,8 +262,9 @@ function safeName(s){ return (s||'FILE').replace(/[^\w\.\-]+/g,'_'); }
 const MAX_W=760, MAX_H=600, MAX_SIZE=150*1024;
 const MAX_W_DOC=1200, MAX_H_DOC=900, MAX_SIZE_DOC=400*1024;
 
-async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}){
-  if(!file.type.startsWith('image/')) return file;
+/* COMPRESIÓN DE IMAGEN (función única) */
+async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
+  if(!file || !file.type || !file.type.startsWith('image/')) return file;
   const bitmap = await createImageBitmap(file);
   let W=bitmap.width,H=bitmap.height;
   const ratio=Math.min(w/W, h/H, 1); W=Math.round(W*ratio); H=Math.round(H*ratio);
@@ -274,6 +276,7 @@ async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}){
   return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
 }
 
+/* UI: confirm móvil */
 function mobileConfirm(message, onOK){
   const ovl = document.getElementById('overlay');
   const sh  = document.getElementById('mSheet');
@@ -291,6 +294,7 @@ function mobileConfirm(message, onOK){
   ovl.onclick = close;
 }
 
+/* TABLA FIJA 2 CONTROLES (igual que la tuya) */
 function buildTableFixed2(id){
   const colsHdr = ['1° control','Control final']; // fijos y obligatorios
   const filas = [
@@ -322,6 +326,8 @@ function buildTableFixed2(id){
   html += '</tbody></table>';
   return html;
 }
+
+/* Lectura/restore de tabla y tiempos */
 function readHeaderTimes(card){
   const arr=[];
   for(let i=0;i<2;i++){
@@ -330,7 +336,6 @@ function readHeaderTimes(card){
   }
   return arr;
 }
-
 function readTableValues(card){
   const keys=['usda1','usda2','usda3','sp','sup','ret'];
   const vals={}; keys.forEach(k=> vals[k]=[]);
@@ -344,7 +349,6 @@ function readTableValues(card){
   }
   return vals;
 }
-
 function restoreValues(card, vals, hrs){
   const id = card.dataset.uid;
   hrs.forEach((v,i)=>{ const inp = card.querySelector(`input[name="c${id}_ht_${i}"]`); if(inp) inp.value = v || ''; });
@@ -357,6 +361,7 @@ function restoreValues(card, vals, hrs){
   });
 }
 
+/* UI helpers */
 function enforceFirstNotDeletable(){
   const cards = $$('#containers .container-card');
   cards.forEach((c,i)=>{
@@ -364,7 +369,6 @@ function enforceFirstNotDeletable(){
     if(del) del.style.display = (i===0 ? 'none' : '');
   });
 }
-
 function updateAddButtonState(){
   const btn = $('#addContainerBtn');
   const count = $$('#containers .container-card').length;
@@ -372,6 +376,7 @@ function updateAddButtonState(){
   else { btn.disabled = false; btn.textContent = '+ Añadir contenedor'; }
 }
 
+/* ADD CONTAINER (igual que tu implementación) */
 function addContainer(){
   if($$('#containers .container-card').length >= 3){ updateAddButtonState(); return; }
 
@@ -417,7 +422,7 @@ function addContainer(){
       <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
       <div class="actions">
         <!-- Cámara o galería -->
-        <input id="pickFotos_${id}" type="file" style="display:none">
+        <input id="pickFotos_${id}" type="file" style="display:none" multiple accept="image/*">
         <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
         <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
         <span class="muted">Obligatorio.</span>
@@ -436,7 +441,7 @@ function addContainer(){
     </div>
   `;
 
-  // DELEGACIÓN: clicks del card
+  // Delegación clicks
   card.addEventListener('click', (ev)=>{
     const t = ev.target;
 
@@ -479,7 +484,7 @@ function addContainer(){
     }
   });
 
-  // File inputs (change)
+  // File inputs (change) - fotos
   card.querySelector('#pickFotos_'+id).addEventListener('change', async (e)=>{
     const files = Array.from(e.target.files||[]);
     if(!files.length) return;
@@ -490,6 +495,8 @@ function addContainer(){
     }
     photoStores.set(id, store); renderThumbs(id, card.querySelector('#thumbs_'+id)); e.target.value='';
   });
+
+  // datalog
   card.querySelector('#pickDatalog_'+id).addEventListener('change', (e)=>{
     const f=(e.target.files||[])[0]; if(!f) return;
     datalogStore.set(id,f); card.querySelector('#datalogInfo_'+id).textContent=`${f.name} · ${(f.size/1024).toFixed(0)} KB`; e.target.value='';
@@ -521,11 +528,11 @@ function renderThumbs(id, host){
   });
 }
 
-// Init
+/* INIT */
 addContainer();
 document.getElementById('addContainerBtn').addEventListener('click', addContainer);
 
-// Documentos de planta
+/* Documentos de planta */
 const pickDocPlanta = $('#pickDocPlanta');
 const thumbsDocPlanta = $('#thumbsDocPlanta');
 $('#btnDocPlanta').addEventListener('click', ()=> pickDocPlanta.click());
@@ -562,68 +569,28 @@ function renderPlantaDocs(){
   });
 }
 
-
-async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
-  if(!file.type.startsWith('image/')) return file;
-  const bitmap = await createImageBitmap(file);
-  let W=bitmap.width,H=bitmap.height;
-  const ratio=Math.min(w/W, h/H, 1); W=Math.round(W*ratio); H=Math.round(H*ratio);
-  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
-  const ctx=canvas.getContext('2d'); ctx.drawImage(bitmap,0,0,W,H);
-  let q=0.9; let blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q));
-  while(blob && blob.size>max && q>0.6){ q-=0.05; blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q)); }
-  if(!blob) return file;
-  return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
-}
-
-// FUNCIONES NUEVAS: 
-// Muestra el ícono de carga y desactiva los botones
+/* FUNCIONES NUEVAS: mostrar/ocultar loading y success */
 function showLoading() {
   document.getElementById('loadingIcon').style.display = 'inline';
   document.getElementById('submitBtn').disabled = true;
   document.getElementById('testBtn').disabled = true;
   document.getElementById('msg').textContent = 'Enviando...';
 }
-
-// Oculta el ícono de carga y muestra el mensaje de éxito
-function showSuccess() {
+function hideLoading() {
   document.getElementById('loadingIcon').style.display = 'none';
-  document.getElementById('msg').textContent = '¡Enviado con éxito! <a href="#" onclick="resetForm()">Volver a realizar reporte</a>';
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('testBtn').disabled = false;
 }
-
-// Función para reiniciar el formulario
-function resetForm() {
-  document.getElementById('cotForm').reset();
-  document.getElementById('msg').textContent = 'Listo para enviar.';
+function showSuccess(urlResp) {
+  hideLoading();
+  document.getElementById('msg').innerHTML = '¡Enviado con éxito! ' + (urlResp?`<span class="muted">(${urlResp})</span>`:'');
+}
+function showError(msg){
+  hideLoading();
+  document.getElementById('msg').textContent = 'Error: ' + msg;
 }
 
-// FUNCIÓN QUE MANEJA EL ENVÍO DEL FORMULARIO
-$('#cotForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!$('#cotForm').reportValidity()) {
-    $('#msg').textContent = 'Revisa campos marcados.';
-    return;
-  }
-  const v = validForm();
-  if (!v.ok) {
-    $('#msg').textContent = v.msg;
-    return;
-  }
-
-  showLoading();  // Mostrar el ícono de carga
-
-  // Aquí iría tu lógica de envío de formulario...
-  const payload = await buildPayload();
-  console.log('Payload COT:', payload);
-
-  showSuccess();  // Mostrar el mensaje de éxito
-});
-
-
-
-// Validaciones y envío
+/* VALIDACIONES (igual que las tuyas) */
 function validForm(){
   const need = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing'];
   for(const n of need){ if(!$(`[name="${n}"]`).value) return {ok:false,msg:'Completa los datos generales obligatorios.'}; }
@@ -646,24 +613,139 @@ function validForm(){
       const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
       if(!t || !t.value) return {ok:false,msg:'Indique las horas de ambos controles.'};
     }
+    // fotos obligatorias por contenedor
+    const photos = photoStores.get(Number(id)) || [];
+    if(!photos.length) return {ok:false,msg:`Contenedor #${Array.from($$('#containers .container-card')).indexOf(card)+1}: falta foto(s).`};
+    // datalog obligatorio? (si quieres, descomenta la comprobación)
+    // if(!datalogStore.get(Number(id))) return {ok:false,msg:'Falta datalog en algún contenedor.'};
   }
   if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
   return {ok:true};
 }
 
+/* Construir payload y enviar (modo B: múltiples contenedores).
+   Se usa FormData (multipart/form-data). El servidor GAS deberá aceptar multipart; 
+   si tu GAS espera otro formato, te adapto el server. */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxA7ElZ9g0aFtqcy9yhBclRIo4t6Qi2oOtGyV8VCFBt_gfy5Zz4O_auCBgfB2DQ95Sm/exec';
+
+async function buildPayloadFormData(){
+  const form = new FormData();
+
+  // Datos generales
+  const genFields = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing','viaje','comentarios'];
+  for(const f of genFields){
+    const el = $(`[name="${f}"]`);
+    form.append(f, el ? el.value : '');
+  }
+
+  // Documentos de planta: varias imágenes
+  plantaDocs.forEach((p, idx)=>{
+    // campo planta_doc_0, planta_doc_1, ...
+    form.append(`planta_doc_${idx}`, p.file, p.name);
+  });
+  form.append('planta_docs_count', String(plantaDocs.length));
+
+  // Contenedores: recopilamos todos y los metemos con índice
+  const cards = $$('#containers .container-card');
+  form.append('containers_count', String(cards.length));
+  for(let i=0;i<cards.length;i++){
+    const card = cards[i];
+    const id = card.dataset.uid;
+    // campos básicos
+    const cont = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
+    const book = $(`[name="c${id}_booking"]`).value.trim();
+    const navSel = $(`[name="c${id}_naviera_sel"]`).value;
+    const navOtra = $(`[name="c${id}_naviera_otra"]`).value || '';
+    form.append(`c${i}_container`, cont);
+    form.append(`c${i}_booking`, book);
+    form.append(`c${i}_naviera_sel`, navSel);
+    form.append(`c${i}_naviera_otra`, navOtra);
+
+    // header times
+    const hrs = readHeaderTimes(card);
+    form.append(`c${i}_ht_0`, hrs[0]||'');
+    form.append(`c${i}_ht_1`, hrs[1]||'');
+
+    // tabla values (usda/sp/sup/ret) -> guardamos como campos por celda
+    const vals = readTableValues(card);
+    Object.keys(vals).forEach(k=>{
+      vals[k].forEach((v, colIdx)=>{
+        form.append(`c${i}_${k}_${colIdx}`, v || '');
+      });
+    });
+
+    // fotos del contenedor (puede haber varias)
+    const photos = photoStores.get(Number(id)) || [];
+    photos.forEach((p, idxPhoto)=>{
+      // clave: c{index}_photo_{idxPhoto}
+      form.append(`c${i}_photo_${idxPhoto}`, p.file, p.name);
+    });
+    form.append(`c${i}_photo_count`, String(photos.length));
+
+    // datalog (un solo archivo) si existe
+    const d = datalogStore.get(Number(id));
+    if(d) form.append(`c${i}_datalog`, d, safeName(d.name));
+  }
+
+  return form;
+}
+
+/* Envío por fetch (multipart/form-data) */
+async function sendToGas(formData){
+  // Nota: no seteamos content-type para que el browser añada boundary
+  const resp = await fetch(GAS_URL, {
+    method: 'POST',
+    body: formData,
+    // mode: 'cors' // por defecto
+  });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=>null);
+    throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text?'- '+text:''}`);
+  }
+  return resp.text();
+}
+
+/* Handler submit principal — construye FormData y envía */
+$('#cotForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
+  const v = validForm(); if(!v.ok){ $('#msg').textContent=v.msg; return; }
+
+  try{
+    showLoading();
+    const formData = await buildPayloadFormData();
+
+    // Envío
+    const respText = await sendToGas(formData);
+    // Asumimos que GAS devuelve texto o JSON. Mostramos resultado.
+    showSuccess(respText || '');
+    // opcional: resetForm() si quieres limpiar todo
+    // resetForm();
+  }catch(err){
+    console.error('Error envío COT', err);
+    showError(err.message || 'Error desconocido');
+  }
+});
+
+/* Botón de prueba */
 $('#testBtn').addEventListener('click', ()=>{
   if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
   const v = validForm(); $('#msg').textContent = v.ok ? 'Validaciones OK.' : v.msg;
 });
 
-$('#cotForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
-  const v = validForm(); if(!v.ok){ $('#msg').textContent=v.msg; return; }
-  const payload = await buildPayload();
-  console.log('Payload COT:', payload);
-  $('#msg').textContent = 'OK. Payload listo (ver consola).';
-});
+/* Reset del formulario (limpio básico) */
+function resetForm(){
+  document.getElementById('cotForm').reset();
+  // limpiar stores y thumbs
+  photoStores.clear();
+  datalogStore.clear();
+  plantaDocs.length = 0;
+  document.getElementById('thumbsDocPlanta').innerHTML = '<div class="muted">Sin archivos.</div>';
+  document.getElementById('containers').innerHTML = '';
+  uid = 0;
+  addContainer();
+  $('#msg').textContent = 'Listo para enviar.';
+}
 </script>
 </body>
 </html>
