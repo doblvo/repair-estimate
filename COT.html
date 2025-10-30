@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>COT — Reporte Digital v5</title>
+<title>COT — Reporte Digital v6</title>
 <meta name="color-scheme" content="light">
 <style>
   :root{
@@ -738,141 +738,6 @@ function validForm(){
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbw1zLEJrr1DbIrVjnPiGdmdKibiNm4ymew6x_JX95ufi5pJfF935FPXj9O4yBDbGOx0/exec';
 
 /* =========================
-   Recolección (Plan A: JSON text/plain)
-========================= */
-function readHeaderTimes(card){
-  const arr=[];
-  for(let i=0;i<2;i++){
-    const inp = card.querySelector(`input[name="c${card.dataset.uid}_ht_${i}"]`);
-    arr[i] = inp ? inp.value : '';
-  }
-  return arr;
-}
-function readTableValues(card){
-  const keys=['usda1','usda2','usda3','sp','sup','ret'];
-  const vals={}; keys.forEach(k=> vals[k]=[]);
-  const id = card.dataset.uid;
-  for(let c=0;c<2;c++){
-    keys.forEach(key=>{
-      const name=`c${id}_${key}_${c}`;
-      const inp=card.querySelector(`input[name="${name}"]`);
-      vals[key][c]= inp? inp.value : '';
-    });
-  }
-  return vals;
-}
-
-async function collectContainersJSON(){
-  const cards = $$('#containers .container-card');
-  const items = [];
-  for(let i=0;i<cards.length;i++){
-    const card = cards[i];
-    const id   = Number(card.dataset.uid);
-    const cont = $(`[name="c${id}_container"]`)?.value.trim().toUpperCase() || '';
-    const book = $(`[name="c${id}_booking"]`)?.value.trim() || '';
-    const sel  = $(`[name="c${id}_naviera_sel"]`)?.value || '';
-    const otra = $(`[name="c${id}_naviera_otra"]`)?.value.trim() || '';
-    const naviera = (sel==='Otra') ? (otra || 'Otra') : sel;
-
-    const hrs  = readHeaderTimes(card);
-    const vals = readTableValues(card);
-
-    // Archivos/fotos (si es imagen -> ya viene comprimido; igual convertimos a DataURL)
-    const store = photoStores.get(id) || [];
-    const files = [];
-    for(let k=0;k<store.length;k++){
-      const p = store[k];
-      const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W, h:MAX_H, max:MAX_SIZE});
-      files.push({
-        name: p.name,
-        mimeType: p.mimeType || 'application/octet-stream',
-        isImg: !!p.isImg,
-        dataURL,
-        linea: i+1,
-        container: i+1
-      });
-    }
-
-    // Datalog (opcional)
-    let datalog = null;
-    const d = datalogStore.get(id);
-    if(d){
-      const dURL = await fileToDataURL(d);
-      datalog = { name: safeName(d.name), mimeType: d.type || 'application/octet-stream', dataURL: dURL, container: i+1 };
-    }
-
-    items.push({
-      idx: i+1,
-      container: cont,
-      booking: book,
-      naviera,
-      horas: { control1: hrs[0]||'', control2: hrs[1]||'' },
-      tabla: vals,
-      files,     // todos los adjuntos de la unidad
-      datalog
-    });
-  }
-  return items;
-}
-
-async function buildPayloadJSON(){
-  // Generales
-  const g = f => ($(`[name="${f}"]`)?.value || '').trim();
-  const payload = {
-    fn: 'saveinspection',
-    id: (crypto?.randomUUID?.() || ('cot_'+Date.now())),
-    status: 'enviado',
-    timestamp: new Date().toISOString(),
-    // generales
-    folio: g('folio'),
-    fecha_servicio: g('fecha_servicio'),
-    hora_llegada: g('hora_llegada'),
-    hora_inicio_cal: g('hora_inicio_cal'),
-    hora_termino: g('hora_termino'),
-    tecnico: g('tecnico'),
-    planta: g('planta'),
-    responsable_packing: g('responsable_packing'),
-    viaje: g('viaje'),
-    comentarios: g('comentarios'),
-    // específico COT
-    tipo_form: 'COT_v6'
-  };
-
-  payload.containers = await collectContainersJSON();
-
-  // Documento de planta -> DataURL
-  if(plantaDoc){
-    const dataURL = await fileToDataURLSmart(plantaDoc.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
-    payload.plantaDoc = {
-      name: plantaDoc.name,
-      mimeType: plantaDoc.mimeType || 'application/octet-stream',
-      isImg: !!plantaDoc.isImg,
-      dataURL
-    };
-  }
-
-  // Compat: aplanado de adjuntos tipo "fotosJSON" (si tu GAS actual lo usa)
-  payload.fotosJSON = JSON.stringify(
-    payload.containers.flatMap(c => (c.files||[]).filter(f => f.isImg))
-  );
-
-  return payload;
-}
-
-async function sendJSON(payload){
-  const resp = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // clave anti-Zscaler
-    body: JSON.stringify(payload)
-  });
-  const txt = await resp.text();
-  let json;
-  try{ json = JSON.parse(txt); }catch(_){ json = null; }
-  if(!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText} - ${txt}`);
-  return json || { ok:true, raw:txt };
-}
-
-/* =========================
    Fallback (Plan B: multipart/form-data)
 ========================= */
 async function buildPayloadFormData(){
@@ -963,43 +828,33 @@ function showError(msg){
   $('#msg').textContent = 'Error: ' + (msg || 'desconocido');
 }
 
-/* =========================
-   Submit handler (Plan A -> Plan B)
-========================= */
+// --- SUBMIT: SOLO PLAN B (multipart/form-data) ---
 const formEl = document.getElementById('cotForm');
-if(formEl){
+if (formEl){
   formEl.addEventListener('submit', async (e)=>{
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
     const v = validForm();
-    if(!v.ok){ $('#msg').textContent = v.msg || 'Formulario inválido.'; return; }
+    if(!v.ok){
+      document.getElementById('msg').textContent = v.msg || 'Formulario inválido.';
+      return;
+    }
 
     showLoading();
     try{
-      // Plan A: JSON text/plain
-      try{
-        const payload = await buildPayloadJSON();
-        const resA = await sendJSON(payload);
-        console.log('Plan A (JSON) OK:', resA);
-        showSuccess('Plan A: JSON');
-        return;
-      }catch(errA){
-        console.warn('Plan A falló, pruebo Plan B. Detalle:', errA);
-      }
-
-      // Plan B: multipart/form-data
       const fd = await buildPayloadFormData();
-      const resB = await sendToGas(fd);
-      console.log('Plan B (FormData) OK:', resB);
+      const res = await sendToGas(fd);
+      console.log('Plan B (FormData) OK:', res);
       showSuccess('Plan B: FormData');
     }catch(err){
       console.error('Error envío COT', err);
-      showError(err?.message);
+      showError(err?.message || 'Error de envío');
     }
   }, true);
 }
+
 
 /* Botón de prueba de validaciones */
 document.getElementById('testBtn')?.addEventListener('click', ()=>{
