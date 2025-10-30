@@ -142,6 +142,14 @@
   .thumb .x{position:absolute;top:5px;right:5px;background:transparent;border:1px solid var(--danger);color:var(--danger);
     width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
 
+  /* Card para archivos no-imagen */
+  .filebox{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px}
+  .filebox .badge{min-width:28px;height:28px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+  .filebox .name{font-size:12px;color:var(--ink)}
+  .filebox .size{font-size:11px;color:var(--muted)}
+  .filebox .x{margin-left:auto;background:transparent;border:1px solid var(--danger);color:var(--danger);
+    width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
+
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:9998}
   .overlay.show{display:block}
   .sheet{position:fixed;left:0;right:0;bottom:-100%;background:#fff;border-top-left-radius:14px;border-top-right-radius:14px;box-shadow:0 -12px 30px rgba(0,0,0,.25);padding:16px;transition:bottom .25s;z-index:9999}
@@ -220,14 +228,14 @@
     </div>
 
     <div class="card">
-      <div class="sectitle">Documentos de Planta (Hoja firmada) — General</div>
+      <div class="sectitle">Documento de Planta (Hoja firmada) — General</div>
       <div class="uploader">
         <div class="actions">
-          <!-- Cámara o galería -->
-          <input id="pickDocPlanta" type="file" style="display:none" multiple accept="image/*">
-          <button type="button" class="btn" id="btnDocPlanta">Añadir fotos del documento</button>
-          <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar todas</button>
-          <span class="muted">Obligatorio.</span>
+          <!-- Cualquier tipo de archivo, SOLO 1 -->
+          <input id="pickDocPlanta" type="file" style="display:none" accept="*/*">
+          <button type="button" class="btn" id="btnDocPlanta">Añadir documento</button>
+          <button type="button" class="btn danger" id="btnDocPlantaClear">Borrar</button>
+          <span class="muted">Obligatorio (1 archivo).</span>
         </div>
         <div class="thumbs" id="thumbsDocPlanta"></div>
       </div>
@@ -236,11 +244,10 @@
     <div class="card">
       <div class="actions">
         <button type="button" class="btn" id="testBtn">Probar validaciones</button>
-        <!-- agrego id submitBtn para control desde JS -->
         <button type="submit" id="submitBtn" class="btn primary">Enviar reporte</button>
       </div>
       <div class="footer" id="msg">Listo para enviar.</div>
-      <div id="loadingIcon" style="display:none;">Cargando...</div> <!-- Icono de carga -->
+      <div id="loadingIcon" style="display:none;">Cargando...</div>
     </div>
   </form>
 </div>
@@ -249,24 +256,49 @@
 <div id="mSheet" class="sheet"></div>
 
 <script>
+/* ==========
+   Utilidades
+========== */
 const $ = s=>document.querySelector(s);
 const $$ = s=>Array.from(document.querySelectorAll(s));
 
+/* ==========
+   Estado
+========== */
 let uid = 0;
-const photoStores = new Map();
-const datalogStore = new Map();
-let plantaDocs = [];
+const photoStores = new Map();   // id -> [{name,file,size,mimeType,isImg}]
+const datalogStore = new Map();  // id -> File|null
+let plantaDoc = null;            // {name,file,size,mimeType,isImg} | null
 
+/* ==========
+   Helpers
+========== */
 function truncate(s,n){ return s.length>n ? s.slice(0,n-1)+'…' : s; }
 function safeName(s){ return (s||'FILE').replace(/[^\w\.\-]+/g,'_'); }
+function formatBytes(b){
+  if (!b && b!==0) return '';
+  const u=['B','KB','MB','GB']; let i=0; let v=b;
+  while(v>=1024 && i<u.length-1){ v/=1024; i++; }
+  return `${v.toFixed(v<10&&i>0?1:0)} ${u[i]}`;
+}
+function isImageLike(f){
+  if(!f) return false;
+  if(f.type) return f.type.startsWith('image/');
+  // fallback por extensión
+  const m = (f.name||'').toLowerCase().match(/\.(\w+)$/);
+  if(!m) return false;
+  return ['jpg','jpeg','png','gif','webp','bmp','heic','heif','tif','tiff'].includes(m[1]);
+}
+function fileBadgeExt(name){
+  const m = (name||'').toLowerCase().match(/\.(\w+)$/);
+  return (m?m[1]:'FILE').slice(0,4).toUpperCase();
+}
+
+/* ==========
+   Límites de compresión (solo imágenes)
+========== */
 const MAX_W=760, MAX_H=600, MAX_SIZE=150*1024;
 const MAX_W_DOC=1200, MAX_H_DOC=900, MAX_SIZE_DOC=400*1024;
-
-/* =========================
-   PATCH Plan A — Modo envío JSON
-   (si es true: envía JSON text/plain; si es false: usa multipart FormData)
-========================= */
-const USE_JSON = true; // PATCH Plan A
 
 /* COMPRESIÓN DE IMAGEN (función única) */
 async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
@@ -282,9 +314,7 @@ async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
   return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
 }
 
-/* =========================
-   PATCH Plan A — Helpers para DataURL/base64
-========================= */
+/* Helpers para DataURL/base64 */
 function fileToDataURL(file){
   return new Promise((resolve,reject)=>{
     const r = new FileReader();
@@ -295,13 +325,288 @@ function fileToDataURL(file){
 }
 async function fileToDataURLSmart(file, compressCfg){
   // Si es imagen -> comprime y luego a dataURL; si no, directo a dataURL
-  const f = (file && file.type && file.type.startsWith('image/'))
+  const f = (file && isImageLike(file))
     ? await compressImage(file, compressCfg||{})
     : file;
   return fileToDataURL(f);
 }
+  /* =========================
+     Sección CONTENEDORES
+     - Tabla 2 controles (1° y Control final)
+     - Fotos por unidad (acepta CUALQUIER archivo; si es imagen, preview)
+     - Datalog por unidad (1 archivo)
+  ========================= */
 
-/* UI: confirm móvil */
+  function enforceFirstNotDeletable(){
+    const cards = $$('#containers .container-card');
+    cards.forEach((c,i)=>{
+      const del = c.querySelector('[data-del]');
+      if(del) del.style.display = (i===0 ? 'none' : '');
+    });
+  }
+  function updateAddButtonState(){
+    const btn = $('#addContainerBtn');
+    const count = $$('#containers .container-card').length;
+    if(count >= 3){ btn.disabled = true; btn.textContent = 'Máx. 3 contenedores'; }
+    else { btn.disabled = false; btn.textContent = '+ Añadir contenedor'; }
+  }
+
+  /* Cabecera de tabla 2 controles */
+  function buildTableFixed2(id){
+    const colsHdr = ['1° control','Control final']; // fijos
+    const filas = [
+      ['USDA 1 (°C)','usda1'],
+      ['USDA 2 (°C)','usda2'],
+      ['USDA 3 (°C)','usda3'],
+      ['Set Point (°C)','sp'],
+      ['Temperatura Suministro (°C)','sup'],
+      ['Temperatura Retorno (°C)','ret']
+    ];
+    const dataW = Math.max(12, Math.floor(60/colsHdr.length));
+    let html = '<table><thead><tr>';
+    html += '<th class="firstcol">Hora control temperatura</th>';
+    colsHdr.forEach((h,i)=>{
+      html += `<th class="colhdr" style="width:${dataW}%">
+                ${h}
+                <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" required>
+              </th>`;
+    });
+    html += '</tr></thead><tbody>';
+    filas.forEach(([label,key])=>{
+      html += '<tr><th style="text-align:left;padding-left:10px;font-weight:700">'+label+'</th>';
+      for(let c=0;c<colsHdr.length;c++){
+        const name = `c${id}_${key}_${c}`;
+        html += `<td><input type="text" name="${name}"></td>`;
+      }
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  /* Lecturas/restore */
+  function readHeaderTimes(card){
+    const arr=[];
+    for(let i=0;i<2;i++){
+      const inp = card.querySelector(`input[name="c${card.dataset.uid}_ht_${i}"]`);
+      arr[i] = inp ? inp.value : '';
+    }
+    return arr;
+  }
+  function readTableValues(card){
+    const keys=['usda1','usda2','usda3','sp','sup','ret'];
+    const vals={}; keys.forEach(k=> vals[k]=[]);
+    const id = card.dataset.uid;
+    for(let c=0;c<2;c++){
+      keys.forEach(key=>{
+        const name=`c${id}_${key}_${c}`;
+        const inp=card.querySelector(`input[name="${name}"]`);
+        vals[key][c]= inp? inp.value : '';
+      });
+    }
+    return vals;
+  }
+
+  /* Render miniaturas/archivos por unidad */
+  function renderThumbs(id, host){
+    const store = photoStores.get(Number(id)) || [];
+    host.innerHTML='';
+    if(!store.length){ host.innerHTML='<div class="muted">Sin archivos.</div>'; return; }
+    store.forEach((p,i)=>{
+      const ext = fileBadgeExt(p.name);
+      if(p.isImg){
+        const url = URL.createObjectURL(p.file);
+        const card = document.createElement('div');
+        card.className='thumb';
+        card.innerHTML = `
+          <img src="${url}" alt="archivo ${i+1}">
+          <div class="x" title="Eliminar" data-x="${i}">×</div>
+          <div class="meta">${truncate(p.name,22)} · ${formatBytes(p.size)}</div>`;
+        host.appendChild(card);
+        card.querySelector('.x').addEventListener('click', ()=>{
+          URL.revokeObjectURL(url);
+          store.splice(i,1); renderThumbs(id, host);
+        });
+      }else{
+        const wrap = document.createElement('div');
+        wrap.className = 'filebox';
+        wrap.innerHTML = `
+          <div class="badge">${ext}</div>
+          <div class="name">${truncate(p.name,38)}</div>
+          <div class="size">${formatBytes(p.size)}</div>
+          <button type="button" class="x" data-x="${i}">×</button>`;
+        host.appendChild(wrap);
+        wrap.querySelector('.x').addEventListener('click', ()=>{
+          store.splice(i,1); renderThumbs(id, host);
+        });
+      }
+    });
+  }
+
+  /* ADD CONTAINER */
+  function addContainer(){
+    if($$('#containers .container-card').length >= 3){ updateAddButtonState(); return; }
+
+    uid++;
+    const id = uid;
+    photoStores.set(id, []); 
+    datalogStore.set(id, null);
+
+    const card = document.createElement('div');
+    card.className='container-card';
+    card.dataset.uid = id;
+
+    card.innerHTML = `
+      <div class="container-head">
+        <h3 data-title>Contenedor</h3>
+        <div class="actions">
+          <button type="button" class="btn danger sm" data-del>Eliminar contenedor</button>
+        </div>
+      </div>
+
+      <div class="grid g3">
+        <div class="row">
+          <label>N° CONTENEDOR</label>
+          <input name="c${id}_container" required placeholder="MNBU1234567"
+                 pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)">
+        </div>
+        <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
+        <div class="row">
+          <label>Naviera</label>
+          <div style="display:flex;gap:4px">
+            <select name="c${id}_naviera_sel" required>
+              <option value="">Selecciona…</option>
+              <option>Maersk Line</option>
+              <option>Hapag Lloyd</option>
+              <option>Cosco Shipping</option>
+              <option>Pil</option>
+              <option>Otra</option>
+            </select>
+            <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
+          </div>
+        </div>
+      </div>
+
+      <div class="line"></div>
+
+      <div class="table-wrap">${buildTableFixed2(id)}</div>
+
+      <div class="uploader">
+        <div class="sectitle" style="margin:6px 0 4px">Archivos/fotos de esta unidad</div>
+        <div class="actions">
+          <!-- acepta CUALQUIER archivo; múltiples -->
+          <input id="pickFotos_${id}" type="file" style="display:none" multiple accept="*/*">
+          <button type="button" class="btn sm" data-pickfotos>Añadir archivo(s)</button>
+          <button type="button" class="btn danger sm" data-cleanfotos>Borrar todos</button>
+          <span class="muted">Obligatorio al menos 1.</span>
+        </div>
+        <div class="thumbs" id="thumbs_${id}"></div>
+      </div>
+
+      <div class="uploader">
+        <div class="sectitle" style="margin:6px 0 4px">Data logger (esta unidad)</div>
+        <div class="actions">
+          <input id="pickDatalog_${id}" type="file" style="display:none" accept="*/*">
+          <button type="button" class="btn sm" data-pickdatalog>Subir/Reemplazar</button>
+          <button type="button" class="btn danger sm" data-cleandatalog>Eliminar</button>
+          <span class="muted" id="datalogInfo_${id}">Sin archivo.</span>
+        </div>
+      </div>
+    `;
+
+    /* Delegación de clicks dentro de cada card */
+    card.addEventListener('click', (ev)=>{
+      const t = ev.target;
+
+      if(t.matches('[data-del]')){
+        if(card.parentElement){
+          mobileConfirm('¿Eliminar este contenedor?', ()=>{
+            const idNum = Number(card.dataset.uid);
+            photoStores.delete(idNum); 
+            datalogStore.delete(idNum);
+            card.remove(); reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
+          });
+        }
+      }
+
+      if(t.matches('[data-pickfotos]')){ card.querySelector('#pickFotos_'+id).click(); }
+      if(t.matches('[data-cleanfotos]')){
+        const store = photoStores.get(id)||[];
+        if(!store.length) return;
+        mobileConfirm('¿Borrar todos los archivos de esta unidad?', ()=>{
+          store.length=0; renderThumbs(id, card.querySelector('#thumbs_'+id));
+        });
+      }
+      if(t.matches('[data-pickdatalog]')){ card.querySelector('#pickDatalog_'+id).click(); }
+      if(t.matches('[data-cleandatalog]')){
+        if(!datalogStore.get(id)) return;
+        mobileConfirm('¿Eliminar archivo datalog?', ()=>{
+          datalogStore.set(id,null);
+          card.querySelector('#datalogInfo_'+id).textContent='Sin archivo.';
+        });
+      }
+    });
+
+    /* Cambio naviera -> mostrar "Otra" */
+    card.addEventListener('change', (ev)=>{
+      const t=ev.target;
+      if(t.name===`c${id}_naviera_sel`){
+        const otra = card.querySelector(`[name="c${id}_naviera_otra"]`);
+        const show = t.value==='Otra';
+        otra.style.display = show? 'block':'none';
+        if(show) otra.focus();
+      }
+    });
+
+    /* Carga de archivos/fotos (múltiples, cualquier tipo) */
+    card.querySelector('#pickFotos_'+id).addEventListener('change', async (e)=>{
+      const files = Array.from(e.target.files||[]);
+      if(!files.length) return;
+      const store = photoStores.get(id)||[];
+      for(const f of files){
+        let fOut = f;
+        let isImg = isImageLike(f);
+        if(isImg){
+          fOut = await compressImage(f); // comprime imagen
+        }
+        store.push({
+          name: safeName(f.name).replace(/\s+/g,'_'),
+          file: fOut,
+          size: fOut.size || f.size,
+          mimeType: fOut.type || f.type || 'application/octet-stream',
+          isImg
+        });
+      }
+      photoStores.set(id, store); 
+      renderThumbs(id, card.querySelector('#thumbs_'+id)); 
+      e.target.value='';
+    });
+
+    /* Datalog (1 archivo cualquiera) */
+    card.querySelector('#pickDatalog_'+id).addEventListener('change', (e)=>{
+      const f=(e.target.files||[])[0]; 
+      if(!f) return;
+      datalogStore.set(id,f); 
+      card.querySelector('#datalogInfo_'+id).textContent=`${f.name} · ${formatBytes(f.size)}`;
+      e.target.value='';
+    });
+
+    $('#containers').appendChild(card);
+    reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
+  }
+
+  function reindexTitles(){ 
+    $$('#containers .container-card').forEach((c,idx)=>{ 
+      c.querySelector('[data-title]').textContent = `Contenedor #${idx+1}`; 
+    }); 
+  }
+
+  /* INIT contenedores */
+  addContainer();
+  document.getElementById('addContainerBtn').addEventListener('click', addContainer);
+/* =========================
+   UI hoja de confirmación (overlay + bottom sheet)
+========================= */
 function mobileConfirm(message, onOK){
   const ovl = document.getElementById('overlay');
   const sh  = document.getElementById('mSheet');
@@ -319,40 +624,122 @@ function mobileConfirm(message, onOK){
   ovl.onclick = close;
 }
 
-/* TABLA FIJA 2 CONTROLES (igual que la tuya) */
-function buildTableFixed2(id){
-  const colsHdr = ['1° control','Control final']; // fijos y obligatorios
-  const filas = [
-    ['USDA 1 (°C)','usda1'],
-    ['USDA 2 (°C)','usda2'],
-    ['USDA 3 (°C)','usda3'],
-    ['Set Point (°C)','sp'],
-    ['Temperatura Suministro (°C)','sup'],
-    ['Temperatura Retorno (°C)','ret']
-  ];
-  const dataW = Math.max(12, Math.floor(60/colsHdr.length));
-  let html = '<table><thead><tr>';
-  html += '<th class="firstcol">Hora control temperatura</th>';
-  colsHdr.forEach((h,i)=>{
-    html += `<th class="colhdr" style="width:${dataW}%">
-              ${h}
-              <input class="hdr-time" type="time" step="60" name="c${id}_ht_${i}" required>
-            </th>`;
+/* =========================
+   Documento de planta (SOLO 1 archivo, cualquier tipo)
+========================= */
+const pickDocPlanta = $('#pickDocPlanta');
+const thumbsDocPlanta = $('#thumbsDocPlanta');
+
+$('#btnDocPlanta').addEventListener('click', ()=> pickDocPlanta.click());
+$('#btnDocPlantaClear').addEventListener('click', ()=>{
+  if(!plantaDoc) return;
+  mobileConfirm('¿Borrar documento de planta?', ()=>{
+    plantaDoc = null; renderPlantaDoc();
   });
-  html += '</tr></thead><tbody>';
-  filas.forEach(([label,key])=>{
-    html += '<tr><th style="text-align:left;padding-left:10px;font-weight:700">'+label+'</th>';
-    for(let c=0;c<colsHdr.length;c++){
-      const name = `c${id}_${key}_${c}`;
-      html += `<td><input type="text" name="${name}"></td>`;
-    }
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  return html;
+});
+
+pickDocPlanta.addEventListener('change', async ()=>{
+  const f = (pickDocPlanta.files||[])[0];
+  if(!f) return;
+  let fOut = f;
+  const isImg = isImageLike(f);
+  if(isImg){
+    fOut = await compressImage(f, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
+  }
+  plantaDoc = {
+    name: safeName(f.name),
+    file: fOut,
+    size: fOut.size || f.size,
+    mimeType: fOut.type || f.type || 'application/octet-stream',
+    isImg
+  };
+  renderPlantaDoc();
+  pickDocPlanta.value = '';
+});
+
+function renderPlantaDoc(){
+  thumbsDocPlanta.innerHTML = '';
+  if(!plantaDoc){
+    thumbsDocPlanta.innerHTML = '<div class="muted">Sin archivo.</div>';
+    return;
+  }
+  if(plantaDoc.isImg){
+    const url = URL.createObjectURL(plantaDoc.file);
+    const card = document.createElement('div');
+    card.className='thumb';
+    card.innerHTML = `
+      <img src="${url}" alt="doc planta">
+      <div class="x" title="Eliminar">×</div>
+      <div class="meta">${truncate(plantaDoc.name,24)} · ${formatBytes(plantaDoc.size)}</div>`;
+    thumbsDocPlanta.appendChild(card);
+    card.querySelector('.x').addEventListener('click', ()=>{
+      URL.revokeObjectURL(url);
+      plantaDoc = null; renderPlantaDoc();
+    });
+  }else{
+    const wrap = document.createElement('div');
+    wrap.className = 'filebox';
+    wrap.innerHTML = `
+      <div class="badge">${fileBadgeExt(plantaDoc.name)}</div>
+      <div class="name">${truncate(plantaDoc.name,38)}</div>
+      <div class="size">${formatBytes(plantaDoc.size)}</div>
+      <button type="button" class="x">×</button>`;
+    thumbsDocPlanta.appendChild(wrap);
+    wrap.querySelector('.x').addEventListener('click', ()=>{
+      plantaDoc = null; renderPlantaDoc();
+    });
+  }
 }
 
-/* Lectura/restore de tabla y tiempos */
+/* =========================
+   Validaciones
+========================= */
+function validForm(){
+  const need = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing'];
+  for(const n of need){
+    const el = $(`[name="${n}"]`);
+    if(!el || !el.value) return {ok:false,msg:'Completa los datos generales obligatorios.'};
+  }
+  const cards = $$('#containers .container-card');
+  if(!cards.length) return {ok:false,msg:'Agrega al menos un contenedor.'};
+
+  for(const card of cards){
+    const id = card.dataset.uid;
+    const cont = $(`[name="c${id}_container"]`)?.value.trim().toUpperCase() || '';
+    const book = $(`[name="c${id}_booking"]`)?.value.trim() || '';
+    if(!/^[A-Z]{4}\d{7}$/.test(cont)) return {ok:false,msg:'N° Contenedor inválido (ABCD1234567).'};
+    if(!book) return {ok:false,msg:'Falta N° Booking.'};
+
+    const navSel  = $(`[name="c${id}_naviera_sel"]`);
+    const navOtra = $(`[name="c${id}_naviera_otra"]`);
+    if(!navSel || !navSel.value) return {ok:false,msg:'Seleccione la naviera.'};
+    if(navSel.value==='Otra' && !navOtra.value.trim()) return {ok:false,msg:'Indique la naviera (Otra).'};
+
+    // horas obligatorias para los 2 controles
+    for(let i=0;i<2;i++){
+      const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
+      if(!t || !t.value) return {ok:false,msg:'Indique las horas de ambos controles.'};
+    }
+
+    // Al menos 1 archivo/foto por unidad
+    const files = photoStores.get(Number(id)) || [];
+    if(!files.length) return {ok:false,msg:`Contenedor #${Array.from(cards).indexOf(card)+1}: falta adjuntar archivos/fotos.`};
+  }
+
+  // Documento de planta obligatorio (1 archivo)
+  if(!plantaDoc) return {ok:false,msg:'Debes adjuntar el documento de planta (1 archivo).'};
+
+  return {ok:true};
+}
+
+/* =========================
+   GAS endpoint
+========================= */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQDd6WT7x5FhiVquJBBDQSyA1zOw6QJ7GRd1t27G9WinRGo99z3_pD_MZUh4ZWtmQ/exec';
+
+/* =========================
+   Recolección (Plan A: JSON text/plain)
+========================= */
 function readHeaderTimes(card){
   const arr=[];
   for(let i=0;i<2;i++){
@@ -374,288 +761,7 @@ function readTableValues(card){
   }
   return vals;
 }
-function restoreValues(card, vals, hrs){
-  const id = card.dataset.uid;
-  hrs.forEach((v,i)=>{ const inp = card.querySelector(`input[name="c${id}_ht_${i}"]`); if(inp) inp.value = v || ''; });
-  Object.keys(vals).forEach(key=>{
-    vals[key].forEach((v,i)=>{
-      const name = `c${id}_${key}_${i}`;
-      const inp = card.querySelector(`input[name="${name}"]`);
-      if(inp) inp.value = v || '';
-    });
-  });
-}
 
-/* UI helpers */
-function enforceFirstNotDeletable(){
-  const cards = $$('#containers .container-card');
-  cards.forEach((c,i)=>{
-    const del = c.querySelector('[data-del]');
-    if(del) del.style.display = (i===0 ? 'none' : '');
-  });
-}
-function updateAddButtonState(){
-  const btn = $('#addContainerBtn');
-  const count = $$('#containers .container-card').length;
-  if(count >= 3){ btn.disabled = true; btn.textContent = 'Máx. 3 contenedores'; }
-  else { btn.disabled = false; btn.textContent = '+ Añadir contenedor'; }
-}
-
-/* ADD CONTAINER (igual que tu implementación) */
-function addContainer(){
-  if($$('#containers .container-card').length >= 3){ updateAddButtonState(); return; }
-
-  uid++;
-  const id = uid;
-  photoStores.set(id, []); datalogStore.set(id, null);
-
-  const card = document.createElement('div');
-  card.className='container-card';
-  card.dataset.uid = id;
-
-  card.innerHTML = `
-    <div class="container-head">
-      <h3 data-title>Contenedor</h3>
-      <div class="actions">
-        <button type="button" class="btn danger sm" data-del>Eliminar contenedor</button>
-      </div>
-    </div>
-
-    <div class="grid g3">
-      <div class="row"><label>N° CONTENEDOR</label><input name="c${id}_container" required placeholder="MNBU1234567" pattern="[A-Za-z]{4}\\d{7}" title="Formato ABCD1234567 (4 letras + 7 dígitos)"></div>
-      <div class="row"><label>N° BOOKING</label><input name="c${id}_booking" required></div>
-      <div class="row"><label>Naviera</label>
-        <div style="display:flex;gap:4px">
-          <select name="c${id}_naviera_sel" required>
-            <option value="">Selecciona…</option>
-            <option>Maersk Line</option>
-            <option>Hapag Lloyd</option>
-            <option>Cosco Shipping</option>
-            <option>Pil</option>
-            <option>Otra</option>
-          </select>
-          <input name="c${id}_naviera_otra" style="display:none" placeholder="Especifique…">
-        </div>
-      </div>
-    </div>
-
-    <div class="line"></div>
-
-    <div class="table-wrap">${buildTableFixed2(id)}</div>
-
-    <div class="uploader">
-      <div class="sectitle" style="margin:6px 0 4px">Fotos de esta unidad</div>
-      <div class="actions">
-        <!-- Cámara o galería -->
-        <input id="pickFotos_${id}" type="file" style="display:none" multiple accept="image/*">
-        <button type="button" class="btn sm" data-pickfotos>Añadir fotos</button>
-        <button type="button" class="btn danger sm" data-cleanfotos>Borrar todas</button>
-        <span class="muted">Obligatorio.</span>
-      </div>
-      <div class="thumbs" id="thumbs_${id}"></div>
-    </div>
-
-    <div class="uploader">
-      <div class="sectitle" style="margin:6px 0 4px">Data logger (esta unidad)</div>
-      <div class="actions">
-        <input id="pickDatalog_${id}" type="file" style="display:none">
-        <button type="button" class="btn sm" data-pickdatalog>Subir/Reemplazar</button>
-        <button type="button" class="btn danger sm" data-cleandatalog>Eliminar</button>
-        <span class="muted" id="datalogInfo_${id}">Sin archivo.</span>
-      </div>
-    </div>
-  `;
-
-  // Delegación clicks
-  card.addEventListener('click', (ev)=>{
-    const t = ev.target;
-
-    if(t.matches('[data-del]')){
-      if(card.parentElement){
-        mobileConfirm('¿Eliminar este contenedor?', ()=>{
-          const id = Number(card.dataset.uid);
-          photoStores.delete(id); datalogStore.delete(id);
-          card.remove(); reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
-        });
-      }
-    }
-
-    if(t.matches('[data-pickfotos]')){ card.querySelector('#pickFotos_'+id).click(); }
-    if(t.matches('[data-cleanfotos]')){
-      const store = photoStores.get(id)||[];
-      if(!store.length) return;
-      mobileConfirm('¿Borrar todas las fotos de esta unidad?', ()=>{
-        store.length=0; renderThumbs(id, card.querySelector('#thumbs_'+id));
-      });
-    }
-    if(t.matches('[data-pickdatalog]')){ card.querySelector('#pickDatalog_'+id).click(); }
-    if(t.matches('[data-cleandatalog]')){
-      if(!datalogStore.get(id)) return;
-      mobileConfirm('¿Eliminar archivo datalog?', ()=>{
-        datalogStore.set(id,null);
-        card.querySelector('#datalogInfo_'+id).textContent='Sin archivo.';
-      });
-    }
-  });
-
-  // Cambios en select "Otra"
-  card.addEventListener('change', (ev)=>{
-    const t=ev.target;
-    if(t.name===`c${id}_naviera_sel`){
-      const otra = card.querySelector(`[name="c${id}_naviera_otra"]`);
-      const show = t.value==='Otra';
-      otra.style.display = show? 'block':'none';
-      if(show) otra.focus();
-    }
-  });
-
-  // File inputs (change) - fotos
-  card.querySelector('#pickFotos_'+id).addEventListener('change', async (e)=>{
-    const files = Array.from(e.target.files||[]);
-    if(!files.length) return;
-    const store = photoStores.get(id)||[];
-    for(const f of files){
-      const c = await compressImage(f);
-      store.push({name:safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size});
-    }
-    photoStores.set(id, store); renderThumbs(id, card.querySelector('#thumbs_'+id)); e.target.value='';
-  });
-
-  // datalog
-  card.querySelector('#pickDatalog_'+id).addEventListener('change', (e)=>{
-    const f=(e.target.files||[])[0]; if(!f) return;
-    datalogStore.set(id,f); card.querySelector('#datalogInfo_'+id).textContent=`${f.name} · ${(f.size/1024).toFixed(0)} KB`; e.target.value='';
-  });
-
-  $('#containers').appendChild(card);
-  reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
-}
-
-function reindexTitles(){ $$('#containers .container-card').forEach((c,idx)=>{ c.querySelector('[data-title]').textContent = `Contenedor #${idx+1}`; }); }
-
-function renderThumbs(id, host){
-  const store = photoStores.get(Number(id)) || [];
-  host.innerHTML='';
-  if(!store.length){ host.innerHTML='<div class="muted">Sin fotos.</div>'; return; }
-  store.forEach((p,i)=>{
-    const url = URL.createObjectURL(p.file);
-    const card = document.createElement('div');
-    card.className='thumb';
-    card.innerHTML = `
-      <img src="${url}" alt="foto ${i+1}">
-      <div class="x" title="Eliminar" data-x="${i}">×</div>
-      <div class="meta">${truncate(p.name,22)} · ${(p.size/1024).toFixed(0)} KB</div>`;
-    host.appendChild(card);
-    card.querySelector('.x').addEventListener('click', ()=>{
-      URL.revokeObjectURL(url);
-      store.splice(i,1); renderThumbs(id, host);
-    });
-  });
-}
-
-/* INIT */
-addContainer();
-document.getElementById('addContainerBtn').addEventListener('click', addContainer);
-
-/* Documentos de planta */
-const pickDocPlanta = $('#pickDocPlanta');
-const thumbsDocPlanta = $('#thumbsDocPlanta');
-$('#btnDocPlanta').addEventListener('click', ()=> pickDocPlanta.click());
-$('#btnDocPlantaClear').addEventListener('click', ()=>{
-  if(!plantaDocs.length) return;
-  mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
-});
-pickDocPlanta.addEventListener('change', async ()=>{
-  const files = Array.from(pickDocPlanta.files||[]);
-  if(!files.length) return;
-  for(const f of files){
-    const c = await compressImage(f, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
-    plantaDocs.push({ name: safeName(f.name).replace(/\.[^.]+$/i,'.jpg'), file:c, size:c.size });
-  }
-  renderPlantaDocs(); pickDocPlanta.value='';
-});
-
-function renderPlantaDocs(){
-  thumbsDocPlanta.innerHTML='';
-  if(!plantaDocs.length){ thumbsDocPlanta.innerHTML='<div class="muted">Sin archivos.</div>'; return; }
-  plantaDocs.forEach((p,i)=>{
-    const url = URL.createObjectURL(p.file);
-    const card = document.createElement('div');
-    card.className='thumb';
-    card.innerHTML = `
-      <img src="${url}" alt="doc ${i+1}">
-      <div class="x" title="Eliminar" data-x="${i}">×</div>
-      <div class="meta">${truncate(p.name,22)} · ${(p.size/1024).toFixed(0)} KB</div>`;
-    thumbsDocPlanta.appendChild(card);
-    card.querySelector('.x').addEventListener('click', ()=>{
-      URL.revokeObjectURL(url);
-      plantaDocs.splice(i,1); renderPlantaDocs();
-    });
-  });
-}
-
-/* FUNCIONES NUEVAS: mostrar/ocultar loading y success */
-function showLoading() {
-  document.getElementById('loadingIcon').style.display = 'inline';
-  document.getElementById('submitBtn').disabled = true;
-  document.getElementById('testBtn').disabled = true;
-  document.getElementById('msg').textContent = 'Enviando...';
-}
-function hideLoading() {
-  document.getElementById('loadingIcon').style.display = 'none';
-  document.getElementById('submitBtn').disabled = false;
-  document.getElementById('testBtn').disabled = false;
-}
-function showSuccess(urlResp) {
-  hideLoading();
-  document.getElementById('msg').innerHTML = '¡Enviado con éxito! ' + (urlResp?`<span class="muted">(${urlResp})</span>`:'');
-}
-function showError(msg){
-  hideLoading();
-  document.getElementById('msg').textContent = 'Error: ' + msg;
-}
-
-/* VALIDACIONES (igual que las tuyas) */
-function validForm(){
-  const need = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing'];
-  for(const n of need){ if(!$(`[name="${n}"]`).value) return {ok:false,msg:'Completa los datos generales obligatorios.'}; }
-  const cards = $$('#containers .container-card');
-  if(!cards.length) return {ok:false,msg:'Agrega al menos un contenedor.'};
-  for(const card of cards){
-    const id = card.dataset.uid;
-    const cont = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
-    const book = $(`[name="c${id}_booking"]`).value.trim();
-    if(!/^[A-Z]{4}\d{7}$/.test(cont)) return {ok:false,msg:'N° Contenedor inválido (ABCD1234567).'};
-    if(!book) return {ok:false,msg:'Falta N° Booking.'};
-    const navSel  = $(`[name="c${id}_naviera_sel"]`);
-    const navOtra = $(`[name="c${id}_naviera_otra"]`);
-    if(navSel){
-      if(!navSel.value) return {ok:false,msg:'Seleccione la naviera.'};
-      if(navSel.value==='Otra' && !navOtra.value.trim()) return {ok:false,msg:'Indique la naviera (Otra).'};
-    }
-    // horas obligatorias para 2 controles
-    for(let i=0;i<2;i++){
-      const t = card.querySelector(`input[name="c${id}_ht_${i}"]`);
-      if(!t || !t.value) return {ok:false,msg:'Indique las horas de ambos controles.'};
-    }
-    // fotos obligatorias por contenedor
-    const photos = photoStores.get(Number(id)) || [];
-    if(!photos.length) return {ok:false,msg:`Contenedor #${Array.from($$('#containers .container-card')).indexOf(card)+1}: falta foto(s).`};
-    // datalog obligatorio? (opcional)
-    // if(!datalogStore.get(Number(id))) return {ok:false,msg:'Falta datalog en algún contenedor.'};
-  }
-  if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
-  return {ok:true};
-}
-/* =========================
-   Config & Endpoints
-========================= */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQDd6WT7x5FhiVquJBBDQSyA1zOw6QJ7GRd1t27G9WinRGo99z3_pD_MZUh4ZWtmQ/exec'; // mismo que usas
-
-/* =========================
-   Plan A — JSON text/plain
-   (evita el bloqueo Zscaler)
-========================= */
 async function collectContainersJSON(){
   const cards = $$('#containers .container-card');
   const items = [];
@@ -668,21 +774,22 @@ async function collectContainersJSON(){
     const otra = $(`[name="c${id}_naviera_otra"]`)?.value.trim() || '';
     const naviera = (sel==='Otra') ? (otra || 'Otra') : sel;
 
-    const hrs  = readHeaderTimes(card);        // ['HH:MM','HH:MM']
-    const vals = readTableValues(card);        // {usda1:[...], usda2:[...], ...}
+    const hrs  = readHeaderTimes(card);
+    const vals = readTableValues(card);
 
-    // Fotos del contenedor -> a DataURL
+    // Archivos/fotos (si es imagen -> ya viene comprimido; igual convertimos a DataURL)
     const store = photoStores.get(id) || [];
-    const photos = [];
+    const files = [];
     for(let k=0;k<store.length;k++){
       const p = store[k];
       const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W, h:MAX_H, max:MAX_SIZE});
-      photos.push({
+      files.push({
         name: p.name,
-        mimeType: 'image/jpeg',
+        mimeType: p.mimeType || 'application/octet-stream',
+        isImg: !!p.isImg,
         dataURL,
-        linea: i+1,          // para subcarpetas en GAS (line_#)
-        container: i+1       // metadato extra
+        linea: i+1,
+        container: i+1
       });
     }
 
@@ -690,7 +797,7 @@ async function collectContainersJSON(){
     let datalog = null;
     const d = datalogStore.get(id);
     if(d){
-      const dURL = await fileToDataURL(d); // sin comprimir (no es imagen)
+      const dURL = await fileToDataURL(d);
       datalog = { name: safeName(d.name), mimeType: d.type || 'application/octet-stream', dataURL: dURL, container: i+1 };
     }
 
@@ -700,8 +807,8 @@ async function collectContainersJSON(){
       booking: book,
       naviera,
       horas: { control1: hrs[0]||'', control2: hrs[1]||'' },
-      tabla: vals,    // {usda1:[v1,v2], sp:[v1,v2], ...}
-      photos,
+      tabla: vals,
+      files,     // todos los adjuntos de la unidad
       datalog
     });
   }
@@ -711,56 +818,43 @@ async function collectContainersJSON(){
 async function buildPayloadJSON(){
   // Generales
   const g = f => ($(`[name="${f}"]`)?.value || '').trim();
-  const folio  = g('folio');
-  const fecha  = g('fecha_servicio');
-  const hLL    = g('hora_llegada');
-  const hINI   = g('hora_inicio_cal');
-  const hFIN   = g('hora_termino');
-  const tec    = g('tecnico');
-  const planta = g('planta');
-  const resp   = g('responsable_packing');
-  const viaje  = g('viaje');
-  const comm   = g('comentarios');
-
-  // Contenedores + fotos
-  const containers = await collectContainersJSON();
-
-  // Documentos de planta -> DataURL (como imágenes)
-  const docs = [];
-  for(let i=0;i<plantaDocs.length;i++){
-    const p = plantaDocs[i];
-    const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
-    docs.push({ name: p.name, mimeType:'image/jpeg', dataURL, tipo:'doc_planta' });
-  }
-
-  // Aplanado de fotos para compat con tu GAS "saveinspection"
-  const flatPhotos = containers.flatMap(c => c.photos);
-
-  // Payload principal
   const payload = {
     fn: 'saveinspection',
     id: (crypto?.randomUUID?.() || ('cot_'+Date.now())),
     status: 'enviado',
     timestamp: new Date().toISOString(),
-
-    // Generales
-    folio: folio,
-    fecha_servicio: fecha,
-    hora_llegada: hLL,
-    hora_inicio_cal: hINI,
-    hora_termino: hFIN,
-    tecnico: tec,
-    planta: planta,
-    responsable_packing: resp,
-    viaje: viaje,
-    comentarios: comm,
-
-    // Específico COT v6
-    tipo_form: 'COT_v6',
-    containers,                       // estructura completa
-    plantaDocsJSON: JSON.stringify(docs), // adjuntos de planta (si decides usarlos en GAS)
-    fotosJSON: JSON.stringify(flatPhotos) // COMPAT con tu GAS actual
+    // generales
+    folio: g('folio'),
+    fecha_servicio: g('fecha_servicio'),
+    hora_llegada: g('hora_llegada'),
+    hora_inicio_cal: g('hora_inicio_cal'),
+    hora_termino: g('hora_termino'),
+    tecnico: g('tecnico'),
+    planta: g('planta'),
+    responsable_packing: g('responsable_packing'),
+    viaje: g('viaje'),
+    comentarios: g('comentarios'),
+    // específico COT
+    tipo_form: 'COT_v6'
   };
+
+  payload.containers = await collectContainersJSON();
+
+  // Documento de planta -> DataURL
+  if(plantaDoc){
+    const dataURL = await fileToDataURLSmart(plantaDoc.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
+    payload.plantaDoc = {
+      name: plantaDoc.name,
+      mimeType: plantaDoc.mimeType || 'application/octet-stream',
+      isImg: !!plantaDoc.isImg,
+      dataURL
+    };
+  }
+
+  // Compat: aplanado de adjuntos tipo "fotosJSON" (si tu GAS actual lo usa)
+  payload.fotosJSON = JSON.stringify(
+    payload.containers.flatMap(c => (c.files||[]).filter(f => f.isImg))
+  );
 
   return payload;
 }
@@ -768,7 +862,7 @@ async function buildPayloadJSON(){
 async function sendJSON(payload){
   const resp = await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // clave para Zscaler
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // clave anti-Zscaler
     body: JSON.stringify(payload)
   });
   const txt = await resp.text();
@@ -779,24 +873,25 @@ async function sendJSON(payload){
 }
 
 /* =========================
-   Plan B — Fallback FormData
-   (mantengo tu versión)
+   Fallback (Plan B: multipart/form-data)
 ========================= */
 async function buildPayloadFormData(){
   const form = new FormData();
 
-  // Datos generales
+  // Generales
   const genFields = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing','viaje','comentarios'];
   for(const f of genFields){
     const el = $(`[name="${f}"]`);
     form.append(f, el ? el.value : '');
   }
+  form.append('tipo_form', 'COT_v6');
 
-  // Documentos de planta
-  plantaDocs.forEach((p, idx)=>{
-    form.append(`planta_doc_${idx}`, p.file, p.name);
-  });
-  form.append('planta_docs_count', String(plantaDocs.length));
+  // Documento de planta (1 archivo)
+  if(plantaDoc){
+    form.append('planta_doc', plantaDoc.file, plantaDoc.name);
+  } else {
+    form.append('planta_doc', new Blob([''],{type:'application/octet-stream'}), '');
+  }
 
   // Contenedores
   const cards = $$('#containers .container-card');
@@ -805,30 +900,30 @@ async function buildPayloadFormData(){
     const card = cards[i];
     const id = card.dataset.uid;
 
-    const cont   = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
-    const book   = $(`[name="c${id}_booking"]`).value.trim();
-    const navSel = $(`[name="c${id}_naviera_sel"]`).value;
-    const navOtra= $(`[name="c${id}_naviera_otra"]`).value || '';
+    const cont   = $(`[name="c${id}_container"]`)?.value.trim().toUpperCase() || '';
+    const book   = $(`[name="c${id}_booking"]`)?.value.trim() || '';
+    const navSel = $(`[name="c${id}_naviera_sel"]`)?.value || '';
+    const navOtra= $(`[name="c${id}_naviera_otra"]`)?.value || '';
     form.append(`c${i}_container`, cont);
     form.append(`c${i}_booking`, book);
     form.append(`c${i}_naviera_sel`, navSel);
     form.append(`c${i}_naviera_otra`, navOtra);
 
-    // Tiempos de cabecera
+    // Tiempos cabecera
     const hrs = readHeaderTimes(card);
     form.append(`c${i}_ht_0`, hrs[0]||'');
     form.append(`c${i}_ht_1`, hrs[1]||'');
 
-    // Tabla (usda/sp/sup/ret)
+    // Tabla
     const vals = readTableValues(card);
     Object.keys(vals).forEach(k=>{
       vals[k].forEach((v, colIdx)=> form.append(`c${i}_${k}_${colIdx}`, v || ''));
     });
 
-    // Fotos
-    const photos = photoStores.get(Number(id)) || [];
-    photos.forEach((p, k)=> form.append(`c${i}_photo_${k}`, p.file, p.name));
-    form.append(`c${i}_photo_count`, String(photos.length));
+    // Adjuntos unidad
+    const files = photoStores.get(Number(id)) || [];
+    files.forEach((p, k)=> form.append(`c${i}_file_${k}`, p.file, p.name));
+    form.append(`c${i}_file_count`, String(files.length));
 
     // Datalog (opcional)
     const d = datalogStore.get(Number(id));
@@ -840,88 +935,136 @@ async function buildPayloadFormData(){
 
 async function sendToGas(formData){
   const resp = await fetch(GAS_URL, { method: 'POST', body: formData });
-  if(!resp.ok){
-    const text = await resp.text().catch(()=>null);
-    throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text?'- '+text:''}`);
-  }
-  return resp.text();
+  const text = await resp.text().catch(()=>null);
+  if(!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text?'- '+text:''}`);
+  return text;
 }
+
 /* =========================
-   Helpers de conversión a DataURL
-   (con guardas por si ya existen)
+   UI de estado
 ========================= */
-if (typeof fileToDataURL === 'undefined') {
-  async function fileToDataURL(file){
-    return await new Promise((resolve, reject)=>{
-      const r = new FileReader();
-      r.onload = e => resolve(e.target.result);
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-  }
+function showLoading() {
+  $('#loadingIcon').style.display = 'inline';
+  $('#submitBtn').disabled = true;
+  $('#testBtn').disabled = true;
+  $('#msg').textContent = 'Enviando...';
 }
-if (typeof fileToDataURLSmart === 'undefined') {
-  async function fileToDataURLSmart(file, opts){
-    try{
-      // Si es imagen, comprimimos con tu compressImage() y luego a DataURL
-      if(file && file.type && file.type.startsWith('image/')){
-        const cf = await compressImage(file, opts || {});
-        return await fileToDataURL(cf || file);
-      }
-      // Si no es imagen (ej. datalog), solo convierto
-      return await fileToDataURL(file);
-    }catch(_){
-      // Fallback duro
-      return await fileToDataURL(file);
-    }
-  }
+function hideLoading() {
+  $('#loadingIcon').style.display = 'none';
+  $('#submitBtn').disabled = false;
+  $('#testBtn').disabled = false;
+}
+function showSuccess(note) {
+  hideLoading();
+  $('#msg').innerHTML = '¡Enviado con éxito! ' + (note?`<span class="muted">(${note})</span>`:'');
+}
+function showError(msg){
+  hideLoading();
+  $('#msg').textContent = 'Error: ' + (msg || 'desconocido');
 }
 
 /* =========================
    Submit handler (Plan A -> Plan B)
-   - Captura el evento y bloquea otros listeners
 ========================= */
 const formEl = document.getElementById('cotForm');
-if (formEl){
+if(formEl){
   formEl.addEventListener('submit', async (e)=>{
-    // FASE DE CAPTURA: bloquea bubbling hacia otros handlers ya existentes
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
+    const v = validForm();
+    if(!v.ok){ $('#msg').textContent = v.msg || 'Formulario inválido.'; return; }
+
+    showLoading();
     try{
-      // Validaciones nativas + custom
-      if(!formEl.reportValidity()){ document.getElementById('msg').textContent='Revisa campos marcados.'; return; }
-      const v = (typeof validForm === 'function') ? validForm() : {ok:true};
-      if(!v.ok){ document.getElementById('msg').textContent = v.msg || 'Formulario inválido.'; return; }
-
-      showLoading();
-
-      // ======= PLAN A: JSON text/plain (evita bloqueo Zscaler) =======
+      // Plan A: JSON text/plain
       try{
         const payload = await buildPayloadJSON();
-        const resA = await sendJSON(payload); // {ok:true, id?...} o texto parseado
+        const resA = await sendJSON(payload);
         console.log('Plan A (JSON) OK:', resA);
-        showSuccess('Enviado (Plan A: JSON).');
+        showSuccess('Plan A: JSON');
         return;
       }catch(errA){
-        console.warn('Plan A falló, voy a Plan B. Detalle:', errA);
+        console.warn('Plan A falló, pruebo Plan B. Detalle:', errA);
       }
 
-      // ======= PLAN B: multipart/form-data (fallback) =======
-      try{
-        const fd = await buildPayloadFormData();
-        const resB = await sendToGas(fd); // texto
-        console.log('Plan B (FormData) OK:', resB);
-        showSuccess('Enviado (Plan B: FormData).');
-        return;
-      }catch(errB){
-        throw errB; // lo captura el catch externo
-      }
-
+      // Plan B: multipart/form-data
+      const fd = await buildPayloadFormData();
+      const resB = await sendToGas(fd);
+      console.log('Plan B (FormData) OK:', resB);
+      showSuccess('Plan B: FormData');
     }catch(err){
       console.error('Error envío COT', err);
-      showError(err?.message || 'Error desconocido');
+      showError(err?.message);
     }
-  }, true); // <-- true = CAPTURE
+  }, true);
 }
+
+/* Botón de prueba de validaciones */
+document.getElementById('testBtn')?.addEventListener('click', ()=>{
+  const v = validForm();
+  $('#msg').textContent = v.ok ? 'Validaciones OK.' : v.msg;
+});
+/* =========================
+   UX extra: título dinámico y formato contenedor
+========================= */
+document.addEventListener('input', (e)=>{
+  const el = e.target;
+
+  // Forzar formato ISO 6346 (4 letras + 7 dígitos) y mayúsculas (máx. 11)
+  if(el.name && /_container$/.test(el.name)){
+    const raw = (el.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    el.value = raw.slice(0,11);
+
+    // Actualizar título del card con #idx y código (si hay)
+    const card = el.closest('.container-card');
+    if(card){
+      const idx = Array.from($$('#containers .container-card')).indexOf(card)+1;
+      const h = card.querySelector('[data-title]');
+      h.textContent = `Contenedor #${idx}${el.value ? ' · '+el.value : ''}`;
+    }
+  }
+});
+
+/* Cerrar overlay con ESC */
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Escape'){
+    document.getElementById('overlay')?.classList.remove('show');
+    document.getElementById('mSheet')?.classList.remove('show');
+  }
+});
+
+/* Polyfill simple para createImageBitmap en navegadores antiguos */
+if (typeof createImageBitmap === 'undefined') {
+  window.createImageBitmap = async function(file){
+    return await new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const cnv = document.createElement('canvas');
+        cnv.width = img.naturalWidth; cnv.height = img.naturalHeight;
+        const ctx = cnv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        // Devolvemos el canvas: tiene width/height y sirve como fuente de drawImage
+        resolve(cnv);
+      };
+      img.onerror = reject;
+      try {
+        img.src = URL.createObjectURL(file);
+      } catch(err) {
+        reject(err);
+      }
+    });
+  };
+}
+
+/* Guardas finales: evitar doble submit por Enter en inputs */
+formEl?.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && e.target.tagName==='INPUT'){
+    // Evita enviar al presionar Enter por accidente; quita si lo deseas
+    e.preventDefault();
+  }
+});
+</script>
+</body>
+</html>
