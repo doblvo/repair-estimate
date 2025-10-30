@@ -262,6 +262,12 @@ function safeName(s){ return (s||'FILE').replace(/[^\w\.\-]+/g,'_'); }
 const MAX_W=760, MAX_H=600, MAX_SIZE=150*1024;
 const MAX_W_DOC=1200, MAX_H_DOC=900, MAX_SIZE_DOC=400*1024;
 
+/* =========================
+   PATCH Plan A — Modo envío JSON
+   (si es true: envía JSON text/plain; si es false: usa multipart FormData)
+========================= */
+const USE_JSON = true; // PATCH Plan A
+
 /* COMPRESIÓN DE IMAGEN (función única) */
 async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
   if(!file || !file.type || !file.type.startsWith('image/')) return file;
@@ -274,6 +280,25 @@ async function compressImage(file, {w=MAX_W, h=MAX_H, max=MAX_SIZE}={}) {
   while(blob && blob.size>max && q>0.6){ q-=0.05; blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',q)); }
   if(!blob) return file;
   return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
+}
+
+/* =========================
+   PATCH Plan A — Helpers para DataURL/base64
+========================= */
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+async function fileToDataURLSmart(file, compressCfg){
+  // Si es imagen -> comprime y luego a dataURL; si no, directo a dataURL
+  const f = (file && file.type && file.type.startsWith('image/'))
+    ? await compressImage(file, compressCfg||{})
+    : file;
+  return fileToDataURL(f);
 }
 
 /* UI: confirm móvil */
@@ -540,7 +565,7 @@ $('#btnDocPlantaClear').addEventListener('click', ()=>{
   if(!plantaDocs.length) return;
   mobileConfirm('¿Borrar todos los documentos de planta?', ()=>{ plantaDocs.length=0; renderPlantaDocs(); });
 });
-pickDocPlanta.addEventListener('change', async ()=> {
+pickDocPlanta.addEventListener('change', async ()=>{
   const files = Array.from(pickDocPlanta.files||[]);
   if(!files.length) return;
   for(const f of files){
@@ -616,18 +641,147 @@ function validForm(){
     // fotos obligatorias por contenedor
     const photos = photoStores.get(Number(id)) || [];
     if(!photos.length) return {ok:false,msg:`Contenedor #${Array.from($$('#containers .container-card')).indexOf(card)+1}: falta foto(s).`};
-    // datalog obligatorio? (si quieres, descomenta la comprobación)
+    // datalog obligatorio? (opcional)
     // if(!datalogStore.get(Number(id))) return {ok:false,msg:'Falta datalog en algún contenedor.'};
   }
   if(plantaDocs.length===0) return {ok:false,msg:'Debes adjuntar al menos 1 foto del documento de planta.'};
   return {ok:true};
 }
+/* =========================
+   Config & Endpoints
+========================= */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQDd6WT7x5FhiVquJBBDQSyA1zOw6QJ7GRd1t27G9WinRGo99z3_pD_MZUh4ZWtmQ/exec'; // mismo que usas
 
-/* Construir payload y enviar (modo B: múltiples contenedores).
-   Se usa FormData (multipart/form-data). El servidor GAS deberá aceptar multipart; 
-   si tu GAS espera otro formato, te adapto el server. */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQDd6WT7x5FhiVquJBBDQSyA1zOw6QJ7GRd1t27G9WinRGo99z3_pD_MZUh4ZWtmQ/exec';
+/* =========================
+   Plan A — JSON text/plain
+   (evita el bloqueo Zscaler)
+========================= */
+async function collectContainersJSON(){
+  const cards = $$('#containers .container-card');
+  const items = [];
+  for(let i=0;i<cards.length;i++){
+    const card = cards[i];
+    const id   = Number(card.dataset.uid);
+    const cont = $(`[name="c${id}_container"]`)?.value.trim().toUpperCase() || '';
+    const book = $(`[name="c${id}_booking"]`)?.value.trim() || '';
+    const sel  = $(`[name="c${id}_naviera_sel"]`)?.value || '';
+    const otra = $(`[name="c${id}_naviera_otra"]`)?.value.trim() || '';
+    const naviera = (sel==='Otra') ? (otra || 'Otra') : sel;
 
+    const hrs  = readHeaderTimes(card);        // ['HH:MM','HH:MM']
+    const vals = readTableValues(card);        // {usda1:[...], usda2:[...], ...}
+
+    // Fotos del contenedor -> a DataURL
+    const store = photoStores.get(id) || [];
+    const photos = [];
+    for(let k=0;k<store.length;k++){
+      const p = store[k];
+      const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W, h:MAX_H, max:MAX_SIZE});
+      photos.push({
+        name: p.name,
+        mimeType: 'image/jpeg',
+        dataURL,
+        linea: i+1,          // para subcarpetas en GAS (line_#)
+        container: i+1       // metadato extra
+      });
+    }
+
+    // Datalog (opcional)
+    let datalog = null;
+    const d = datalogStore.get(id);
+    if(d){
+      const dURL = await fileToDataURL(d); // sin comprimir (no es imagen)
+      datalog = { name: safeName(d.name), mimeType: d.type || 'application/octet-stream', dataURL: dURL, container: i+1 };
+    }
+
+    items.push({
+      idx: i+1,
+      container: cont,
+      booking: book,
+      naviera,
+      horas: { control1: hrs[0]||'', control2: hrs[1]||'' },
+      tabla: vals,    // {usda1:[v1,v2], sp:[v1,v2], ...}
+      photos,
+      datalog
+    });
+  }
+  return items;
+}
+
+async function buildPayloadJSON(){
+  // Generales
+  const g = f => ($(`[name="${f}"]`)?.value || '').trim();
+  const folio  = g('folio');
+  const fecha  = g('fecha_servicio');
+  const hLL    = g('hora_llegada');
+  const hINI   = g('hora_inicio_cal');
+  const hFIN   = g('hora_termino');
+  const tec    = g('tecnico');
+  const planta = g('planta');
+  const resp   = g('responsable_packing');
+  const viaje  = g('viaje');
+  const comm   = g('comentarios');
+
+  // Contenedores + fotos
+  const containers = await collectContainersJSON();
+
+  // Documentos de planta -> DataURL (como imágenes)
+  const docs = [];
+  for(let i=0;i<plantaDocs.length;i++){
+    const p = plantaDocs[i];
+    const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC});
+    docs.push({ name: p.name, mimeType:'image/jpeg', dataURL, tipo:'doc_planta' });
+  }
+
+  // Aplanado de fotos para compat con tu GAS "saveinspection"
+  const flatPhotos = containers.flatMap(c => c.photos);
+
+  // Payload principal
+  const payload = {
+    fn: 'saveinspection',
+    id: (crypto?.randomUUID?.() || ('cot_'+Date.now())),
+    status: 'enviado',
+    timestamp: new Date().toISOString(),
+
+    // Generales
+    folio: folio,
+    fecha_servicio: fecha,
+    hora_llegada: hLL,
+    hora_inicio_cal: hINI,
+    hora_termino: hFIN,
+    tecnico: tec,
+    planta: planta,
+    responsable_packing: resp,
+    viaje: viaje,
+    comentarios: comm,
+
+    // Específico COT v6
+    tipo_form: 'COT_v6',
+    containers,                       // estructura completa
+    plantaDocsJSON: JSON.stringify(docs), // adjuntos de planta (si decides usarlos en GAS)
+    fotosJSON: JSON.stringify(flatPhotos) // COMPAT con tu GAS actual
+  };
+
+  return payload;
+}
+
+async function sendJSON(payload){
+  const resp = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // clave para Zscaler
+    body: JSON.stringify(payload)
+  });
+  const txt = await resp.text();
+  let json;
+  try{ json = JSON.parse(txt); }catch(_){ json = null; }
+  if(!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText} - ${txt}`);
+  return json || { ok:true, raw:txt };
+}
+
+/* =========================
+   Plan B — Fallback FormData
+   (mantengo tu versión)
+========================= */
 async function buildPayloadFormData(){
   const form = new FormData();
 
@@ -638,51 +792,45 @@ async function buildPayloadFormData(){
     form.append(f, el ? el.value : '');
   }
 
-  // Documentos de planta: varias imágenes
+  // Documentos de planta
   plantaDocs.forEach((p, idx)=>{
-    // campo planta_doc_0, planta_doc_1, ...
     form.append(`planta_doc_${idx}`, p.file, p.name);
   });
   form.append('planta_docs_count', String(plantaDocs.length));
 
-  // Contenedores: recopilamos todos y los metemos con índice
+  // Contenedores
   const cards = $$('#containers .container-card');
   form.append('containers_count', String(cards.length));
   for(let i=0;i<cards.length;i++){
     const card = cards[i];
     const id = card.dataset.uid;
-    // campos básicos
-    const cont = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
-    const book = $(`[name="c${id}_booking"]`).value.trim();
+
+    const cont   = $(`[name="c${id}_container"]`).value.trim().toUpperCase();
+    const book   = $(`[name="c${id}_booking"]`).value.trim();
     const navSel = $(`[name="c${id}_naviera_sel"]`).value;
-    const navOtra = $(`[name="c${id}_naviera_otra"]`).value || '';
+    const navOtra= $(`[name="c${id}_naviera_otra"]`).value || '';
     form.append(`c${i}_container`, cont);
     form.append(`c${i}_booking`, book);
     form.append(`c${i}_naviera_sel`, navSel);
     form.append(`c${i}_naviera_otra`, navOtra);
 
-    // header times
+    // Tiempos de cabecera
     const hrs = readHeaderTimes(card);
     form.append(`c${i}_ht_0`, hrs[0]||'');
     form.append(`c${i}_ht_1`, hrs[1]||'');
 
-    // tabla values (usda/sp/sup/ret) -> guardamos como campos por celda
+    // Tabla (usda/sp/sup/ret)
     const vals = readTableValues(card);
     Object.keys(vals).forEach(k=>{
-      vals[k].forEach((v, colIdx)=>{
-        form.append(`c${i}_${k}_${colIdx}`, v || '');
-      });
+      vals[k].forEach((v, colIdx)=> form.append(`c${i}_${k}_${colIdx}`, v || ''));
     });
 
-    // fotos del contenedor (puede haber varias)
+    // Fotos
     const photos = photoStores.get(Number(id)) || [];
-    photos.forEach((p, idxPhoto)=>{
-      // clave: c{index}_photo_{idxPhoto}
-      form.append(`c${i}_photo_${idxPhoto}`, p.file, p.name);
-    });
+    photos.forEach((p, k)=> form.append(`c${i}_photo_${k}`, p.file, p.name));
     form.append(`c${i}_photo_count`, String(photos.length));
 
-    // datalog (un solo archivo) si existe
+    // Datalog (opcional)
     const d = datalogStore.get(Number(id));
     if(d) form.append(`c${i}_datalog`, d, safeName(d.name));
   }
@@ -690,62 +838,90 @@ async function buildPayloadFormData(){
   return form;
 }
 
-/* Envío por fetch (multipart/form-data) */
 async function sendToGas(formData){
-  // Nota: no seteamos content-type para que el browser añada boundary
-  const resp = await fetch(GAS_URL, {
-    method: 'POST',
-    body: formData,
-    // mode: 'cors' // por defecto
-  });
+  const resp = await fetch(GAS_URL, { method: 'POST', body: formData });
   if(!resp.ok){
     const text = await resp.text().catch(()=>null);
     throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text?'- '+text:''}`);
   }
   return resp.text();
 }
-
-/* Handler submit principal — construye FormData y envía */
-$('#cotForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
-  const v = validForm(); if(!v.ok){ $('#msg').textContent=v.msg; return; }
-
-  try{
-    showLoading();
-    const formData = await buildPayloadFormData();
-
-    // Envío
-    const respText = await sendToGas(formData);
-    // Asumimos que GAS devuelve texto o JSON. Mostramos resultado.
-    showSuccess(respText || '');
-    // opcional: resetForm() si quieres limpiar todo
-    // resetForm();
-  }catch(err){
-    console.error('Error envío COT', err);
-    showError(err.message || 'Error desconocido');
+/* =========================
+   Helpers de conversión a DataURL
+   (con guardas por si ya existen)
+========================= */
+if (typeof fileToDataURL === 'undefined') {
+  async function fileToDataURL(file){
+    return await new Promise((resolve, reject)=>{
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
   }
-});
-
-/* Botón de prueba */
-$('#testBtn').addEventListener('click', ()=>{
-  if(!$('#cotForm').reportValidity()){ $('#msg').textContent='Revisa campos marcados.'; return; }
-  const v = validForm(); $('#msg').textContent = v.ok ? 'Validaciones OK.' : v.msg;
-});
-
-/* Reset del formulario (limpio básico) */
-function resetForm(){
-  document.getElementById('cotForm').reset();
-  // limpiar stores y thumbs
-  photoStores.clear();
-  datalogStore.clear();
-  plantaDocs.length = 0;
-  document.getElementById('thumbsDocPlanta').innerHTML = '<div class="muted">Sin archivos.</div>';
-  document.getElementById('containers').innerHTML = '';
-  uid = 0;
-  addContainer();
-  $('#msg').textContent = 'Listo para enviar.';
 }
-</script>
-</body>
-</html>
+if (typeof fileToDataURLSmart === 'undefined') {
+  async function fileToDataURLSmart(file, opts){
+    try{
+      // Si es imagen, comprimimos con tu compressImage() y luego a DataURL
+      if(file && file.type && file.type.startsWith('image/')){
+        const cf = await compressImage(file, opts || {});
+        return await fileToDataURL(cf || file);
+      }
+      // Si no es imagen (ej. datalog), solo convierto
+      return await fileToDataURL(file);
+    }catch(_){
+      // Fallback duro
+      return await fileToDataURL(file);
+    }
+  }
+}
+
+/* =========================
+   Submit handler (Plan A -> Plan B)
+   - Captura el evento y bloquea otros listeners
+========================= */
+const formEl = document.getElementById('cotForm');
+if (formEl){
+  formEl.addEventListener('submit', async (e)=>{
+    // FASE DE CAPTURA: bloquea bubbling hacia otros handlers ya existentes
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    try{
+      // Validaciones nativas + custom
+      if(!formEl.reportValidity()){ document.getElementById('msg').textContent='Revisa campos marcados.'; return; }
+      const v = (typeof validForm === 'function') ? validForm() : {ok:true};
+      if(!v.ok){ document.getElementById('msg').textContent = v.msg || 'Formulario inválido.'; return; }
+
+      showLoading();
+
+      // ======= PLAN A: JSON text/plain (evita bloqueo Zscaler) =======
+      try{
+        const payload = await buildPayloadJSON();
+        const resA = await sendJSON(payload); // {ok:true, id?...} o texto parseado
+        console.log('Plan A (JSON) OK:', resA);
+        showSuccess('Enviado (Plan A: JSON).');
+        return;
+      }catch(errA){
+        console.warn('Plan A falló, voy a Plan B. Detalle:', errA);
+      }
+
+      // ======= PLAN B: multipart/form-data (fallback) =======
+      try{
+        const fd = await buildPayloadFormData();
+        const resB = await sendToGas(fd); // texto
+        console.log('Plan B (FormData) OK:', resB);
+        showSuccess('Enviado (Plan B: FormData).');
+        return;
+      }catch(errB){
+        throw errB; // lo captura el catch externo
+      }
+
+    }catch(err){
+      console.error('Error envío COT', err);
+      showError(err?.message || 'Error desconocido');
+    }
+  }, true); // <-- true = CAPTURE
+}
