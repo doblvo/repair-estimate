@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>COT — Reporte Digital v03</title>
+<title>COT — Reporte Digital v04</title>
 <meta name="color-scheme" content="light">
 <style>
   :root{
@@ -742,7 +742,7 @@ async function buildPayloadFormData(){
   form.append('containers_count', String(cards.length));
 
   // Respaldo en base64 para TODAS las fotos (por si el binario llega vacío)
-  const filesFallback = [];
+
 
   for (let i = 0; i < cards.length; i++){
     const card = cards[i];
@@ -776,19 +776,10 @@ async function buildPayloadFormData(){
     for (let k = 0; k < files.length; k++){
       const p = files[k];
       form.append(`c${i}_file_${k}`, p.file, p.name); // binario
-      const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W, h:MAX_H, max:MAX_SIZE});
-      filesFallback.push({
-        key: `c${i}_file_${k}`,
-        name: p.name,
-        mimeType: p.mimeType || 'application/octet-stream',
-        dataURL
-      });
     }
   }
 
   // Adjuntamos el respaldo JSON con TODAS las fotos
-  form.append('files_json', JSON.stringify(filesFallback));
-
   return form;
 }
 
