@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>COT — Reporte Digital v05</title>
+<title>COT — Reporte Digital v06</title>
 <meta name="color-scheme" content="light">
 <style>
   :root{
@@ -725,14 +725,6 @@ async function buildPayloadFormData(){
   // Documento de planta (binario + respaldo JSON base64)
   if (plantaDoc){
     form.append('planta_doc', plantaDoc.file, plantaDoc.name);
-    const plantaDataURL = await fileToDataURLSmart(
-      plantaDoc.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC}
-    );
-    form.append('planta_doc_json', JSON.stringify({
-      name: plantaDoc.name,
-      mimeType: plantaDoc.mimeType || 'application/octet-stream',
-      dataURL: plantaDataURL
-    }));
   } else {
     form.append('planta_doc', new Blob([''],{type:'application/octet-stream'}), '');
   }
@@ -785,10 +777,18 @@ async function buildPayloadFormData(){
 
 
 async function sendToGas(formData){
-  const resp = await fetch(GAS_URL, { method: 'POST', body: formData });
-  const text = await resp.text().catch(()=>null);
-  if(!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text?'- '+text:''}`);
-  return text;
+  return await new Promise((resolve, reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', GAS_URL, true);
+    xhr.onreadystatechange = ()=>{
+      if (xhr.readyState === 4){
+        if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
+        else reject(new Error(`HTTP ${xhr.status} ${xhr.statusText} - ${xhr.responseText||''}`));
+      }
+    };
+    xhr.onerror = ()=> reject(new Error('Error de red'));
+    xhr.send(formData); // el browser setea el boundary automáticamente
+  });
 }
 
 /* =========================
