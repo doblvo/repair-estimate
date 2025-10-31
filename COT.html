@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>COT — Reporte Digital v01</title>
+<title>COT — Reporte Digital v02</title>
 <meta name="color-scheme" content="light">
 <style>
   :root{
@@ -193,10 +193,10 @@
 <div class="wrap">
   <header>
     <h1>REPORTE TRATAMIENTO DE FRÍO — COT</h1>
-    <div class="meta">Controles obligatorios • Fotos/Datalog por unidad • Máx. 3 contenedores</div>
+    <div class="meta">Controles obligatorios • Fotos por unidad • Máx. 3 contenedores</div>
   </header>
 
-  <form id="cotForm" novalidate>
+  <form id="cotForm" novalidate enctype="multipart/form-data">
     <div class="card">
       <div class="sectitle">Encabezado</div>
       <div class="grid g3">
@@ -267,7 +267,6 @@ const $$ = s=>Array.from(document.querySelectorAll(s));
 ========== */
 let uid = 0;
 const photoStores = new Map();   // id -> [{name,file,size,mimeType,isImg}]
-const datalogStore = new Map();  // id -> File|null
 let plantaDoc = null;            // {name,file,size,mimeType,isImg} | null
 
 /* ==========
@@ -450,7 +449,6 @@ async function fileToDataURLSmart(file, compressCfg){
     uid++;
     const id = uid;
     photoStores.set(id, []); 
-    datalogStore.set(id, null);
 
     const card = document.createElement('div');
     card.className='container-card';
@@ -502,16 +500,6 @@ async function fileToDataURLSmart(file, compressCfg){
         </div>
         <div class="thumbs" id="thumbs_${id}"></div>
       </div>
-
-      <div class="uploader">
-        <div class="sectitle" style="margin:6px 0 4px">Data logger (esta unidad)</div>
-        <div class="actions">
-          <input id="pickDatalog_${id}" type="file" style="display:none" accept="*/*">
-          <button type="button" class="btn sm" data-pickdatalog>Subir/Reemplazar</button>
-          <button type="button" class="btn danger sm" data-cleandatalog>Eliminar</button>
-          <span class="muted" id="datalogInfo_${id}">Sin archivo.</span>
-        </div>
-      </div>
     `;
 
     /* Delegación de clicks dentro de cada card */
@@ -523,7 +511,6 @@ async function fileToDataURLSmart(file, compressCfg){
           mobileConfirm('¿Eliminar este contenedor?', ()=>{
             const idNum = Number(card.dataset.uid);
             photoStores.delete(idNum); 
-            datalogStore.delete(idNum);
             card.remove(); reindexTitles(); enforceFirstNotDeletable(); updateAddButtonState();
           });
         }
@@ -535,14 +522,6 @@ async function fileToDataURLSmart(file, compressCfg){
         if(!store.length) return;
         mobileConfirm('¿Borrar todos los archivos de esta unidad?', ()=>{
           store.length=0; renderThumbs(id, card.querySelector('#thumbs_'+id));
-        });
-      }
-      if(t.matches('[data-pickdatalog]')){ card.querySelector('#pickDatalog_'+id).click(); }
-      if(t.matches('[data-cleandatalog]')){
-        if(!datalogStore.get(id)) return;
-        mobileConfirm('¿Eliminar archivo datalog?', ()=>{
-          datalogStore.set(id,null);
-          card.querySelector('#datalogInfo_'+id).textContent='Sin archivo.';
         });
       }
     });
@@ -579,15 +558,6 @@ async function fileToDataURLSmart(file, compressCfg){
       }
       photoStores.set(id, store); 
       renderThumbs(id, card.querySelector('#thumbs_'+id)); 
-      e.target.value='';
-    });
-
-    /* Datalog (1 archivo cualquiera) */
-    card.querySelector('#pickDatalog_'+id).addEventListener('change', (e)=>{
-      const f=(e.target.files||[])[0]; 
-      if(!f) return;
-      datalogStore.set(id,f); 
-      card.querySelector('#datalogInfo_'+id).textContent=`${f.name} · ${formatBytes(f.size)}`;
       e.target.value='';
     });
 
@@ -737,66 +707,91 @@ function validForm(){
 ========================= */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuDrzVtL_amh9FVS51zMrrWIL_QoHCdUHQ0XjaSC6pyYVW3xlhZFztCV5nzL5eCFLq/exec';
 
-/* =========================
-   Fallback (Plan B: multipart/form-data)
-========================= */
+// === REEMPLAZO: buildPayloadFormData (con DATALOG por unidad + fallback) ===
 async function buildPayloadFormData(){
   const form = new FormData();
 
   // Generales
-  const genFields = ['folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino','tecnico','planta','responsable_packing','viaje','comentarios'];
-  for(const f of genFields){
-    const el = $(`[name="${f}"]`);
-    form.append(f, el ? el.value : '');
+  const genFields = [
+    'folio','fecha_servicio','hora_llegada','hora_inicio_cal','hora_termino',
+    'tecnico','planta','responsable_packing','viaje','comentarios'
+  ];
+  for (const f of genFields){
+    const el = document.querySelector(`[name="${f}"]`);
+    form.append(f, el ? (el.value ?? '') : '');
   }
   form.append('tipo_form', 'COT_v6');
 
-  // Documento de planta (1 archivo)
-  if(plantaDoc){
+  // Documento de planta (binario + respaldo JSON base64)
+  if (plantaDoc){
     form.append('planta_doc', plantaDoc.file, plantaDoc.name);
+    const plantaDataURL = await fileToDataURLSmart(
+      plantaDoc.file, {w:MAX_W_DOC, h:MAX_H_DOC, max:MAX_SIZE_DOC}
+    );
+    form.append('planta_doc_json', JSON.stringify({
+      name: plantaDoc.name,
+      mimeType: plantaDoc.mimeType || 'application/octet-stream',
+      dataURL: plantaDataURL
+    }));
   } else {
     form.append('planta_doc', new Blob([''],{type:'application/octet-stream'}), '');
   }
 
   // Contenedores
-  const cards = $$('#containers .container-card');
+  const cards = Array.from(document.querySelectorAll('#containers .container-card'));
   form.append('containers_count', String(cards.length));
-  for(let i=0;i<cards.length;i++){
+
+  // Respaldo en base64 para TODAS las fotos (por si el binario llega vacío)
+  const filesFallback = [];
+
+  for (let i = 0; i < cards.length; i++){
     const card = cards[i];
     const id = card.dataset.uid;
 
-    const cont   = $(`[name="c${id}_container"]`)?.value.trim().toUpperCase() || '';
-    const book   = $(`[name="c${id}_booking"]`)?.value.trim() || '';
-    const navSel = $(`[name="c${id}_naviera_sel"]`)?.value || '';
-    const navOtra= $(`[name="c${id}_naviera_otra"]`)?.value || '';
+    // Campos básicos contenedor
+    const cont   = (document.querySelector(`[name="c${id}_container"]`)?.value || '').trim().toUpperCase();
+    const book   = (document.querySelector(`[name="c${id}_booking"]`)?.value || '').trim();
+    const navSel = (document.querySelector(`[name="c${id}_naviera_sel"]`)?.value || '');
+    const navOtra= (document.querySelector(`[name="c${id}_naviera_otra"]`)?.value || '');
+
     form.append(`c${i}_container`, cont);
     form.append(`c${i}_booking`, book);
     form.append(`c${i}_naviera_sel`, navSel);
     form.append(`c${i}_naviera_otra`, navOtra);
 
-    // Tiempos cabecera
+    // Tiempos cabecera (2 controles)
     const hrs = readHeaderTimes(card);
-    form.append(`c${i}_ht_0`, hrs[0]||'');
-    form.append(`c${i}_ht_1`, hrs[1]||'');
+    form.append(`c${i}_ht_0`, hrs[0] || '');
+    form.append(`c${i}_ht_1`, hrs[1] || '');
 
-    // Tabla
+    // Tabla (usda1/usda2/usda3/sp/sup/ret × 2 columnas)
     const vals = readTableValues(card);
     Object.keys(vals).forEach(k=>{
       vals[k].forEach((v, colIdx)=> form.append(`c${i}_${k}_${colIdx}`, v || ''));
     });
 
-    // Adjuntos unidad
+    // FOTOS/ARCHIVOS de la unidad (binario + respaldo base64)
     const files = photoStores.get(Number(id)) || [];
-    files.forEach((p, k)=> form.append(`c${i}_file_${k}`, p.file, p.name));
     form.append(`c${i}_file_count`, String(files.length));
-
-    // Datalog (opcional)
-    const d = datalogStore.get(Number(id));
-    if(d) form.append(`c${i}_datalog`, d, safeName(d.name));
+    for (let k = 0; k < files.length; k++){
+      const p = files[k];
+      form.append(`c${i}_file_${k}`, p.file, p.name); // binario
+      const dataURL = await fileToDataURLSmart(p.file, {w:MAX_W, h:MAX_H, max:MAX_SIZE});
+      filesFallback.push({
+        key: `c${i}_file_${k}`,
+        name: p.name,
+        mimeType: p.mimeType || 'application/octet-stream',
+        dataURL
+      });
+    }
   }
+
+  // Adjuntamos el respaldo JSON con TODAS las fotos
+  form.append('files_json', JSON.stringify(filesFallback));
 
   return form;
 }
+
 
 async function sendToGas(formData){
   const resp = await fetch(GAS_URL, { method: 'POST', body: formData });
